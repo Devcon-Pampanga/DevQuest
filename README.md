@@ -79,9 +79,11 @@ npm run dev
 
 ## Team Members
 
-- `TBD`
-- `TBD`
-- `TBD`
+- Kiel Albiend David
+- Joaquin Galang
+- Russel Jan Patio
+- Russelle Roxas
+- Reign Sanchez
 
 ## Future Improvements
 
