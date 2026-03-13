@@ -10,6 +10,7 @@ import {
   query,
   where,
   getDocs,
+  writeBatch,
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -72,4 +73,70 @@ export async function signUp(email: string, password: string): Promise<void> {
     onboardingComplete: false,
     createdAt: serverTimestamp(),
   });
+}
+
+export interface CompleteOnboardingParams {
+  uid: string;
+  username: string;
+  contactNumber: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  chapterId: string;
+  teams: string[];
+}
+
+export async function completeOnboarding(
+  params: CompleteOnboardingParams
+): Promise<void> {
+  const {
+    uid,
+    username,
+    contactNumber,
+    linkedinUrl,
+    githubUrl,
+    chapterId,
+    teams,
+  } = params;
+  const lowerUsername = username.toLowerCase().trim();
+
+  // Uniqueness check must happen outside the batch — getDocs can't run inside one
+  const usernameSnap = await getDocs(
+    query(collection(db, "users"), where("username", "==", lowerUsername))
+  );
+  if (!usernameSnap.empty) throw new Error("USERNAME_TAKEN");
+
+  const batch = writeBatch(db);
+
+  // a. Update user doc — use update (not set) to preserve role/email/createdAt from signUp
+  batch.update(doc(db, "users", uid), {
+    username: lowerUsername,
+    contactNumber: contactNumber.trim(),
+    linkedinUrl: linkedinUrl.trim(),
+    githubUrl: githubUrl.trim(),
+    chapterId,
+    teams,
+    onboardingComplete: true,
+    xp: 10,
+  });
+
+  // b. XP log entry (+10 for profile setup)
+  const xpLogRef = doc(collection(db, "users", uid, "xpLog"));
+  batch.set(xpLogRef, {
+    logId: xpLogRef.id,
+    source: "profile_setup",
+    sourceId: uid,
+    description: "Completed profile setup",
+    xp: 10,
+    createdAt: serverTimestamp(),
+  });
+
+  // c. Initialize teamProgress for each selected team
+  for (const teamId of teams) {
+    batch.set(doc(db, "users", uid, "teamProgress", teamId), {
+      teamId,
+      currentTier: "team_member",
+    });
+  }
+
+  await batch.commit();
 }
