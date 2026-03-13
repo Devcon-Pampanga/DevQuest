@@ -210,11 +210,17 @@ export default function RegisterPage() {
 
         {/* Team Color Dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {TEAM_COLORS.map((color) => (
+          {TEAM_COLORS.map((color, i) => (
             <div
               key={color}
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: color }}
+              style={{
+                backgroundColor: color,
+                ...(loading && {
+                  animation: "wave-dot 0.6s ease-in-out infinite",
+                  animationDelay: `${i * 0.1}s`,
+                }),
+              }}
             />
           ))}
         </div>

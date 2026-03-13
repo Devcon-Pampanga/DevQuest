@@ -30,6 +30,46 @@ const CHAPTERS = [
   "DEVCON Kids Zamboanga",
 ] as const;
 
+// ─── Team Info (for dialog) ───────────────────────────────────────────────────
+
+const TEAM_INFO = [
+  {
+    id: "lead_learners",
+    name: "Lead Learners",
+    color: "#F5C518",
+    description: "The largest of the volunteer teams. They deliver the learning experiences central to the DEVCON Kids program.",
+    tiers: ["Team Member", "Lead Learner Associate", "Lead Learner Specialist", "Certified Lead Learner"],
+  },
+  {
+    id: "people_culture",
+    name: "People & Culture",
+    color: "#F97316",
+    description: "Works to recruit volunteers and keep volunteer engagement high across all chapters.",
+    tiers: ["Team Member", "Associate", "Specialist", "P&C Lead"],
+  },
+  {
+    id: "community_engagement",
+    name: "Community Engagement",
+    color: "#22C55E",
+    description: "Builds relationships, partnerships, and synergies with other organizations to grow DEVCON Kids' reach.",
+    tiers: ["Team Member", "Representative Associate", "Ambassador Specialist", "CE Lead"],
+  },
+  {
+    id: "creatives",
+    name: "Creatives",
+    color: "#9333EA",
+    description: "Produces artwork, visual content, and creative materials to support DEVCON Kids events.",
+    tiers: ["Team Member", "Associate", "Specialist", "Creative Director"],
+  },
+  {
+    id: "sustainability",
+    name: "Sustainability",
+    color: "#06B6D4",
+    description: "Works towards critical resource management and financial sustainability of the DEVCON Kids program.",
+    tiers: ["Team Member", "Sustainability Associate", "Sustainability Specialist", "Sustainability Lead"],
+  },
+] as const;
+
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 
 function LinkedInIcon() {
@@ -133,6 +173,36 @@ function ChevronDownIcon() {
   );
 }
 
+function InfoIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="8.01" />
+      <line x1="12" y1="12" x2="12" y2="16" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function ChevronRightSmIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
 const TEAM_ICONS: Record<string, () => React.JSX.Element> = {
@@ -161,8 +231,9 @@ export default function OnboardingPage() {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
 
   // UI state
-  const [error, setError]     = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [showTeamInfo, setShowTeamInfo] = useState(false);
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -196,8 +267,20 @@ export default function OnboardingPage() {
   function formatContactNumber(value: string): string {
     const digits = value.replace(/\D/g, "");
     if (digits.length === 0) return CONTACT_PREFIX;
-    const after63 = digits.startsWith("63") ? digits.slice(2) : digits;
-    return CONTACT_PREFIX + after63.replace(/(\d{3})(?=\d)/g, "$1 ");
+    let after63 = digits.startsWith("63") ? digits.slice(2) : digits;
+    after63 = after63.slice(0, 10);
+    const part1 = after63.slice(0, 3);
+    const part2 = after63.slice(3, 6);
+    const part3 = after63.slice(6, 10);
+    return CONTACT_PREFIX + [part1, part2, part3].filter(Boolean).join(" ");
+  }
+
+  function ensureFullUrl(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    const lower = trimmed.toLowerCase();
+    if (lower.startsWith("http://") || lower.startsWith("https://")) return trimmed;
+    return "https://" + trimmed.replace(/^\/+/, "");
   }
 
   function validate(): string {
@@ -222,8 +305,8 @@ export default function OnboardingPage() {
         uid,
         username:      username.trim(),
         contactNumber: contactNumber.replace(/\s/g, "").trim(),
-        linkedinUrl:   linkedinUrl.trim(),
-        githubUrl:     githubUrl.trim(),
+        linkedinUrl:   ensureFullUrl(linkedinUrl),
+        githubUrl:     ensureFullUrl(githubUrl),
         chapterId,
         teams: selectedTeams,
       });
@@ -247,6 +330,7 @@ export default function OnboardingPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
+    <>
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6 py-14"
       style={{
@@ -366,7 +450,18 @@ export default function OnboardingPage() {
 
         {/* Volunteer Teams */}
         <div className="mb-6">
-          <label className={labelCls}>Volunteer Team(s)</label>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-sans uppercase tracking-widest text-text-secondary">
+              Volunteer Team(s)
+            </span>
+            <button
+              onClick={() => setShowTeamInfo(true)}
+              className="text-text-muted hover:text-accent-highlight transition-colors"
+              aria-label="Learn about volunteer teams"
+            >
+              <InfoIcon />
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {TEAMS.map((team) => {
               const isSelected = selectedTeams.includes(team.id);
@@ -414,16 +509,130 @@ export default function OnboardingPage() {
 
         {/* Team Color Dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {TEAMS.map((team) => (
+          {TEAMS.map((team, i) => (
             <div
               key={team.id}
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: team.color }}
+              style={{
+                backgroundColor: team.color,
+                ...(loading && {
+                  animation: "wave-dot 0.6s ease-in-out infinite",
+                  animationDelay: `${i * 0.1}s`,
+                }),
+              }}
             />
           ))}
         </div>
 
       </div>
     </div>
+
+    {/* ── Team Info Dialog ───────────────────────────────────────────────── */}
+
+    {showTeamInfo && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowTeamInfo(false)}
+        />
+
+        {/* Panel — dark purplish to match onboarding background */}
+        <div className="relative border border-border rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl" style={{ backgroundColor: "#1a1625" }}>
+
+          {/* Header — sticky */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
+            <h2 className="font-heading text-lg text-text-primary">
+              Volunteer Teams
+            </h2>
+            <button
+              onClick={() => setShowTeamInfo(false)}
+              className="text-text-muted hover:text-text-primary transition-colors"
+              aria-label="Close"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="overflow-y-auto scrollbar-minimal px-6 py-5 space-y-4">
+            {TEAM_INFO.map((team) => {
+              const Icon = TEAM_ICONS[team.id];
+              return (
+                <div
+                  key={team.id}
+                  className="rounded-xl border border-border overflow-hidden"
+                  style={{ backgroundColor: "#1e1a2e" }}
+                >
+                  {/* Colored top stripe */}
+                  <div className="h-[3px]" style={{ backgroundColor: team.color }} />
+
+                  <div className="p-4">
+                    {/* Team name + icon */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span style={{ color: team.color }}>
+                        {Icon && <Icon />}
+                      </span>
+                      <span
+                        className="font-heading text-sm"
+                        style={{ color: team.color }}
+                      >
+                        {team.name}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-text-secondary text-xs mb-4 leading-relaxed">
+                      {team.description}
+                    </p>
+
+                    {/* Progression label */}
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">
+                      Path Progression
+                    </p>
+
+                    {/* Tier steps */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {team.tiers.map((tier, i) => {
+                        const isLast = i === team.tiers.length - 1;
+                        return (
+                          <div key={tier} className="flex items-center gap-1">
+                            <span
+                              className={
+                                isLast
+                                  ? "px-2 py-1 rounded-md text-[10px] font-sans border"
+                                  : "px-2 py-1 rounded-md text-[10px] font-sans border border-border text-text-secondary"
+                              }
+                              style={
+                                isLast
+                                  ? {
+                                      borderColor: `${team.color}55`,
+                                      backgroundColor: `${team.color}18`,
+                                      color: team.color,
+                                    }
+                                  : { backgroundColor: "#252038" }
+                              }
+                            >
+                              {tier}
+                            </span>
+                            {!isLast && (
+                              <span className="text-text-muted flex-shrink-0">
+                                <ChevronRightSmIcon />
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      </div>
+    )}
+    </>
   );
 }
