@@ -1,9 +1,8 @@
 <p align="center">
- <img width="100px" src="" align="center" alt="DevQuest Logo" />
+ <img width="100px" src="https://github.com/user-attachments/assets/3ef0eb30-e067-4c05-86cd-6079fcfe8960" align="center" alt="DevQuest Logo" />
  <h2 align="center">DevQuest</h2>
  <p align="center">An open-source career progression platform for DEVCON Kids volunteers</p>
 </p>
-
 <p align="center">
     <a href="https://github.com/Devcon-Pampanga/DevQuest/graphs/contributors">
       <img alt="GitHub Contributors" src="https://img.shields.io/github/contributors/Devcon-Pampanga/DevQuest?color=0088ff"/>
@@ -79,9 +78,11 @@ npm run dev
 
 ## Team Members
 
-- `TBD`
-- `TBD`
-- `TBD`
+- Kiel Albiend David
+- Joaquin Galang
+- Russel Jan Patio
+- Russelle Roxas
+- Reign Sanchez
 
 ## Future Improvements
 
