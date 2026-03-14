@@ -25,6 +25,13 @@ export const metadata: Metadata = {
     title: "DevQuest",
     statusBarStyle: "black-translucent",
   },
+  openGraph: {
+    images: [{ url: "/banner.png", alt: "DevQuest" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/banner.png"],
+  },
 };
 
 export default function RootLayout({
