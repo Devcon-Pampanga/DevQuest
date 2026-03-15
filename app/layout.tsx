@@ -17,6 +17,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://dev-quest-lilac.vercel.app"),
   title: "DevQuest",
   description: "Turn your volunteer work into your career.",
   themeColor: "#0a0a0f",
