@@ -16,7 +16,7 @@
   </p>
 
   <p align="center">
-    <a href="/">View Demo</a>
+    <a href="https://dev-quest-lilac.vercel.app/">View Demo</a>
     ·
     <a href="https://github.com/Devcon-Pampanga/DevQuest/issues/new?labels=bug">Report Bug</a>
     ·
