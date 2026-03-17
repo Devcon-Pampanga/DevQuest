@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(ls /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/app/\\\\\\(auth\\\\\\)/)",
+      "Bash(npx tsc --noEmit)",
+      "WebFetch(domain:www.dicebear.com)",
+      "WebFetch(domain:api.dicebear.com)",
+      "Bash(ls -la \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest/app/\\(auth\\)\")",
+      "Bash(find C:UsersL-JOAQUINDocumentsProjectsWebDevQuest -maxdepth 3 -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\) ! -path */node_modules/* ! -path */.next/*)",
+      "Bash(find \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\" -type f -name \"*.tsx\" -o -name \"*.ts\")",
+      "Bash(find C:UsersL-JOAQUINDocumentsProjectsWebDevQuest -type f \\\\\\(-name firestore.ts -o -name *.css \\\\\\))",
+      "Bash(ls -la \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\events\")",
+      "Bash(find \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\" -type f -name \"*.tsx\")",
+      "Bash(ls -la \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\events\\\\new\")",
+      "Bash(npm install:*)"
+    ]
+  }
+}

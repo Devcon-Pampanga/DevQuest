@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+import { DM_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import InstallPrompt from "@/components/InstallPrompt";
 
@@ -9,10 +10,9 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
+const agrandirBold = localFont({
+  src: "./fonts/AgrandirBold.ttf",
   variable: "--font-heading",
-  weight: ["700"],
   display: "swap",
 });
 
@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${dmSans.variable} ${spaceGrotesk.variable} antialiased`}
+        className={`${dmSans.variable} ${agrandirBold.variable} antialiased`}
       >
         <InstallPrompt />
         {children}
