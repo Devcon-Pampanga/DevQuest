@@ -195,6 +195,19 @@ function EventCard({ event }: { event: EventDoc }) {
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 
+const CHAPTERS = [
+  "DEVCON Kids Baguio",
+  "DEVCON Kids Cagayan de Oro",
+  "DEVCON Kids Cebu",
+  "DEVCON Kids Davao",
+  "DEVCON Kids Iloilo",
+  "DEVCON Kids Manila",
+  "DEVCON Kids Pampanga",
+  "DEVCON Kids Quezon City",
+  "DEVCON Kids Tacloban",
+  "DEVCON Kids Zamboanga",
+] as const;
+
 type FilterType = "all" | "upcoming" | "past";
 
 export default function EventsPage() {
@@ -253,19 +266,6 @@ export default function EventsPage() {
 
     fetchEvents();
   }, [userData]);
-
-  // ── Derived chapter list (only chapters that have at least one event) ────────
-  const availableChapters = useMemo(() => {
-    const seen = new Set<string>();
-    const chapters: string[] = [];
-    for (const e of events) {
-      if (e.chapterId && !seen.has(e.chapterId)) {
-        seen.add(e.chapterId);
-        chapters.push(e.chapterId);
-      }
-    }
-    return chapters.sort();
-  }, [events]);
 
   // ── Filtered events ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -411,37 +411,35 @@ export default function EventsPage() {
             ))}
           </div>
 
-          {/* Chapter filter chips — only shown when more than one chapter has events */}
-          {availableChapters.length > 1 && (
-            <div className="flex gap-2 flex-wrap items-center">
-              <span className="text-xs text-text-muted font-sans uppercase tracking-widest mr-1">
-                Chapter
-              </span>
+          {/* Chapter filter chips */}
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs text-text-muted font-sans uppercase tracking-widest mr-1">
+              Chapter
+            </span>
+            <button
+              onClick={() => setChapterFilter("all")}
+              className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                chapterFilter === "all"
+                  ? "bg-accent-primary/80 border-accent-primary text-white"
+                  : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
+              }`}
+            >
+              All
+            </button>
+            {CHAPTERS.map((chapter) => (
               <button
-                onClick={() => setChapterFilter("all")}
+                key={chapter}
+                onClick={() => setChapterFilter(chapter)}
                 className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
-                  chapterFilter === "all"
+                  chapterFilter === chapter
                     ? "bg-accent-primary/80 border-accent-primary text-white"
                     : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
                 }`}
               >
-                All
+                {shortChapter(chapter)}
               </button>
-              {availableChapters.map((chapter) => (
-                <button
-                  key={chapter}
-                  onClick={() => setChapterFilter(chapter)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
-                    chapterFilter === chapter
-                      ? "bg-accent-primary/80 border-accent-primary text-white"
-                      : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
-                  }`}
-                >
-                  {shortChapter(chapter)}
-                </button>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         {/* Events grid */}
