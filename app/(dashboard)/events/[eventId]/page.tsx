@@ -17,7 +17,8 @@ import {
   addDoc,
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -211,6 +212,16 @@ function IconTrash() {
   );
 }
 
+function IconUpload() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+
 // ─── Date/time helpers for edit modal ─────────────────────────────────────────
 
 function tsToDateInput(ts: Timestamp): string {
@@ -247,7 +258,7 @@ function EditEventModal({
   saving,
 }: {
   event: EventDoc;
-  onSave: (fields: EditFields) => void;
+  onSave: (fields: EditFields, bannerFile: File | null) => void;
   onClose: () => void;
   saving: boolean;
 }) {
@@ -260,9 +271,17 @@ function EditEventModal({
     location: event.location,
     lumaUrl: event.lumaUrl ?? "",
   });
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   function set(key: keyof EditFields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setBannerFile(file);
+    if (file) setBannerPreview(URL.createObjectURL(file));
   }
 
   return (
@@ -318,6 +337,24 @@ function EditEventModal({
               <label className={EDIT_LABEL}>Luma Link</label>
               <input type="url" value={fields.lumaUrl} onChange={(e) => set("lumaUrl", e.target.value)} className={EDIT_INPUT} placeholder="https://lu.ma/your-event" />
             </div>
+
+            <div>
+              <label className={EDIT_LABEL}>Banner Image</label>
+              <div className="rounded-xl overflow-hidden border border-[#27272A] bg-[#0a0a0f]">
+                {(bannerPreview || event.bannerUrl) && (
+                  <img
+                    src={bannerPreview ?? event.bannerUrl}
+                    alt="Banner preview"
+                    className="w-full h-28 object-cover opacity-80"
+                  />
+                )}
+                <label className="flex items-center justify-center gap-2 py-3 cursor-pointer hover:bg-white/5 transition-colors text-sm text-[#A1A1AA] hover:text-white">
+                  <IconUpload />
+                  {bannerFile ? bannerFile.name : "Replace banner…"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
+                </label>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3 mt-6">
@@ -328,7 +365,7 @@ function EditEventModal({
               Cancel
             </button>
             <button
-              onClick={() => onSave(fields)}
+              onClick={() => onSave(fields, bannerFile)}
               disabled={saving || !fields.name.trim() || !fields.date || !fields.location.trim()}
               className="flex-1 py-3 rounded-xl bg-[#A855F7] hover:bg-[#7C3AED] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-heading transition-colors flex items-center justify-center gap-2"
             >
@@ -732,7 +769,7 @@ export default function EventDetailPage() {
   }, [eventId]);
 
   // ── Edit event ───────────────────────────────────────────────────────────────
-  async function handleSaveEdit(fields: EditFields) {
+  async function handleSaveEdit(fields: EditFields, bannerFile: File | null) {
     setSaving(true);
     try {
       const startTs = Timestamp.fromDate(new Date(`${fields.date}T${fields.startTime || "00:00"}`));
@@ -749,6 +786,13 @@ export default function EventDetailPage() {
       if (endTs) updates.endDate = endTs;
       if (fields.lumaUrl.trim()) updates.lumaUrl = fields.lumaUrl.trim();
 
+      if (bannerFile) {
+        const bannerRef = ref(storage, `event-banners/${eventId}/banner`);
+        try { await deleteObject(bannerRef); } catch { /* no existing banner */ }
+        await uploadBytes(bannerRef, bannerFile);
+        updates.bannerUrl = await getDownloadURL(bannerRef);
+      }
+
       await updateDoc(doc(db, "events", eventId), updates);
       await fetchData();
       setShowEditModal(false);
@@ -763,6 +807,11 @@ export default function EventDetailPage() {
   async function handleDelete() {
     setDeleting(true);
     try {
+      if (event?.bannerUrl) {
+        try {
+          await deleteObject(ref(storage, `event-banners/${eventId}/banner`));
+        } catch { /* banner may not exist */ }
+      }
       await deleteDoc(doc(db, "events", eventId));
       router.replace("/events");
     } catch (err) {

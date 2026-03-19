@@ -122,14 +122,16 @@ const LABEL_CLS =
 // Shared card wrapper — matches onboarding dialog team cards
 function SectionCard({
   stripe = "linear-gradient(90deg, #7C3AED, #A855F7)",
+  className = "",
   children,
 }: {
   stripe?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
-      className="rounded-2xl border border-border overflow-hidden"
+      className={`rounded-2xl border border-border overflow-hidden ${className}`}
       style={{ backgroundColor: "#1e1a2e" }}
     >
       {/* Colored top stripe */}
@@ -362,7 +364,11 @@ export default function NewEventPage() {
             "radial-gradient(ellipse 80% 40% at 60% 0%, rgba(124,58,237,0.12) 0%, transparent 70%)",
         }}
       >
-        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+        <div className="max-w-5xl mx-auto flex flex-col gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 items-stretch">
+
+          {/* ── Left column ─────────────────────────────────────────────────── */}
+          <div className="flex flex-col gap-5 h-full">
 
           {/* ── A: Import from Luma ─────────────────────────────────────────── */}
           <SectionCard stripe="#7C3AED">
@@ -422,7 +428,7 @@ export default function NewEventPage() {
           </SectionCard>
 
           {/* ── B: Event Details ────────────────────────────────────────────── */}
-          <SectionCard>
+          <SectionCard className="flex-1">
             <h2 className="font-heading text-base text-text-primary mb-5">Event Details</h2>
 
             {/* Name */}
@@ -511,6 +517,11 @@ export default function NewEventPage() {
             </div>
           </SectionCard>
 
+          </div>{/* end left column */}
+
+          {/* ── Right column ────────────────────────────────────────────────── */}
+          <div className="flex flex-col gap-5 h-full">
+
           {/* ── C: Event Banner ─────────────────────────────────────────────── */}
           <SectionCard stripe="#22C55E">
             <div className="flex items-center gap-2 mb-1">
@@ -561,7 +572,7 @@ export default function NewEventPage() {
           </SectionCard>
 
           {/* ── D: Volunteer Roles ──────────────────────────────────────────── */}
-          <SectionCard stripe="#A855F7">
+          <SectionCard stripe="#A855F7" className="flex-1">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-base text-text-primary">Volunteer Roles</h2>
               <span className="text-[11px] font-sans text-text-muted uppercase tracking-widest">
@@ -639,6 +650,9 @@ export default function NewEventPage() {
               Adjust slot counts as needed. XP values are fixed by the DevQuest system.
             </p>
           </SectionCard>
+
+          </div>{/* end right column */}
+          </div>{/* end grid */}
 
           {/* ── Submit ────────────────────────────────────────────────────────── */}
           {submitError && (
