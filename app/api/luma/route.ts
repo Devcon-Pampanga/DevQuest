@@ -29,9 +29,17 @@ interface MicrolinkResponse {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Strip the " · Luma" / " | Luma" suffix that Luma appends to page titles. */
+/** Strip everything after (and including) the last middle-dot separator in a page title.
+ *  Handles U+00B7 (·), U+2022 (•), U+2219 (∙), U+22C5 (⋅), U+2027 (‧). */
 function cleanTitle(raw: string | null | undefined): string {
-  return (raw ?? "").replace(/\s*[·|]\s*luma\s*$/i, "").trim();
+  const s = raw ?? "";
+  // Log char codes so we can identify the exact Unicode point used by Luma
+  console.log("[cleanTitle] raw:", JSON.stringify(s));
+  console.log("[cleanTitle] char codes:", s.split("").map((c) => `${c}(${c.charCodeAt(0)})`).join(" "));
+  // Remove last middot-like character and everything after it
+  const result = s.replace(/\s*[\u00B7\u2022\u2219\u22C5\u2027][^\u00B7\u2022\u2219\u22C5\u2027]*$/, "").trim();
+  console.log("[cleanTitle] result:", JSON.stringify(result));
+  return result;
 }
 
 /** Resolve the best location string from Luma's geo_address_json field. */
@@ -82,7 +90,7 @@ export async function GET(request: Request) {
       const body = await lumaApiRes.json();
       const event: LumaApiEvent = body.event ?? body;
 
-      const name = event.name?.trim() ?? "";
+      const name = cleanTitle(event.name);
       const description = event.description?.trim() ?? "";
       const location = resolveGeo(event);
 
