@@ -9,7 +9,6 @@ import {
   getDoc,
   collection,
   query,
-  where,
   getDocs,
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
@@ -209,6 +208,7 @@ export default function EventsPage() {
 
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [chapterFilter, setChapterFilter] = useState<string>("all");
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -237,10 +237,7 @@ export default function EventsPage() {
     async function fetchEvents() {
       setLoadingEvents(true);
       try {
-        const q = query(
-          collection(db, "events"),
-          where("chapterId", "==", userData!.chapterId)
-        );
+        const q = query(collection(db, "events"));
         const snapshot = await getDocs(q);
         const docs = snapshot.docs
           .map((d) => ({ eventId: d.id, ...d.data() }) as EventDoc)
@@ -257,19 +254,34 @@ export default function EventsPage() {
     fetchEvents();
   }, [userData]);
 
+  // ── Derived chapter list (only chapters that have at least one event) ────────
+  const availableChapters = useMemo(() => {
+    const seen = new Set<string>();
+    const chapters: string[] = [];
+    for (const e of events) {
+      if (e.chapterId && !seen.has(e.chapterId)) {
+        seen.add(e.chapterId);
+        chapters.push(e.chapterId);
+      }
+    }
+    return chapters.sort();
+  }, [events]);
+
   // ── Filtered events ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     const now = new Date();
     return events
-      .filter((e) =>
-        e.name.toLowerCase().includes(search.toLowerCase())
-      )
+      .filter((e) => e.name.toLowerCase().includes(search.toLowerCase()))
       .filter((e) => {
         if (activeFilter === "upcoming") return e.date.toDate() > now;
         if (activeFilter === "past") return e.date.toDate() <= now;
         return true;
+      })
+      .filter((e) => {
+        if (chapterFilter === "all") return true;
+        return e.chapterId === chapterFilter;
       });
-  }, [events, search, activeFilter]);
+  }, [events, search, activeFilter, chapterFilter]);
 
   if (!authChecked || !userData) return null;
 
@@ -278,11 +290,16 @@ export default function EventsPage() {
     userData.avatarOptions ?? DEFAULT_AVATAR
   );
 
-  const filters: { key: FilterType; label: string }[] = [
+  const statusFilters: { key: FilterType; label: string }[] = [
     { key: "all", label: "All" },
     { key: "upcoming", label: "Upcoming" },
     { key: "past", label: "Past" },
   ];
+
+  // Strip the "DEVCON Kids " prefix for compact chip labels
+  function shortChapter(chapter: string): string {
+    return chapter.replace(/^DEVCON Kids\s+/i, "");
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -377,9 +394,9 @@ export default function EventsPage() {
             />
           </div>
 
-          {/* Filter chips */}
+          {/* Status filter chips */}
           <div className="flex gap-2 flex-wrap">
-            {filters.map(({ key, label }) => (
+            {statusFilters.map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setActiveFilter(key)}
@@ -393,6 +410,38 @@ export default function EventsPage() {
               </button>
             ))}
           </div>
+
+          {/* Chapter filter chips — only shown when more than one chapter has events */}
+          {availableChapters.length > 1 && (
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-xs text-text-muted font-sans uppercase tracking-widest mr-1">
+                Chapter
+              </span>
+              <button
+                onClick={() => setChapterFilter("all")}
+                className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                  chapterFilter === "all"
+                    ? "bg-accent-primary/80 border-accent-primary text-white"
+                    : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
+                }`}
+              >
+                All
+              </button>
+              {availableChapters.map((chapter) => (
+                <button
+                  key={chapter}
+                  onClick={() => setChapterFilter(chapter)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                    chapterFilter === chapter
+                      ? "bg-accent-primary/80 border-accent-primary text-white"
+                      : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
+                  }`}
+                >
+                  {shortChapter(chapter)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Events grid */}

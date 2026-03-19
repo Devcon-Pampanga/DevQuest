@@ -5,13 +5,23 @@ import Link from "next/link";
 import Image from "next/image";
 import Sidebar from "@/components/layout/Sidebar";
 
-const TEAMS = [
-  { id: "lead_learners",        color: "#F5C518" },
-  { id: "people_culture",       color: "#F97316" },
-  { id: "community_engagement", color: "#22C55E" },
-  { id: "creatives",            color: "#9333EA" },
-  { id: "sustainability",       color: "#06B6D4" },
-];
+function IconBack() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 12H5M12 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
+function IconMenu() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
 
 export default function NotFound() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,21 +37,19 @@ export default function NotFound() {
           className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-surface border border-border text-text-secondary hover:text-text-primary transition-colors"
           aria-label="Open sidebar"
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
+          <IconMenu />
         </button>
+
+        {/* Top bar */}
+        <div className="flex items-center px-6 py-4 border-b border-border">
+          <Link
+            href="/dashboard"
+            className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+          >
+            <IconBack />
+          </Link>
+          <h1 className="font-heading text-2xl text-text-primary tracking-wide ml-3">Not Found</h1>
+        </div>
 
         {/* Content */}
         <div
@@ -51,47 +59,28 @@ export default function NotFound() {
               "radial-gradient(ellipse 100% 60% at 30% 20%, rgba(124,58,237,0.22) 0%, transparent 60%)",
           }}
         >
-          <div className="w-full max-w-sm flex flex-col items-center text-center">
+          <div className="w-full max-w-sm md:max-w-md lg:max-w-lg flex flex-col items-center text-center">
 
             {/* Illustration */}
-            <div className="mb-8 rounded-2xl overflow-hidden">
+            <div className="mb-8 rounded-2xl overflow-hidden w-72 h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] relative">
               <Image
                 src="/404-robot.png"
                 alt="404 — broken robot"
-                width={300}
-                height={300}
+                fill
+                className="object-contain"
                 priority
               />
             </div>
 
             {/* Heading */}
-            <h1 className="font-heading text-3xl text-text-primary mb-2">
+            <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl text-text-primary mb-3">
               Page Not Found
             </h1>
-            <p className="text-text-secondary text-sm mb-8">
+            <p className="text-sm md:text-base" style={{ color: "#A1A1AA" }}>
               Looks like this page went on an unplanned adventure.
               <br />
               Let&apos;s get you back on track.
             </p>
-
-            {/* CTA */}
-            <Link
-              href="/"
-              className="w-full bg-accent-highlight hover:bg-accent-primary text-white font-heading text-sm tracking-widest uppercase py-3 rounded-lg transition-colors block"
-            >
-              Back to Home
-            </Link>
-
-            {/* Team Color Dots */}
-            <div className="flex justify-center gap-2 mt-10">
-              {TEAMS.map((team) => (
-                <div
-                  key={team.id}
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: team.color }}
-                />
-              ))}
-            </div>
 
           </div>
         </div>
