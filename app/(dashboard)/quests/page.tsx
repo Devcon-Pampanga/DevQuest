@@ -29,7 +29,7 @@ import {
 } from "@/lib/seed/quests";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -171,12 +171,16 @@ function QuestDot({ status, color }: { status: UIQuestStatus; color: string }) {
 // ─── Hero Progress Card ───────────────────────────────────────────────────────
 
 function HeroProgressCard({
+  teamId,
+  currentTier,
   tierLabel,
   nextTierLabel,
   color,
   quests,
   completions,
 }: {
+  teamId: string;
+  currentTier: string;
   tierLabel: string;
   nextTierLabel: string | null;
   color: string;
@@ -214,13 +218,21 @@ function HeroProgressCard({
             </p>
           </div>
 
-          {/* Fraction */}
-          <div className="shrink-0 text-right">
-            <span className="font-heading text-3xl font-bold" style={{ color }}>
-              {completedCount}
-            </span>
-            <span className="text-text-muted text-lg font-heading"> / {total}</span>
-            <p className="text-xs text-text-muted mt-0.5">quests done</p>
+          {/* Badge + count */}
+          <div className="shrink-0 flex flex-col items-center gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/badges/${teamId}_${currentTier}.png`}
+              alt={tierLabel}
+              width={72}
+              height={72}
+              className="object-contain drop-shadow-lg"
+            />
+            <div className="text-center leading-tight">
+              <span className="font-heading text-xl font-bold" style={{ color }}>{completedCount}</span>
+              <span className="text-text-muted font-heading text-base"> / {total}</span>
+              <p className="text-xs text-text-muted">quests done</p>
+            </div>
           </div>
         </div>
 
@@ -566,33 +578,18 @@ function PathJourneySidebar({
             }`}
             style={isCurrent ? { borderLeft: `3px solid ${teamColor}` } : {}}
           >
-            {/* Icon */}
-            <div className="shrink-0 w-7 h-7 flex items-center justify-center">
-              {allDone ? (
-                <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-              ) : !unlocked ? (
-                <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-              ) : (
-                <div
-                  className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold font-heading"
-                  style={{
-                    borderColor: teamColor,
-                    color: teamColor,
-                    backgroundColor: `${teamColor}15`,
-                  }}
-                >
-                  {idx + 1}
-                </div>
-              )}
+            {/* Badge icon */}
+            <div className="shrink-0 w-10 h-10 flex items-center justify-center relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/badges/${teamId}_${tier}.png`}
+                alt={tierLabel}
+                width={40}
+                height={40}
+                className={`object-contain transition-all duration-300 ${
+                  !unlocked ? "grayscale opacity-25" : "drop-shadow-md"
+                }`}
+              />
             </div>
 
             {/* Text + bar */}
@@ -617,7 +614,7 @@ function PathJourneySidebar({
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${pct}%`,
-                      backgroundColor: allDone ? "#22C55E" : teamColor,
+                      backgroundColor: allDone ? "#06B6D4" : teamColor,
                     }}
                   />
                 )}
@@ -1091,8 +1088,8 @@ export default function QuestsPage() {
           {loadingCompletions && (
             <div className="flex items-center justify-center py-20">
               <div className="flex gap-2">
-                {WAVE_COLORS.map((color, i) => (
-                  <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="w-2 h-2 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
                 ))}
               </div>
             </div>
@@ -1113,8 +1110,8 @@ export default function QuestsPage() {
               {loadingApprovals ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="flex gap-2">
-                    {WAVE_COLORS.map((color, i) => (
-                      <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                    {[0, 1, 2].map((i) => (
+                      <span key={i} className="w-2 h-2 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
                     ))}
                   </div>
                 </div>
@@ -1150,6 +1147,8 @@ export default function QuestsPage() {
 
                 {/* Hero Progress Card */}
                 <HeroProgressCard
+                  teamId={activeTab}
+                  currentTier={currentTier}
                   tierLabel={currentTierLabel}
                   nextTierLabel={nextTierLabel}
                   color={activeMeta.color}

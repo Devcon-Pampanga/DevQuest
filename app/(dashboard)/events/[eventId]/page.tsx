@@ -20,7 +20,7 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -463,8 +463,8 @@ function RoleModal({
         >
           {loading ? (
             <span className="flex gap-1">
-              {WAVE_COLORS.map((color, i) => (
-                <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
               ))}
             </span>
           ) : (
@@ -542,7 +542,7 @@ function QrScannerModal({
           <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-elevated">
             <div className="flex gap-1.5">
               {[0, 1, 2].map((i) => (
-                <span key={i} className="w-2 h-2 rounded-full bg-accent-highlight animate-[wave-dot_0.6s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.15}s` }} />
+                <span key={i} className="w-2 h-2 rounded-full bg-white animate-[wave-dot_0.6s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </div>
           </div>
@@ -857,8 +857,8 @@ export default function EventDetailPage() {
         </div>
         <div className="flex items-center justify-center flex-1">
           <div className="flex gap-2">
-            {WAVE_COLORS.map((color, i) => (
-              <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="w-2 h-2 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
             ))}
           </div>
         </div>
@@ -1101,8 +1101,8 @@ export default function EventDetailPage() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: "Registered", value: allRegs.length, color: "#A855F7" },
-                  { label: "Confirmed", value: confirmed, color: "#22C55E" },
-                  { label: "Reflections", value: reflections, color: "#06B6D4" },
+                  { label: "Confirmed", value: confirmed, color: "#06B6D4" },
+                  { label: "Reflections", value: reflections, color: "#22C55E" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="bg-surface border border-border rounded-xl p-4 text-center">
                     <p className="font-heading text-2xl font-bold" style={{ color }}>{value}</p>
@@ -1126,7 +1126,7 @@ export default function EventDetailPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
                 >
                   {confirmingAll ? (
-                    <span className="flex gap-1">{WAVE_COLORS.map((color, i) => <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />)}</span>
+                    <span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />)}</span>
                   ) : (
                     <IconCheck />
                   )}
@@ -1247,8 +1247,8 @@ export default function EventDetailPage() {
                 >
                   {deleting ? (
                     <span className="flex gap-1">
-                      {WAVE_COLORS.map((color, i) => (
-                        <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
                       ))}
                     </span>
                   ) : "Delete Event"}
