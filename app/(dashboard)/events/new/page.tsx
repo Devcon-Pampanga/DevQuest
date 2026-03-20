@@ -15,6 +15,7 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AvatarOptions {
@@ -391,11 +392,11 @@ export default function NewEventPage() {
               >
                 {lumaLoading ? (
                   <span className="flex gap-1">
-                    {TEAM_COLORS.map((color, i) => (
+                    {[0, 1, 2].map((i) => (
                       <span
                         key={i}
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
+                        className="w-1.5 h-1.5 rounded-full bg-white"
+                        style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }}
                       />
                     ))}
                   </span>
@@ -507,7 +508,7 @@ export default function NewEventPage() {
           </SectionCard>
 
           {/* ── C: Event Banner ─────────────────────────────────────────────── */}
-          <SectionCard stripe="#22C55E">
+          <SectionCard stripe="#06B6D4">
             <div className="flex items-center gap-2 mb-1">
               <h2 className="font-heading text-base text-text-primary">Event Banner</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-primary/20 text-accent-highlight font-sans font-medium uppercase tracking-wide">
@@ -652,17 +653,16 @@ export default function NewEventPage() {
             {submitting ? "Creating Event..." : "Create Event"}
           </button>
 
-          {/* Team color wave dots */}
+          {/* Loading dots */}
           <div className="flex justify-center gap-2 mt-2">
-            {TEAM_COLORS.map((color, i) => (
+            {[0, 1, 2].map((i) => (
               <div
-                key={color}
-                className="w-2 h-2 rounded-full"
+                key={i}
+                className="w-2 h-2 rounded-full bg-white"
                 style={{
-                  backgroundColor: color,
                   ...(submitting && {
                     animation: "wave-dot 0.6s ease-in-out infinite",
-                    animationDelay: `${i * 0.1}s`,
+                    animationDelay: `${i * 0.15}s`,
                   }),
                 }}
               />

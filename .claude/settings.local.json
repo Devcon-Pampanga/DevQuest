@@ -13,7 +13,11 @@
       "Bash(ls -la \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\events\")",
       "Bash(find \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\" -type f -name \"*.tsx\")",
       "Bash(ls -la \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\events\\\\new\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx next:*)",
+      "Bash(ls -la /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/middleware.*)",
+      "Bash(wc -l /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/app/\\\\\\(dashboard\\\\\\)/events/page.tsx)",
+      "Bash(cat \"/c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/app/\\(dashboard\\)/dashboard/page.tsx\")"
     ]
   }
 }

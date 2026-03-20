@@ -88,9 +88,9 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
 const TEAMS = [
   { id: "lead_learners",        name: "Lead Learners",        color: "#F5C518" },
   { id: "people_culture",       name: "People & Culture",     color: "#F97316" },
-  { id: "community_engagement", name: "Community Engagement", color: "#22C55E" },
+  { id: "community_engagement", name: "Community Engagement", color: "#06B6D4" },
   { id: "creatives",            name: "Creatives",            color: "#9333EA" },
-  { id: "sustainability",       name: "Sustainability",       color: "#06B6D4" },
+  { id: "sustainability",       name: "Sustainability",       color: "#22C55E" },
 ];
 
 const TEAM_MAP: Record<string, { name: string; color: string }> = Object.fromEntries(
@@ -532,17 +532,16 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Team color dots */}
+        {/* Loading Dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {TEAMS.map((team, i) => (
+          {[0, 1, 2].map((i) => (
             <div
-              key={team.id}
-              className="w-2 h-2 rounded-full"
+              key={i}
+              className="w-2 h-2 rounded-full bg-white"
               style={{
-                backgroundColor: team.color,
                 ...(loading && {
                   animation: "wave-dot 0.6s ease-in-out infinite",
-                  animationDelay: `${i * 0.1}s`,
+                  animationDelay: `${i * 0.15}s`,
                 }),
               }}
             />
