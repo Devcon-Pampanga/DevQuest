@@ -555,7 +555,6 @@ function PathJourneySidebar({
       </p>
 
       {TIER_ORDER.map((tier) => {
-        const idx = TIER_ORDER.indexOf(tier);
         const quests = getQuestsForTier(teamId, tier);
         const unlocked = isTierUnlocked(teamId, tier, completions);
         const completedCount = quests.filter(

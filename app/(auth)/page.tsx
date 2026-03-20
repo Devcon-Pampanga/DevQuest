@@ -8,7 +8,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { signIn, getFriendlyAuthError } from "@/lib/auth-helpers";
 
-const TEAM_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 function EyeIcon() {
   return (
