@@ -364,11 +364,8 @@ export default function NewEventPage() {
             "radial-gradient(ellipse 80% 40% at 60% 0%, rgba(124,58,237,0.12) 0%, transparent 70%)",
         }}
       >
-        <div className="max-w-5xl mx-auto flex flex-col gap-5">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 items-stretch">
-
-          {/* ── Left column ─────────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-5 h-full">
+        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
 
           {/* ── A: Import from Luma ─────────────────────────────────────────── */}
           <SectionCard stripe="#7C3AED">
@@ -402,11 +399,11 @@ export default function NewEventPage() {
               >
                 {lumaLoading ? (
                   <span className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
+                    {TEAM_COLORS.map((color, i) => (
                       <span
                         key={i}
-                        className="w-1.5 h-1.5 rounded-full bg-white animate-[wave-dot_0.6s_ease-in-out_infinite]"
-                        style={{ animationDelay: `${i * 0.15}s` }}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
                       />
                     ))}
                   </span>
@@ -428,7 +425,7 @@ export default function NewEventPage() {
           </SectionCard>
 
           {/* ── B: Event Details ────────────────────────────────────────────── */}
-          <SectionCard className="flex-1">
+          <SectionCard>
             <h2 className="font-heading text-base text-text-primary mb-5">Event Details</h2>
 
             {/* Name */}
@@ -516,11 +513,6 @@ export default function NewEventPage() {
               />
             </div>
           </SectionCard>
-
-          </div>{/* end left column */}
-
-          {/* ── Right column ────────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-5 h-full">
 
           {/* ── C: Event Banner ─────────────────────────────────────────────── */}
           <SectionCard stripe="#22C55E">
@@ -651,8 +643,7 @@ export default function NewEventPage() {
             </p>
           </SectionCard>
 
-          </div>{/* end right column */}
-          </div>{/* end grid */}
+          </div>
 
           {/* ── Submit ────────────────────────────────────────────────────────── */}
           {submitError && (

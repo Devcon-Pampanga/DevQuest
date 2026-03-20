@@ -29,6 +29,8 @@ import {
 } from "@/lib/seed/quests";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 
+const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AvatarOptions {
@@ -1045,50 +1047,54 @@ export default function QuestsPage() {
         </div>
       </div>
 
-      {/* ── Tab Bar (multi-team or coordinator) ───────────────────────────────── */}
-      {tabs.length > 1 && (
-        <div className="flex items-end gap-1 px-6 border-b border-border shrink-0 overflow-x-auto">
-          {tabs.map((tab) => {
-            const color = tab.isApprovals
-              ? "#A855F7"
-              : (TEAM_META[tab.key]?.color ?? "#A855F7");
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setActiveTab(tab.key);
-                  setExpandedQuestId(null);
-                }}
-                className="relative px-4 py-3 text-sm font-heading font-semibold whitespace-nowrap transition-colors shrink-0"
-                style={{ color: isActive ? color : "#71717A" }}
-              >
-                {tab.label}
-                {tab.isApprovals && approvals.length > 0 && (
-                  <span className="ml-1.5 text-xs bg-accent-highlight text-white rounded-full px-1.5 py-0.5">
-                    {approvals.length}
-                  </span>
-                )}
-                {isActive && (
-                  <span
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full"
-                    style={{ backgroundColor: color }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* ── Content ───────────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-5xl mx-auto flex flex-col gap-5">
+        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+
+          {/* ── Team pill switcher ─────────────────────────────────────────────── */}
+          {tabs.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {tabs.map((tab) => {
+                const color = tab.isApprovals
+                  ? "#A855F7"
+                  : (TEAM_META[tab.key]?.color ?? "#A855F7");
+                const isActive = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => { setActiveTab(tab.key); setExpandedQuestId(null); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-heading font-semibold transition-all border whitespace-nowrap"
+                    style={{
+                      borderColor: isActive ? color : "#27272A",
+                      backgroundColor: isActive ? `${color}1A` : "transparent",
+                      color: isActive ? color : "#71717A",
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0 transition-colors"
+                      style={{ backgroundColor: isActive ? color : "#52525B" }}
+                    />
+                    {tab.label}
+                    {tab.isApprovals && approvals.length > 0 && (
+                      <span className="text-xs bg-accent-highlight text-white rounded-full px-1.5 py-0.5 -mr-1">
+                        {approvals.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Loading spinner */}
           {loadingCompletions && (
             <div className="flex items-center justify-center py-20">
-              <div className="w-8 h-8 rounded-full border-2 border-accent-primary border-t-transparent animate-spin" />
+              <div className="flex gap-2">
+                {WAVE_COLORS.map((color, i) => (
+                  <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                ))}
+              </div>
             </div>
           )}
 
@@ -1106,7 +1112,11 @@ export default function QuestsPage() {
               </div>
               {loadingApprovals ? (
                 <div className="flex items-center justify-center py-16">
-                  <div className="w-6 h-6 rounded-full border-2 border-accent-primary border-t-transparent animate-spin" />
+                  <div className="flex gap-2">
+                    {WAVE_COLORS.map((color, i) => (
+                      <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                    ))}
+                  </div>
                 </div>
               ) : approvals.length === 0 ? (
                 <div className="text-center py-16">
@@ -1134,12 +1144,9 @@ export default function QuestsPage() {
             </div>
           )}
 
-          {/* ── Volunteer quest view — two-column grid ────────────────────────── */}
+          {/* ── Volunteer quest view ──────────────────────────────────────────── */}
           {!loadingCompletions && activeTab !== "approvals" && activeMeta && (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 items-start">
-
-              {/* ── Left column ─────────────────────────────────────────────── */}
-              <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 max-w-2xl">
 
                 {/* Hero Progress Card */}
                 <HeroProgressCard
@@ -1198,25 +1205,20 @@ export default function QuestsPage() {
                   </div>
                 </div>
 
-              </div>{/* end left column */}
-
-              {/* ── Right column ────────────────────────────────────────────── */}
-              <div className="flex flex-col gap-5">
-                <div
-                  className="rounded-2xl border border-border overflow-hidden"
-                  style={{ backgroundColor: "#1e1a2e" }}
-                >
-                  <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
-                  <div className="p-5">
-                    <PathJourneySidebar
-                      teamId={activeTab}
-                      teamColor={activeMeta.color}
-                      leadTitle={activeMeta.leadTitle}
-                      completions={completions}
-                    />
-                  </div>
+              <div
+                className="rounded-2xl border border-border overflow-hidden"
+                style={{ backgroundColor: "#1e1a2e" }}
+              >
+                <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
+                <div className="p-5">
+                  <PathJourneySidebar
+                    teamId={activeTab}
+                    teamColor={activeMeta.color}
+                    leadTitle={activeMeta.leadTitle}
+                    completions={completions}
+                  />
                 </div>
-              </div>{/* end right column */}
+              </div>
 
             </div>
           )}

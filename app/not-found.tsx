@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Sidebar from "@/components/layout/Sidebar";
@@ -25,12 +25,40 @@ function IconMenu() {
 
 export default function NotFound() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (el) el.setAttribute("data-no-transition", "");
+
+    if (localStorage.getItem("sidebar-collapsed") === "true") {
+      setCollapsed(true);
+    }
+
+    requestAnimationFrame(() => {
+      if (el) el.removeAttribute("data-no-transition");
+    });
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  }
 
   return (
-    <div className="min-h-screen bg-base flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div ref={containerRef} className="min-h-screen bg-base flex">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
+      />
 
-      <div className="flex-1 flex flex-col lg:ml-56 min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 transition-[margin-left] duration-300 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
         {/* Mobile hamburger */}
         <button
           onClick={() => setSidebarOpen(true)}

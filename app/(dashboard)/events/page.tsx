@@ -14,6 +14,8 @@ import {
 import { Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
+const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AvatarOptions {
@@ -104,7 +106,6 @@ function EventCard({ event }: { event: EventDoc }) {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        {/* Upcoming/past tint overlay when using placeholder */}
         {!event.bannerUrl && (
           <div
             className="absolute inset-0 opacity-40"
@@ -137,17 +138,7 @@ function EventCard({ event }: { event: EventDoc }) {
 
         {/* Date */}
         <div className="flex items-center gap-2 text-text-secondary text-sm">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="shrink-0"
-          >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
             <line x1="8" y1="2" x2="8" y2="6" />
@@ -158,17 +149,7 @@ function EventCard({ event }: { event: EventDoc }) {
 
         {/* Location */}
         <div className="flex items-center gap-2 text-text-secondary text-sm">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="shrink-0"
-          >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
@@ -302,9 +283,9 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <h1 className="font-heading text-2xl text-text-primary tracking-wide pl-10 lg:pl-0">
           Events
         </h1>
@@ -366,9 +347,10 @@ export default function EventsPage() {
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-5xl mx-auto flex flex-col gap-5">
         {/* Search + filters */}
-        <div className="flex flex-col gap-3 mb-6">
+        <div className="flex flex-col gap-3">
           {/* Search bar */}
           <div className="relative">
             <svg
@@ -446,11 +428,11 @@ export default function EventsPage() {
         {loadingEvents ? (
           <div className="flex items-center justify-center py-24">
             <div className="flex gap-2">
-              {[0, 1, 2].map((i) => (
+              {WAVE_COLORS.map((color, i) => (
                 <span
                   key={i}
-                  className="w-2 h-2 rounded-full bg-accent-highlight animate-[wave-dot_0.6s_ease-in-out_infinite]"
-                  style={{ animationDelay: `${i * 0.15}s` }}
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
                 />
               ))}
             </div>
@@ -485,6 +467,7 @@ export default function EventsPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

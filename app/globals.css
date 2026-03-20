@@ -18,6 +18,11 @@ body {
     text-wrap: balance;
   }
 
+  [data-no-transition] * {
+    transition: none !important;
+    animation: none !important;
+  }
+
   .scrollbar-minimal {
     scrollbar-width: thin;
     scrollbar-color: #3f3f46 transparent;
