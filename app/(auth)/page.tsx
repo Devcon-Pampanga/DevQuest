@@ -8,7 +8,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { signIn, getFriendlyAuthError } from "@/lib/auth-helpers";
 
-const TEAM_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
 
 function EyeIcon() {
   return (
@@ -186,17 +185,16 @@ export default function SignInPage() {
           </Link>
         </p>
 
-        {/* Team Color Dots */}
+        {/* Loading Dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {TEAM_COLORS.map((color, i) => (
+          {[0, 1, 2].map((i) => (
             <div
-              key={color}
-              className="w-2 h-2 rounded-full"
+              key={i}
+              className="w-2 h-2 rounded-full bg-white"
               style={{
-                backgroundColor: color,
                 ...(loading && {
                   animation: "wave-dot 0.6s ease-in-out infinite",
-                  animationDelay: `${i * 0.1}s`,
+                  animationDelay: `${i * 0.15}s`,
                 }),
               }}
             />
