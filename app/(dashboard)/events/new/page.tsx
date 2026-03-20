@@ -15,8 +15,6 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const TEAM_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AvatarOptions {
@@ -228,12 +226,6 @@ export default function NewEventPage() {
     }
   }
 
-  // ── Role slot updates (coordinator only controls slots) ───────────────────
-  function updateSlots(id: string, value: string) {
-    setRoles((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, slots: Number(value) || 1 } : r))
-    );
-  }
 
   function adjustSlots(id: string, delta: number) {
     setRoles((prev) =>

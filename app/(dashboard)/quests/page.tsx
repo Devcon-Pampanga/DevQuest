@@ -29,8 +29,6 @@ import {
 } from "@/lib/seed/quests";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AvatarOptions {
@@ -543,7 +541,8 @@ function PathJourneySidebar({
         YOUR JOURNEY
       </p>
 
-      {TIER_ORDER.map((tier, idx) => {
+      {TIER_ORDER.map((tier) => {
+        const idx = TIER_ORDER.indexOf(tier);
         const quests = getQuestsForTier(teamId, tier);
         const unlocked = isTierUnlocked(teamId, tier, completions);
         const completedCount = quests.filter(

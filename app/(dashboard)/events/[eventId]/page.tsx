@@ -20,8 +20,6 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AvatarOptions {
@@ -530,7 +528,7 @@ function QrScannerModal({
             <IconX />
           </button>
         </div>
-        <p className="text-xs text-text-muted mb-4">Point the camera at a volunteer's DevQuest QR code.</p>
+        <p className="text-xs text-text-muted mb-4">Point the camera at a volunteer&apos;s DevQuest QR code.</p>
 
         {scanError ? (
           <div className="text-center py-8 text-red-400 text-sm">{scanError}</div>
