@@ -532,16 +532,17 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Loading Dots */}
+        {/* Team color dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {[0, 1, 2].map((i) => (
+          {TEAMS.map((team, i) => (
             <div
-              key={i}
-              className="w-2 h-2 rounded-full bg-white"
+              key={team.id}
+              className="w-2 h-2 rounded-full"
               style={{
+                backgroundColor: team.color,
                 ...(loading && {
                   animation: "wave-dot 0.6s ease-in-out infinite",
-                  animationDelay: `${i * 0.15}s`,
+                  animationDelay: `${i * 0.1}s`,
                 }),
               }}
             />

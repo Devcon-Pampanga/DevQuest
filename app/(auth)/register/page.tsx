@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signUp, getFriendlyAuthError } from "@/lib/auth-helpers";
 import { getPasswordStrength } from "@/utils/password";
 
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 function EyeIcon() {
   return (
@@ -207,16 +208,17 @@ export default function RegisterPage() {
           </Link>
         </p>
 
-        {/* Loading Dots */}
+        {/* Team Color Dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {[0, 1, 2].map((i) => (
+          {WAVE_COLORS.map((color, i) => (
             <div
-              key={i}
-              className="w-2 h-2 rounded-full bg-white"
+              key={color}
+              className="w-2 h-2 rounded-full"
               style={{
+                backgroundColor: color,
                 ...(loading && {
                   animation: "wave-dot 0.6s ease-in-out infinite",
-                  animationDelay: `${i * 0.15}s`,
+                  animationDelay: `${i * 0.1}s`,
                 }),
               }}
             />
