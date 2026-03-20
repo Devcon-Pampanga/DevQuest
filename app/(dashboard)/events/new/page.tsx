@@ -15,6 +15,7 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -653,16 +654,17 @@ export default function NewEventPage() {
             {submitting ? "Creating Event..." : "Create Event"}
           </button>
 
-          {/* Loading dots */}
+          {/* Team color wave dots */}
           <div className="flex justify-center gap-2 mt-2">
-            {[0, 1, 2].map((i) => (
+            {WAVE_COLORS.map((color, i) => (
               <div
-                key={i}
-                className="w-2 h-2 rounded-full bg-white"
+                key={color}
+                className="w-2 h-2 rounded-full"
                 style={{
+                  backgroundColor: color,
                   ...(submitting && {
                     animation: "wave-dot 0.6s ease-in-out infinite",
-                    animationDelay: `${i * 0.15}s`,
+                    animationDelay: `${i * 0.1}s`,
                   }),
                 }}
               />

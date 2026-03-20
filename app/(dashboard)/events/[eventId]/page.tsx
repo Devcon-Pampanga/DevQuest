@@ -20,6 +20,7 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -540,8 +541,8 @@ function QrScannerModal({
         {!scannerReady && !scanError && (
           <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-elevated">
             <div className="flex gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="w-2 h-2 rounded-full bg-white animate-[wave-dot_0.6s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.15}s` }} />
+              {WAVE_COLORS.map((color, i) => (
+                <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
               ))}
             </div>
           </div>
@@ -856,8 +857,8 @@ export default function EventDetailPage() {
         </div>
         <div className="flex items-center justify-center flex-1">
           <div className="flex gap-2">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="w-2 h-2 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+            {WAVE_COLORS.map((color, i) => (
+              <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
             ))}
           </div>
         </div>
