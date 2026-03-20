@@ -399,11 +399,11 @@ export default function NewEventPage() {
               >
                 {lumaLoading ? (
                   <span className="flex gap-1">
-                    {TEAM_COLORS.map((color, i) => (
+                    {[0, 1, 2].map((i) => (
                       <span
                         key={i}
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
+                        className="w-1.5 h-1.5 rounded-full bg-white"
+                        style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }}
                       />
                     ))}
                   </span>
@@ -660,17 +660,16 @@ export default function NewEventPage() {
             {submitting ? "Creating Event..." : "Create Event"}
           </button>
 
-          {/* Team color wave dots */}
+          {/* Loading dots */}
           <div className="flex justify-center gap-2 mt-2">
-            {TEAM_COLORS.map((color, i) => (
+            {[0, 1, 2].map((i) => (
               <div
-                key={color}
-                className="w-2 h-2 rounded-full"
+                key={i}
+                className="w-2 h-2 rounded-full bg-white"
                 style={{
-                  backgroundColor: color,
                   ...(submitting && {
                     animation: "wave-dot 0.6s ease-in-out infinite",
-                    animationDelay: `${i * 0.1}s`,
+                    animationDelay: `${i * 0.15}s`,
                   }),
                 }}
               />
