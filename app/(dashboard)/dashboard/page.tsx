@@ -88,9 +88,9 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
 const TEAMS = [
   { id: "lead_learners",        name: "Lead Learners",        color: "#F5C518" },
   { id: "people_culture",       name: "People & Culture",     color: "#F97316" },
-  { id: "community_engagement", name: "Community Engagement", color: "#22C55E" },
+  { id: "community_engagement", name: "Community Engagement", color: "#06B6D4" },
   { id: "creatives",            name: "Creatives",            color: "#9333EA" },
-  { id: "sustainability",       name: "Sustainability",       color: "#06B6D4" },
+  { id: "sustainability",       name: "Sustainability",       color: "#22C55E" },
 ];
 
 const TEAM_MAP: Record<string, { name: string; color: string }> = Object.fromEntries(

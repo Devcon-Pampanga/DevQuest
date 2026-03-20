@@ -20,7 +20,7 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1101,8 +1101,8 @@ export default function EventDetailPage() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: "Registered", value: allRegs.length, color: "#A855F7" },
-                  { label: "Confirmed", value: confirmed, color: "#22C55E" },
-                  { label: "Reflections", value: reflections, color: "#06B6D4" },
+                  { label: "Confirmed", value: confirmed, color: "#06B6D4" },
+                  { label: "Reflections", value: reflections, color: "#22C55E" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="bg-surface border border-border rounded-xl p-4 text-center">
                     <p className="font-heading text-2xl font-bold" style={{ color }}>{value}</p>

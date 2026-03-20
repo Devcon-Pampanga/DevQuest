@@ -6,7 +6,7 @@ import Link from "next/link";
 import { signUp, getFriendlyAuthError } from "@/lib/auth-helpers";
 import { getPasswordStrength } from "@/utils/password";
 
-const TEAM_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+const TEAM_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 function EyeIcon() {
   return (

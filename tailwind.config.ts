@@ -24,9 +24,9 @@ const config: Config = {
         team: {
           learners: "#F5C518",
           culture: "#F97316",
-          community: "#22C55E",
+          community: "#06B6D4",
           creatives: "#9333EA",
-          sustainability: "#06B6D4",
+          sustainability: "#22C55E",
         },
       },
       fontFamily: {

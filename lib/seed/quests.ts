@@ -711,12 +711,12 @@ export const TEAM_META: Record<
   },
   sustainability: {
     label: "Sustainability",
-    color: "#06B6D4",
+    color: "#22C55E",
     leadTitle: "Sustainability Lead",
   },
   community_engagement: {
     label: "Community Engagement",
-    color: "#22C55E",
+    color: "#06B6D4",
     leadTitle: "CE Lead",
   },
 };

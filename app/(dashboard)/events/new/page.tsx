@@ -15,7 +15,7 @@ import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const TEAM_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+const TEAM_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -515,7 +515,7 @@ export default function NewEventPage() {
           </SectionCard>
 
           {/* ── C: Event Banner ─────────────────────────────────────────────── */}
-          <SectionCard stripe="#22C55E">
+          <SectionCard stripe="#06B6D4">
             <div className="flex items-center gap-2 mb-1">
               <h2 className="font-heading text-base text-text-primary">Event Banner</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-primary/20 text-accent-highlight font-sans font-medium uppercase tracking-wide">

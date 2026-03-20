@@ -14,7 +14,7 @@ import {
 import { Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
+const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
