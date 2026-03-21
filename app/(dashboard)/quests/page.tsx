@@ -20,12 +20,12 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { useSidebar } from "@/context/SidebarContext";
 import {
   QUESTS,
   TIER_ORDER,
   TIER_LABELS,
   TEAM_META,
-  getQuestsForTier,
 } from "@/lib/seed/quests";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 
@@ -83,23 +83,25 @@ function formatDate(ts: Timestamp): string {
 function isTierUnlocked(
   teamId: string,
   tier: Quest["tier"],
-  completions: Record<string, QuestCompletion>
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
 ): boolean {
   const idx = TIER_ORDER.indexOf(tier);
   if (idx === 0) return true;
   const prevTier = TIER_ORDER[idx - 1];
-  const prevQuests = getQuestsForTier(teamId, prevTier);
+  const prevQuests = allQuests.filter(q => q.teamId === teamId && q.tier === prevTier);
   return prevQuests.every((q) => completions[q.questId]?.status === "completed");
 }
 
 function getCurrentTier(
   teamId: string,
-  completions: Record<string, QuestCompletion>
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
 ): Quest["tier"] {
   for (const tier of TIER_ORDER) {
-    if (!isTierUnlocked(teamId, tier, completions)) continue;
-    const quests = getQuestsForTier(teamId, tier);
-    const allDone = quests.every((q) => completions[q.questId]?.status === "completed");
+    if (!isTierUnlocked(teamId, tier, completions, allQuests)) continue;
+    const tierQuests = allQuests.filter(q => q.teamId === teamId && q.tier === tier);
+    const allDone = tierQuests.every((q) => completions[q.questId]?.status === "completed");
     if (!allDone) return tier;
   }
   return TIER_ORDER[TIER_ORDER.length - 1];
@@ -206,7 +208,7 @@ function HeroProgressCard({
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <p className="text-xs font-semibold tracking-widest mb-1" style={{ color }}>
-              CURRENT TIER
+              NEXT MILESTONE
             </p>
             <h2 className="font-heading text-2xl text-text-primary leading-tight">
               {tierLabel} Journey
@@ -265,6 +267,53 @@ function HeroProgressCard({
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${pct}%`, backgroundColor: color }}
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EarnedTierCard — shows the tier the volunteer currently holds ──────────────
+function EarnedTierCard({
+  teamId,
+  earnedTier,
+  earnedTierLabel,
+  color,
+  isMaxTier,
+}: {
+  teamId: string;
+  earnedTier: Quest["tier"];
+  earnedTierLabel: string;
+  color: string;
+  isMaxTier: boolean;
+}) {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-[#27272A]"
+      style={{ background: `linear-gradient(135deg, #1a1a2e 0%, ${color}12 100%)` }}
+    >
+      <div className="h-1 w-full" style={{ backgroundColor: color }} />
+      <div className="p-5 flex items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/badges/${teamId}_${earnedTier}.png`}
+          alt={earnedTierLabel}
+          width={60}
+          height={60}
+          className="object-contain drop-shadow-lg shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold tracking-widest mb-0.5" style={{ color }}>
+            CURRENT TIER
+          </p>
+          <h2 className="font-heading text-xl text-text-primary leading-tight">
+            {earnedTierLabel}
+          </h2>
+          <p className="text-sm text-text-secondary mt-0.5">
+            {isMaxTier
+              ? "You've reached the highest tier — your title is fully earned."
+              : "Complete the milestones below to advance to the next tier."}
+          </p>
         </div>
       </div>
     </div>
@@ -541,13 +590,15 @@ function PathJourneySidebar({
   teamColor,
   leadTitle,
   completions,
+  allQuests,
 }: {
   teamId: string;
   teamColor: string;
   leadTitle: string;
   completions: Record<string, QuestCompletion>;
+  allQuests: Quest[];
 }) {
-  const currentTier = getCurrentTier(teamId, completions);
+  const currentTier = getCurrentTier(teamId, completions, allQuests);
 
   return (
     <div className="flex flex-col gap-2">
@@ -556,12 +607,12 @@ function PathJourneySidebar({
       </p>
 
       {TIER_ORDER.map((tier) => {
-        const quests = getQuestsForTier(teamId, tier);
-        const unlocked = isTierUnlocked(teamId, tier, completions);
-        const completedCount = quests.filter(
+        const tierQuests = allQuests.filter(q => q.teamId === teamId && q.tier === tier);
+        const unlocked = isTierUnlocked(teamId, tier, completions, allQuests);
+        const completedCount = tierQuests.filter(
           (q) => completions[q.questId]?.status === "completed"
         ).length;
-        const total = quests.length;
+        const total = tierQuests.length;
         const allDone = completedCount === total && total > 0;
         const isCurrent = tier === currentTier;
         const tierLabel =
@@ -605,7 +656,7 @@ function PathJourneySidebar({
                   className="text-xs font-semibold shrink-0"
                   style={{ color: !unlocked ? "#52525B" : isCurrent ? teamColor : "#A1A1AA" }}
                 >
-                  {completedCount}/{total}
+                  {total === 0 ? "✓" : `${completedCount}/${total}`}
                 </span>
               </div>
               <div className="h-1.5 rounded-full bg-zinc-800/60">
@@ -613,8 +664,8 @@ function PathJourneySidebar({
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
-                      width: `${pct}%`,
-                      backgroundColor: allDone ? "#06B6D4" : teamColor,
+                      width: total === 0 ? "100%" : `${pct}%`,
+                      backgroundColor: (allDone || total === 0) ? "#06B6D4" : teamColor,
                     }}
                   />
                 )}
@@ -759,11 +810,13 @@ function ApprovalItem({
 
 export default function QuestsPage() {
   const router = useRouter();
+  const { openSidebar } = useSidebar();
 
   const [authChecked, setAuthChecked] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [firebaseUid, setFirebaseUid] = useState<string>("");
 
+  const [quests, setQuests] = useState<Quest[]>([]);
   const [completions, setCompletions] = useState<Record<string, QuestCompletion>>({});
   const [loadingCompletions, setLoadingCompletions] = useState(true);
 
@@ -792,15 +845,19 @@ export default function QuestsPage() {
     return () => unsub();
   }, [router]);
 
-  // ── Load quest completions ──────────────────────────────────────────────────
+  // ── Load quests (from Firestore) + completions ──────────────────────────────
   useEffect(() => {
     if (!firebaseUid) return;
     async function load() {
       setLoadingCompletions(true);
       try {
-        const snap = await getDocs(collection(db, "users", firebaseUid, "questCompletions"));
+        const [questsSnap, completionsSnap] = await Promise.all([
+          getDocs(collection(db, "quests")),
+          getDocs(collection(db, "users", firebaseUid, "questCompletions")),
+        ]);
+        setQuests(questsSnap.docs.map(d => d.data() as Quest));
         const map: Record<string, QuestCompletion> = {};
-        snap.docs.forEach((d) => { map[d.id] = d.data() as QuestCompletion; });
+        completionsSnap.docs.forEach((d) => { map[d.id] = d.data() as QuestCompletion; });
         setCompletions(map);
       } finally {
         setLoadingCompletions(false);
@@ -829,7 +886,7 @@ export default function QuestsPage() {
           );
           completionsSnap.docs.forEach((cd) => {
             const c = cd.data() as QuestCompletion;
-            const quest = QUESTS.find((q) => q.questId === cd.id);
+            const quest = quests.find((q) => q.questId === cd.id);
             if (!quest) return;
             items.push({
               userId: userDoc.id,
@@ -850,6 +907,7 @@ export default function QuestsPage() {
     } finally {
       setLoadingApprovals(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData]);
 
   useEffect(() => {
@@ -999,9 +1057,11 @@ export default function QuestsPage() {
   // Derive current team's data for the volunteer view
   const activeMeta = TEAM_META[activeTab];
   const currentTier = activeMeta
-    ? getCurrentTier(activeTab, completions)
+    ? getCurrentTier(activeTab, completions, quests)
     : "team_member";
-  const currentTierQuests = activeMeta ? getQuestsForTier(activeTab, currentTier) : [];
+  const currentTierQuests = activeMeta
+    ? quests.filter(q => q.teamId === activeTab && q.tier === currentTier)
+    : [];
   const currentTierLabel =
     currentTier === "lead"
       ? (activeMeta?.leadTitle ?? TIER_LABELS[currentTier])
@@ -1014,23 +1074,48 @@ export default function QuestsPage() {
       : TIER_LABELS[nextTier]
     : null;
 
+  // Earned tier: highest tier where ALL quests are complete.
+  // team_member has 0 quests → vacuously complete → always the floor.
+  let earnedTier: Quest["tier"] = "team_member";
+  if (activeMeta) {
+    for (const tier of TIER_ORDER) {
+      const tierQs = quests.filter(q => q.teamId === activeTab && q.tier === tier);
+      if (tierQs.every(q => completions[q.questId]?.status === "completed")) {
+        earnedTier = tier;
+      } else {
+        break;
+      }
+    }
+  }
+  const earnedTierLabel = earnedTier === "lead"
+    ? (activeMeta?.leadTitle ?? TIER_LABELS["lead"])
+    : TIER_LABELS[earnedTier];
+  // isMaxTier: volunteer holds the lead title AND has completed every lead quest
+  const isMaxTier = earnedTier === "lead" &&
+    quests.filter(q => q.teamId === activeTab && q.tier === "lead")
+          .every(q => completions[q.questId]?.status === "completed");
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Top Bar ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-        <h1 className="font-heading text-2xl text-text-primary tracking-wide pl-10 lg:pl-0">
-          Quests
-        </h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/notifications"
-            className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openSidebar}
+            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+            aria-label="Open sidebar"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
-          </Link>
+          </button>
+          <h1 className="font-heading text-2xl text-text-primary tracking-wide">
+            Quests
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
           <Link href="/dashboard">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -1145,16 +1230,27 @@ export default function QuestsPage() {
           {!loadingCompletions && activeTab !== "approvals" && activeMeta && (
             <div className="flex flex-col gap-5 max-w-2xl">
 
-                {/* Hero Progress Card */}
-                <HeroProgressCard
+                {/* Current Tier card — what the volunteer holds right now */}
+                <EarnedTierCard
                   teamId={activeTab}
-                  currentTier={currentTier}
-                  tierLabel={currentTierLabel}
-                  nextTierLabel={nextTierLabel}
+                  earnedTier={earnedTier}
+                  earnedTierLabel={earnedTierLabel}
                   color={activeMeta.color}
-                  quests={currentTierQuests}
-                  completions={completions}
+                  isMaxTier={isMaxTier}
                 />
+
+                {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
+                {!isMaxTier && (
+                  <HeroProgressCard
+                    teamId={activeTab}
+                    currentTier={currentTier}
+                    tierLabel={currentTierLabel}
+                    nextTierLabel={nextTierLabel}
+                    color={activeMeta.color}
+                    quests={currentTierQuests}
+                    completions={completions}
+                  />
+                )}
 
                 {/* Milestones card */}
                 <div
@@ -1215,6 +1311,7 @@ export default function QuestsPage() {
                     teamColor={activeMeta.color}
                     leadTitle={activeMeta.leadTitle}
                     completions={completions}
+                    allQuests={quests}
                   />
                 </div>
               </div>

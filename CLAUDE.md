@@ -155,7 +155,7 @@ interface User {
 ```typescript
 interface TeamProgress {
   teamId: string;
-  currentTier: 'team_member' | 'associate' | 'specialist' | 'team_lead';
+  currentTier: 'team_member' | 'associate' | 'specialist' | 'lead';
 }
 ```
 
@@ -181,6 +181,7 @@ interface Event {
   location: string;
   chapterId: string;
   createdBy: string;
+  eventType?: string;        // e.g. "Code Camp", "Lead Learner Workshop" — used for qr_scan quest triggers
   roles: { roleName: string; slots: number; xpReward: number }[];
   createdAt: Timestamp;
 }
@@ -201,18 +202,32 @@ interface Registration {
 }
 ```
 
-### Quest (`quests/{questId}`) — seed data
+### Quest (`quests/{questId}`) — stored in Firestore, seeded from `lib/seed/quests.ts`
 ```typescript
 interface Quest {
   questId: string;
   teamId: string;
-  tier: 'associate' | 'specialist' | 'team_lead';
+  tier: 'associate' | 'specialist' | 'lead';  // team_member tier has 0 quests; volunteers start at associate
   name: string;
   description: string;
   xpReward: number;
   completionMethod: 'qr_scan' | 'coordinator_approval' | 'self_mark';
+  approvalType?: 'standard' | 'major';        // coordinator_approval quests only
+  triggerEventType?: string;                  // qr_scan: event type required (e.g. "Code Camp")
+  triggerRole?: string;                       // qr_scan: role keyword, case-insensitive substring match
 }
 ```
+
+Quest definitions live in **Firestore** (`quests/{questId}`) so coordinators can add/edit milestones
+without code changes. The seed file (`lib/seed/quests.ts`) is the source of truth for one-time
+population — re-seed via `GET /api/seed-quests` in development whenever the seed changes.
+
+**26 quests total** across 5 teams (no `team_member` tier quests):
+- Lead Learners: 3 associate · 2 specialist · 3 lead
+- People & Culture: 1 associate · 1 specialist · 3 lead
+- Creatives: 1 associate · 1 specialist · 2 lead
+- Sustainability: 1 associate · 1 specialist · 2 lead
+- Community Engagement: 1 associate · 2 specialist · 2 lead
 
 ### Quest Completion (`users/{uid}/questCompletions/{questId}`)
 ```typescript
@@ -325,9 +340,13 @@ On scan:
 
 ## Volunteer Teams & Tiers
 
-All teams follow: **Team Member → Associate → Specialist → Team Lead**
+All teams follow: **Team Member → Associate → Specialist → Lead**
 
-| Team | Team Lead Title | Color |
+> **Note:** The `team_member` tier has **0 quests**. It is the entry state after onboarding — volunteers
+> begin their milestone progression at the `associate` tier. Tier advancement is purely quest-driven
+> (not XP-threshold-based): all quests in a tier must be completed before the next tier unlocks.
+
+| Team | Lead Title | Color |
 |---|---|---|
 | Lead Learners | Certified Lead Learner | `#F5C518` |
 | Creatives | Creative Director | `#9333EA` |
@@ -335,7 +354,17 @@ All teams follow: **Team Member → Associate → Specialist → Team Lead**
 | Community Engagement | CE Lead | `#06B6D4` |
 | Sustainability | Sustainability Lead | `#22C55E` |
 
-Quest data for all teams is in `/lib/seed/quests.ts`. Lead Learners quests are sourced from official DEVCON Kids documentation. The other four teams' quests are proposed — confirm with a coordinator before treating them as final.
+Quest definitions are stored in **Firestore** (`quests/{questId}`) and seeded from `lib/seed/quests.ts`.
+Re-seed in development via `GET /api/seed-quests` whenever the seed file changes.
+
+**qr_scan quest trigger system:** Quests with `completionMethod: "qr_scan"` auto-complete when a
+coordinator confirms a volunteer's attendance, but only if:
+1. The event's `eventType` matches the quest's `triggerEventType` (exact string match), AND
+2. The volunteer's role contains the quest's `triggerRole` as a substring (case-insensitive), if set.
+
+Sequential qr_scan quests at the same tier with the same trigger (e.g., Facilitate Code Camp #1
+then #2 for Lead Learners) complete **one at a time** — only the first incomplete match per
+attendance confirmation resolves.
 
 ---
 
