@@ -50,6 +50,7 @@ interface EventDoc {
   roles: EventRole[];
   bannerUrl?: string;
   eventType?: string;
+  isInternal?: boolean;
 }
 
 const EVENT_TYPES = [
@@ -144,7 +145,7 @@ function EventCard({
 
       <div className="p-5 flex flex-col gap-3 flex-1">
         {/* Status chip + name */}
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-2 flex-wrap">
           <span
             className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
               upcoming
@@ -154,6 +155,11 @@ function EventCard({
           >
             {upcoming ? "UPCOMING" : "PAST"}
           </span>
+          {event.isInternal && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-700/50 text-zinc-300 font-medium shrink-0">
+              Internal
+            </span>
+          )}
         </div>
 
         <h2 className="font-heading text-lg text-text-primary leading-tight">
@@ -183,7 +189,7 @@ function EventCard({
         {/* Slots */}
         <div className="mt-auto pt-1">
           <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-text-secondary">Volunteers</span>
+            <span className="text-text-secondary">{event.isInternal ? "Attendees" : "Volunteers"}</span>
             {countLoading ? (
               <span className="text-text-muted text-xs">—</span>
             ) : (
