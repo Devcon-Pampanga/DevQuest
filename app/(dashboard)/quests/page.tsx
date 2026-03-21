@@ -656,7 +656,7 @@ function PathJourneySidebar({
                   className="text-xs font-semibold shrink-0"
                   style={{ color: !unlocked ? "#52525B" : isCurrent ? teamColor : "#A1A1AA" }}
                 >
-                  {completedCount}/{total}
+                  {total === 0 ? "✓" : `${completedCount}/${total}`}
                 </span>
               </div>
               <div className="h-1.5 rounded-full bg-zinc-800/60">
@@ -664,8 +664,8 @@ function PathJourneySidebar({
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
-                      width: `${pct}%`,
-                      backgroundColor: allDone ? "#06B6D4" : teamColor,
+                      width: total === 0 ? "100%" : `${pct}%`,
+                      backgroundColor: (allDone || total === 0) ? "#06B6D4" : teamColor,
                     }}
                   />
                 )}
