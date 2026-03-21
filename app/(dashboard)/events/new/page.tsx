@@ -320,7 +320,7 @@ export default function NewEventPage() {
     <div className="flex flex-col min-h-screen">
 
       {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
         <div className="flex items-center gap-3">
           <Link
             href="/events"

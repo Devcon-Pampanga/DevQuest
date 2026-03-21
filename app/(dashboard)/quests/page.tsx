@@ -1017,7 +1017,7 @@ export default function QuestsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Top Bar ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
         <h1 className="font-heading text-2xl text-text-primary tracking-wide pl-10 lg:pl-0">
           Quests
         </h1>

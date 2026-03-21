@@ -895,7 +895,7 @@ export default function EventDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
           <div className="flex items-center gap-3">
             <Link href="/events" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
               <IconBack />
@@ -1077,12 +1077,12 @@ export default function EventDetailPage() {
     return (
       <div className="flex flex-col min-h-screen">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-3">
+        <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
+          <div className="flex items-center gap-3 min-w-0">
             <Link href="/events" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
               <IconBack />
             </Link>
-            <h1 className="font-heading text-xl text-text-primary tracking-wide truncate max-w-xs">
+            <h1 className="font-heading text-xl text-text-primary tracking-wide truncate min-w-0">
               {event.name}
             </h1>
           </div>
@@ -1321,12 +1321,12 @@ export default function EventDetailPage() {
   return (
     <div className="flex flex-col min-h-screen pb-24">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href="/events" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
             <IconBack />
           </Link>
-          <h1 className="font-heading text-xl text-text-primary tracking-wide truncate max-w-xs">
+          <h1 className="font-heading text-xl text-text-primary tracking-wide truncate min-w-0">
             {event.name}
           </h1>
         </div>
