@@ -13,6 +13,8 @@ export interface Quest {
   xpReward: number;
   completionMethod: CompletionMethod;
   approvalType?: "standard" | "major";
+  triggerEventType?: string; // event type required to auto-complete via QR scan
+  triggerRole?: string;      // role keyword (case-insensitive substring match); undefined = any role qualifies
 }
 
 export interface QuestCompletion {

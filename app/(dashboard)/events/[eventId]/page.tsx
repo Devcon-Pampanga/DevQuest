@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
+import { Quest, QuestCompletion } from "@/types/quest";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
@@ -54,6 +55,7 @@ interface EventDoc {
   endDate?: Timestamp;
   location: string;
   chapterId: string;
+  eventType?: string;
   roles: EventRole[];
   lumaUrl?: string;
   bannerUrl?: string;
@@ -69,7 +71,8 @@ interface Registration {
   reflectionDeadline?: Timestamp;
   confirmedAt?: Timestamp;
   confirmedBy?: string;
-  username?: string; // populated client-side for coordinator view
+  username?: string;       // populated client-side for coordinator view
+  avatarOptions?: AvatarOptions; // populated client-side for coordinator view
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -344,6 +347,7 @@ function EditEventModal({
               <label className={EDIT_LABEL}>Banner Image</label>
               <div className="rounded-xl overflow-hidden border border-[#27272A] bg-[#0a0a0f]">
                 {(bannerPreview || event.bannerUrl) && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={bannerPreview ?? event.bannerUrl}
                     alt="Banner preview"
@@ -489,34 +493,36 @@ function QrScannerModal({
   const [scanError, setScanError] = useState("");
 
   useEffect(() => {
-    let scanner: { clear: () => void } | null = null;
+    let cancelled = false;
+    let qrInstance: { stop: () => Promise<void> } | null = null;
 
     (async () => {
       try {
-        const { Html5QrcodeScanner } = await import("html5-qrcode");
-        const s = new Html5QrcodeScanner(
-          "qr-reader",
+        const { Html5Qrcode } = await import("html5-qrcode");
+        if (cancelled) return; // React Strict Mode: first mount already cleaned up
+        const container = document.getElementById("qr-reader");
+        if (container) container.innerHTML = ""; // evict any leftover DOM from previous mount
+        const qr = new Html5Qrcode("qr-reader");
+        await qr.start(
+          { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          false
-        );
-        s.render(
           (decodedText: string) => {
             onScan(decodedText);
-            s.clear().catch(() => {});
+            try { qr.stop().catch(() => {}); } catch { /* scanner already stopped */ }
           },
-          () => {}
+          () => {} // ignore per-frame scan errors (blurry, no QR found, etc.)
         );
-        scanner = s;
+        if (cancelled) { qr.stop().catch(() => {}); return; } // started but cleanup ran mid-way
+        qrInstance = qr;
         setScannerReady(true);
       } catch {
-        setScanError("Camera not available or permission denied.");
+        if (!cancelled) setScanError("Camera not available or permission denied.");
       }
     })();
 
     return () => {
-      if (scanner) {
-        try { scanner.clear(); } catch { /* ignore */ }
-      }
+      cancelled = true;
+      try { qrInstance?.stop().catch(() => {}); } catch { /* ignore */ }
     };
   }, [onScan]);
 
@@ -570,6 +576,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDoc | null>(null);
   const [myReg, setMyReg] = useState<Registration | null>(null);
   const [allRegs, setAllRegs] = useState<Registration[]>([]);
+  const [eventQuests, setEventQuests] = useState<Quest[]>([]);
   const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
@@ -639,7 +646,11 @@ export default function EventDetailPage() {
           regs.map(async (reg) => {
             try {
               const uSnap = await getDoc(doc(db, "users", reg.userId));
-              return { ...reg, username: uSnap.data()?.username ?? reg.userId };
+              return {
+                ...reg,
+                username: uSnap.data()?.username ?? reg.userId,
+                avatarOptions: uSnap.data()?.avatarOptions as AvatarOptions | undefined,
+              };
             } catch {
               return { ...reg, username: reg.userId };
             }
@@ -649,6 +660,10 @@ export default function EventDetailPage() {
       }
 
       setSlotCounts(counts);
+
+      // Fetch quest definitions from Firestore (used in confirmAttendance for qr_scan gating)
+      const questsSnap = await getDocs(collection(db, "quests"));
+      setEventQuests(questsSnap.docs.map(d => d.data() as Quest));
     } catch (err) {
       console.error(err);
     } finally {
@@ -684,7 +699,7 @@ export default function EventDetailPage() {
   }
 
   // ── Confirm attendance (coordinator) ─────────────────────────────────────────
-  async function confirmAttendance(reg: Registration) {
+  async function confirmAttendance(reg: Registration, options?: { skipRefresh?: boolean }) {
     if (!firebaseUser) return;
     setConfirmingId(reg.userId);
     try {
@@ -717,13 +732,83 @@ export default function EventDetailPage() {
         createdAt: serverTimestamp(),
       });
 
-      await fetchData();
+      // Auto-complete qr_scan quests for this volunteer (event-type + role gated)
+      try {
+        const TIER_ORDER: Quest["tier"][] = ["team_member", "associate", "specialist", "lead"];
+        const eventType = event?.eventType;
+        const volunteerRole = reg.role;
+
+        const [volunteerSnap, completionsSnap] = await Promise.all([
+          getDoc(doc(db, "users", reg.userId)),
+          getDocs(collection(db, "users", reg.userId, "questCompletions")),
+        ]);
+
+        const volunteerTeams: string[] = volunteerSnap.data()?.teams ?? [];
+        const completions: Record<string, QuestCompletion> = {};
+        completionsSnap.docs.forEach(d => { completions[d.id] = d.data() as QuestCompletion; });
+
+        for (const teamId of volunteerTeams) {
+          // Find current tier: first tier with incomplete quests (respects unlock gating)
+          let currentTier: Quest["tier"] = "team_member";
+          for (const tier of TIER_ORDER) {
+            const tierIdx = TIER_ORDER.indexOf(tier);
+            if (tierIdx > 0) {
+              const prevTier = TIER_ORDER[tierIdx - 1];
+              const prevQuests = eventQuests.filter(q => q.teamId === teamId && q.tier === prevTier);
+              const prevDone = prevQuests.every(q => completions[q.questId]?.status === "completed");
+              if (!prevDone) break;
+            }
+            const tierQuests = eventQuests.filter(q => q.teamId === teamId && q.tier === tier);
+            const tierDone = tierQuests.every(q => completions[q.questId]?.status === "completed");
+            if (!tierDone) { currentTier = tier; break; }
+          }
+
+          // Filter by event type + optional role keyword (case-insensitive substring)
+          const toComplete = eventQuests.filter(q => {
+            if (q.teamId !== teamId) return false;
+            if (q.tier !== currentTier) return false;
+            if (q.completionMethod !== "qr_scan") return false;
+            if (completions[q.questId]?.status === "completed") return false;
+            if (!q.triggerEventType || q.triggerEventType !== eventType) return false;
+            if (q.triggerRole && !volunteerRole.toLowerCase().includes(q.triggerRole.toLowerCase())) return false;
+            return true;
+          });
+
+          for (const quest of toComplete) {
+            await setDoc(doc(db, "users", reg.userId, "questCompletions", quest.questId), {
+              questId: quest.questId,
+              status: "completed",
+              completedAt: serverTimestamp(),
+              xpGranted: quest.xpReward, // 0 for all qr_scan quests
+            });
+            // No XP increment or xpLog — all qr_scan quests award 0 XP
+            await addDoc(collection(db, "users", reg.userId, "notifications"), {
+              type: "quest_approved",
+              message: `Quest completed: "${quest.name}"!`,
+              read: false,
+              relatedId: quest.questId,
+              createdAt: serverTimestamp(),
+            });
+          }
+        }
+      } catch (questErr) {
+        console.error("Quest auto-completion failed:", questErr);
+      }
+
+      if (!options?.skipRefresh) {
+        await fetchData();
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setConfirmingId(null);
     }
   }
+
+  // Keep a ref to the latest confirmAttendance so handleQrScan (memoised on
+  // eventId only) never calls a stale closure that has firebaseUser/fetchData = null.
+  const confirmAttendanceRef = useRef(confirmAttendance);
+  confirmAttendanceRef.current = confirmAttendance;
 
   // ── Confirm all ──────────────────────────────────────────────────────────────
   async function confirmAll() {
@@ -739,32 +824,66 @@ export default function EventDetailPage() {
   // ── QR scan handler ──────────────────────────────────────────────────────────
   const handleQrScan = useCallback(async (data: string) => {
     setShowQrScanner(false);
+    setCoordTab("volunteers");
     try {
+      // 1. Must be a DevQuest QR code
+      if (!data.startsWith("devquest://")) {
+        setScanFeedback({ ok: false, msg: "Not a DevQuest QR code." });
+        setTimeout(() => setScanFeedback(null), 4000);
+        return;
+      }
+
+      // 2. Must be an attendance QR specifically
+      if (!data.startsWith("devquest://attendance?")) {
+        setScanFeedback({ ok: false, msg: "Invalid DevQuest QR code type." });
+        setTimeout(() => setScanFeedback(null), 4000);
+        return;
+      }
+
+      // 3. Parse and extract params
       const url = new URL(data.replace("devquest://", "https://devquest.app/"));
       const scannedEventId = url.searchParams.get("eventId");
       const scannedUserId = url.searchParams.get("userId");
 
-      if (scannedEventId !== eventId || !scannedUserId) {
-        setScanFeedback({ ok: false, msg: "Invalid QR code — wrong event." });
+      // 4. Required params must be present
+      if (!scannedEventId || !scannedUserId) {
+        setScanFeedback({ ok: false, msg: "QR code is missing required data." });
+        setTimeout(() => setScanFeedback(null), 4000);
         return;
       }
 
+      // 5. Must match this event
+      if (scannedEventId !== eventId) {
+        setScanFeedback({ ok: false, msg: "QR code is for a different event." });
+        setTimeout(() => setScanFeedback(null), 4000);
+        return;
+      }
+
+      // 6. Volunteer must be registered
       const regSnap = await getDoc(doc(db, "events", eventId, "registrations", scannedUserId));
       if (!regSnap.exists()) {
         setScanFeedback({ ok: false, msg: "No registration found for this volunteer." });
+        setTimeout(() => setScanFeedback(null), 4000);
         return;
       }
 
       const reg = regSnap.data() as Registration;
+
+      // 7. Must not already be attended
       if (reg.attended) {
         setScanFeedback({ ok: false, msg: "Already marked as attended." });
+        setTimeout(() => setScanFeedback(null), 4000);
         return;
       }
 
-      await confirmAttendance(reg);
-      setScanFeedback({ ok: true, msg: `Attendance confirmed for ${reg.userId}.` });
-    } catch {
-      setScanFeedback({ ok: false, msg: "Failed to parse QR code." });
+      await confirmAttendanceRef.current(reg, { skipRefresh: true });
+      setAllRegs(prev => prev.map(r =>
+        r.userId === reg.userId ? { ...r, attended: true } : r
+      ));
+      setScanFeedback({ ok: true, msg: "Attendance confirmed! ✓" });
+    } catch (err) {
+      console.error(err);
+      setScanFeedback({ ok: false, msg: "Failed to read QR code." });
     }
     setTimeout(() => setScanFeedback(null), 4000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -847,7 +966,7 @@ export default function EventDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
           <div className="flex items-center gap-3">
             <Link href="/events" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
               <IconBack />
@@ -1029,12 +1148,12 @@ export default function EventDetailPage() {
     return (
       <div className="flex flex-col min-h-screen">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-3">
+        <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
+          <div className="flex items-center gap-3 min-w-0">
             <Link href="/events" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
               <IconBack />
             </Link>
-            <h1 className="font-heading text-xl text-text-primary tracking-wide truncate max-w-xs">
+            <h1 className="font-heading text-xl text-text-primary tracking-wide truncate min-w-0">
               {event.name}
             </h1>
           </div>
@@ -1057,6 +1176,7 @@ export default function EventDetailPage() {
               <IconBell />
             </Link>
             <Link href="/dashboard">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
             </Link>
           </div>
@@ -1089,14 +1209,6 @@ export default function EventDetailPage() {
 
           {coordTab === "volunteers" && (
             <div className="max-w-3xl mx-auto flex flex-col gap-5">
-              {/* Scan feedback */}
-              {scanFeedback && (
-                <div className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2 ${scanFeedback.ok ? "bg-green-500/10 border border-green-500/30 text-green-400" : "bg-red-500/10 border border-red-500/30 text-red-400"}`}>
-                  {scanFeedback.ok ? <IconCheck /> : <IconX size={14} />}
-                  {scanFeedback.msg}
-                </div>
-              )}
-
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -1151,8 +1263,9 @@ export default function EventDetailPage() {
                       key={reg.userId}
                       className={`flex items-center gap-4 px-5 py-4 ${idx < allRegs.length - 1 ? "border-b border-border" : ""}`}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={buildAvatarUrl(reg.username ?? reg.userId)}
+                        src={buildAvatarUrl(reg.username ?? reg.userId, reg.avatarOptions)}
                         alt=""
                         width={36}
                         height={36}
@@ -1221,6 +1334,20 @@ export default function EventDetailPage() {
           />
         )}
 
+        {/* Scan feedback toast */}
+        {scanFeedback && (
+          <div
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 rounded-xl text-sm flex items-center gap-2 shadow-lg whitespace-nowrap ${
+              scanFeedback.ok
+                ? "bg-green-500/20 border border-green-500/40 text-green-400"
+                : "bg-red-500/20 border border-red-500/40 text-red-400"
+            }`}
+          >
+            {scanFeedback.ok ? <IconCheck /> : <IconX size={14} />}
+            {scanFeedback.msg}
+          </div>
+        )}
+
         {/* Delete confirm */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1267,12 +1394,12 @@ export default function EventDetailPage() {
   return (
     <div className="flex flex-col min-h-screen pb-24">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href="/events" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
             <IconBack />
           </Link>
-          <h1 className="font-heading text-xl text-text-primary tracking-wide truncate max-w-xs">
+          <h1 className="font-heading text-xl text-text-primary tracking-wide truncate min-w-0">
             {event.name}
           </h1>
         </div>
@@ -1281,6 +1408,7 @@ export default function EventDetailPage() {
             <IconBell />
           </Link>
           <Link href="/dashboard">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
           </Link>
         </div>
@@ -1338,6 +1466,7 @@ export default function EventDetailPage() {
                 <p className="text-xs text-text-muted text-center">Show this to your coordinator on the day of the event</p>
               </div>
               <div className="bg-white p-3 rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(myReg.qrData)}&size=280x280&margin=4`}
                   alt="Your attendance QR code"
