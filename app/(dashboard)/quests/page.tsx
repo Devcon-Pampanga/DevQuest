@@ -861,6 +861,7 @@ export default function QuestsPage() {
     } finally {
       setLoadingApprovals(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData]);
 
   useEffect(() => {

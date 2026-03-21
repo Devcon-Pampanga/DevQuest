@@ -477,6 +477,7 @@ export default function NewEventPage() {
             <IconBell />
           </Link>
           <Link href="/dashboard">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={avatarUrl}
               alt="Profile"

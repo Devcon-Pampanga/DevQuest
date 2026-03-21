@@ -347,6 +347,7 @@ function EditEventModal({
               <label className={EDIT_LABEL}>Banner Image</label>
               <div className="rounded-xl overflow-hidden border border-[#27272A] bg-[#0a0a0f]">
                 {(bannerPreview || event.bannerUrl) && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={bannerPreview ?? event.bannerUrl}
                     alt="Banner preview"
@@ -1175,6 +1176,7 @@ export default function EventDetailPage() {
               <IconBell />
             </Link>
             <Link href="/dashboard">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
             </Link>
           </div>
@@ -1261,6 +1263,7 @@ export default function EventDetailPage() {
                       key={reg.userId}
                       className={`flex items-center gap-4 px-5 py-4 ${idx < allRegs.length - 1 ? "border-b border-border" : ""}`}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={buildAvatarUrl(reg.username ?? reg.userId, reg.avatarOptions)}
                         alt=""
@@ -1405,6 +1408,7 @@ export default function EventDetailPage() {
             <IconBell />
           </Link>
           <Link href="/dashboard">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
           </Link>
         </div>
@@ -1462,6 +1466,7 @@ export default function EventDetailPage() {
                 <p className="text-xs text-text-muted text-center">Show this to your coordinator on the day of the event</p>
               </div>
               <div className="bg-white p-3 rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(myReg.qrData)}&size=280x280&margin=4`}
                   alt="Your attendance QR code"
