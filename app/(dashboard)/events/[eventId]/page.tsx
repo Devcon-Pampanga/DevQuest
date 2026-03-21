@@ -774,7 +774,10 @@ export default function EventDetailPage() {
             return true;
           });
 
-          for (const quest of toComplete) {
+          // Complete only the first matching quest per confirmation — enables sequential
+          // quests (e.g. Facilitate Code Camp #1 then #2) to resolve one at a time.
+          const quest = toComplete[0];
+          if (quest) {
             await setDoc(doc(db, "users", reg.userId, "questCompletions", quest.questId), {
               questId: quest.questId,
               status: "completed",
