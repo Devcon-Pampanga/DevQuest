@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
+import { Quest, QuestCompletion } from "@/types/quest";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
@@ -54,6 +55,7 @@ interface EventDoc {
   endDate?: Timestamp;
   location: string;
   chapterId: string;
+  eventType?: string;
   roles: EventRole[];
   lumaUrl?: string;
   bannerUrl?: string;
@@ -573,6 +575,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDoc | null>(null);
   const [myReg, setMyReg] = useState<Registration | null>(null);
   const [allRegs, setAllRegs] = useState<Registration[]>([]);
+  const [eventQuests, setEventQuests] = useState<Quest[]>([]);
   const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
@@ -656,6 +659,10 @@ export default function EventDetailPage() {
       }
 
       setSlotCounts(counts);
+
+      // Fetch quest definitions from Firestore (used in confirmAttendance for qr_scan gating)
+      const questsSnap = await getDocs(collection(db, "quests"));
+      setEventQuests(questsSnap.docs.map(d => d.data() as Quest));
     } catch (err) {
       console.error(err);
     } finally {
@@ -723,6 +730,69 @@ export default function EventDetailPage() {
         relatedId: eventId,
         createdAt: serverTimestamp(),
       });
+
+      // Auto-complete qr_scan quests for this volunteer (event-type + role gated)
+      try {
+        const TIER_ORDER: Quest["tier"][] = ["team_member", "associate", "specialist", "lead"];
+        const eventType = event?.eventType;
+        const volunteerRole = reg.role;
+
+        const [volunteerSnap, completionsSnap] = await Promise.all([
+          getDoc(doc(db, "users", reg.userId)),
+          getDocs(collection(db, "users", reg.userId, "questCompletions")),
+        ]);
+
+        const volunteerTeams: string[] = volunteerSnap.data()?.teams ?? [];
+        const completions: Record<string, QuestCompletion> = {};
+        completionsSnap.docs.forEach(d => { completions[d.id] = d.data() as QuestCompletion; });
+
+        for (const teamId of volunteerTeams) {
+          // Find current tier: first tier with incomplete quests (respects unlock gating)
+          let currentTier: Quest["tier"] = "team_member";
+          for (const tier of TIER_ORDER) {
+            const tierIdx = TIER_ORDER.indexOf(tier);
+            if (tierIdx > 0) {
+              const prevTier = TIER_ORDER[tierIdx - 1];
+              const prevQuests = eventQuests.filter(q => q.teamId === teamId && q.tier === prevTier);
+              const prevDone = prevQuests.every(q => completions[q.questId]?.status === "completed");
+              if (!prevDone) break;
+            }
+            const tierQuests = eventQuests.filter(q => q.teamId === teamId && q.tier === tier);
+            const tierDone = tierQuests.every(q => completions[q.questId]?.status === "completed");
+            if (!tierDone) { currentTier = tier; break; }
+          }
+
+          // Filter by event type + optional role keyword (case-insensitive substring)
+          const toComplete = eventQuests.filter(q => {
+            if (q.teamId !== teamId) return false;
+            if (q.tier !== currentTier) return false;
+            if (q.completionMethod !== "qr_scan") return false;
+            if (completions[q.questId]?.status === "completed") return false;
+            if (!q.triggerEventType || q.triggerEventType !== eventType) return false;
+            if (q.triggerRole && !volunteerRole.toLowerCase().includes(q.triggerRole.toLowerCase())) return false;
+            return true;
+          });
+
+          for (const quest of toComplete) {
+            await setDoc(doc(db, "users", reg.userId, "questCompletions", quest.questId), {
+              questId: quest.questId,
+              status: "completed",
+              completedAt: serverTimestamp(),
+              xpGranted: quest.xpReward, // 0 for all qr_scan quests
+            });
+            // No XP increment or xpLog — all qr_scan quests award 0 XP
+            await addDoc(collection(db, "users", reg.userId, "notifications"), {
+              type: "quest_approved",
+              message: `Quest completed: "${quest.name}"!`,
+              read: false,
+              relatedId: quest.questId,
+              createdAt: serverTimestamp(),
+            });
+          }
+        }
+      } catch (questErr) {
+        console.error("Quest auto-completion failed:", questErr);
+      }
 
       if (!options?.skipRefresh) {
         await fetchData();

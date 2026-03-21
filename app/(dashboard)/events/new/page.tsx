@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
@@ -141,6 +141,93 @@ function SectionCard({
   );
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const EVENT_TYPES = [
+  // Quest-triggering types — auto-complete qr_scan milestones on attendance
+  "Code Camp",
+  "Lead Learner Workshop",
+  "Volunteer Orientation",
+  "School Event",
+  "External Workshop",
+  "Tech Summit",
+  // General types — no automatic quest triggers
+  "Volunteer Social Meetup",
+  "Workshop",
+  "Seminar",
+  "Convention",
+  "Hackathon",
+  "Networking",
+  "Training",
+  "Community Meetup",
+  "Other",
+];
+
+// ─── Scale + Loadout System ───────────────────────────────────────────────────
+
+type EventScale = "small" | "medium" | "large" | "conference";
+
+const EVENT_SCALES: { value: EventScale; label: string }[] = [
+  { value: "small",      label: "Small (< 20 Attendees)" },
+  { value: "medium",     label: "Medium (20–50 Attendees)" },
+  { value: "large",      label: "Large (50–150 Attendees)" },
+  { value: "conference", label: "Conference (150+ Attendees)" },
+];
+
+const WORKSHOP_TYPES = new Set([
+  "Workshop", "Seminar", "Training", "Lead Learner Workshop",
+  "External Workshop", "Code Camp",
+]);
+const CONVENTION_TYPES = new Set([
+  "Convention", "Hackathon", "Tech Summit", "School Event",
+]);
+const SOCIAL_TYPES = new Set([
+  "Volunteer Social Meetup", "Networking", "Volunteer Orientation", "Community Meetup",
+]);
+
+// slots: 0 means role is excluded for this combination
+const SCALE_LOADOUTS: Record<string, Record<EventScale, Record<string, number>>> = {
+  workshop: {
+    small:      { Facilitator: 3, Host: 0,  Tech: 2,  Registration: 2,  Usher: 0,  Documentation: 1 },
+    medium:     { Facilitator: 6, Host: 1,  Tech: 3,  Registration: 4,  Usher: 0,  Documentation: 2 },
+    large:      { Facilitator: 12, Host: 2, Tech: 6,  Registration: 8,  Usher: 5,  Documentation: 3 },
+    conference: { Facilitator: 20, Host: 3, Tech: 10, Registration: 12, Usher: 10, Documentation: 5 },
+  },
+  convention: {
+    small:      { Facilitator: 4,  Host: 1, Tech: 3,  Registration: 4,  Usher: 0,  Documentation: 2 },
+    medium:     { Facilitator: 8,  Host: 2, Tech: 6,  Registration: 8,  Usher: 5,  Documentation: 3 },
+    large:      { Facilitator: 15, Host: 3, Tech: 10, Registration: 15, Usher: 10, Documentation: 5 },
+    conference: { Facilitator: 25, Host: 5, Tech: 20, Registration: 25, Usher: 20, Documentation: 8 },
+  },
+  social: {
+    small:      { Facilitator: 0, Host: 0, Tech: 0, Registration: 3,  Usher: 3,  Documentation: 1 },
+    medium:     { Facilitator: 0, Host: 1, Tech: 0, Registration: 5,  Usher: 5,  Documentation: 2 },
+    large:      { Facilitator: 0, Host: 2, Tech: 2, Registration: 10, Usher: 8,  Documentation: 3 },
+    conference: { Facilitator: 3, Host: 3, Tech: 4, Registration: 15, Usher: 12, Documentation: 5 },
+  },
+  other: {
+    small:      { Facilitator: 3,  Host: 0, Tech: 0, Registration: 3,  Usher: 0,  Documentation: 1 },
+    medium:     { Facilitator: 5,  Host: 1, Tech: 2, Registration: 5,  Usher: 0,  Documentation: 2 },
+    large:      { Facilitator: 10, Host: 2, Tech: 4, Registration: 10, Usher: 5,  Documentation: 3 },
+    conference: { Facilitator: 15, Host: 3, Tech: 8, Registration: 15, Usher: 10, Documentation: 5 },
+  },
+};
+
+function getEventCategory(type: string): "workshop" | "convention" | "social" | "other" {
+  if (WORKSHOP_TYPES.has(type)) return "workshop";
+  if (CONVENTION_TYPES.has(type)) return "convention";
+  if (SOCIAL_TYPES.has(type)) return "social";
+  return "other";
+}
+
+function buildRolesFromPreset(type: string, scale: EventScale): RoleEntry[] {
+  const cat = getEventCategory(type);
+  const loadout = SCALE_LOADOUTS[cat][scale];
+  return DEFAULT_ROLES
+    .filter((r) => (loadout[r.roleName] ?? 0) > 0)
+    .map((r) => ({ ...r, slots: loadout[r.roleName] }));
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NewEventPage() {
@@ -158,6 +245,7 @@ export default function NewEventPage() {
 
   // Form fields
   const [eventName, setEventName] = useState("");
+  const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -171,6 +259,14 @@ export default function NewEventPage() {
 
   // Roles — coordinator only edits slot counts
   const [roles, setRoles] = useState<RoleEntry[]>(DEFAULT_ROLES);
+
+  // Scale + preset system
+  const [eventScale, setEventScale] = useState("");
+  const hasCustomRoles = useRef(false);
+  const [presetPending, setPresetPending] = useState<{ type: string; scale: EventScale } | null>(null);
+
+  // Add role dropdown
+  const [showAddRole, setShowAddRole] = useState(false);
 
   // Submit state
   const [submitting, setSubmitting] = useState(false);
@@ -229,7 +325,36 @@ export default function NewEventPage() {
   }
 
 
+  function applyPreset(type: string, scale: EventScale) {
+    setRoles(buildRolesFromPreset(type, scale));
+    hasCustomRoles.current = false;
+    setPresetPending(null);
+    setShowAddRole(false);
+  }
+
+  function triggerPreset(type: string, scale: string) {
+    if (!type || !scale) return;
+    const s = scale as EventScale;
+    if (hasCustomRoles.current) {
+      setPresetPending({ type, scale: s });
+    } else {
+      applyPreset(type, s);
+    }
+  }
+
+  function handleEventTypeChange(newType: string) {
+    setEventType(newType);
+    triggerPreset(newType, eventScale);
+  }
+
+  function handleEventScaleChange(newScale: string) {
+    setEventScale(newScale);
+    triggerPreset(eventType, newScale);
+  }
+
   function adjustSlots(id: string, delta: number) {
+    hasCustomRoles.current = true;
+    setPresetPending(null);
     setRoles((prev) =>
       prev.map((r) =>
         r.id === id ? { ...r, slots: Math.max(1, r.slots + delta) } : r
@@ -238,7 +363,18 @@ export default function NewEventPage() {
   }
 
   function removeRole(id: string) {
+    hasCustomRoles.current = true;
+    setPresetPending(null);
     setRoles((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function addRole(roleId: string) {
+    const template = DEFAULT_ROLES.find((r) => r.id === roleId);
+    if (!template) return;
+    hasCustomRoles.current = true;
+    setPresetPending(null);
+    setRoles((prev) => [...prev, { ...template, slots: 3 }]);
+    setShowAddRole(false);
   }
 
   // ── Banner file selection ────────────────────────────────────────────────────
@@ -259,10 +395,11 @@ export default function NewEventPage() {
   // ── Submit ───────────────────────────────────────────────────────────────────
   async function handleSubmit() {
     const errors: Record<string, string> = {};
-    if (!eventName.trim())  errors.name     = "Event name is required.";
-    if (!eventDate)         errors.date     = "Date is required.";
-    if (!location.trim())   errors.location = "Location is required.";
-    if (roles.length === 0) errors.roles    = "At least one volunteer role is required.";
+    if (!eventName.trim())  errors.name      = "Event name is required.";
+    if (!eventType)         errors.eventType = "Event type is required.";
+    if (!eventDate)         errors.date      = "Date is required.";
+    if (!location.trim())   errors.location  = "Location is required.";
+    if (roles.length === 0) errors.roles     = "At least one volunteer role is required.";
 
     if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
     setFieldErrors({});
@@ -286,6 +423,7 @@ export default function NewEventPage() {
       await setDoc(eventRef, {
         eventId:     eventRef.id,
         name:        eventName.trim(),
+        eventType,
         description: description.trim(),
         date:        startTs,
         ...(endTs     ? { endDate: endTs }     : {}),
@@ -447,6 +585,23 @@ export default function NewEventPage() {
               />
             </div>
 
+            {/* Event Type */}
+            <div className="mb-4">
+              <label className={LABEL_CLS}>Event Type *</label>
+              <select
+                value={eventType}
+                onChange={(e) => handleEventTypeChange(e.target.value)}
+                className={`${INPUT_CLS} pr-10 ${fieldErrors.eventType ? "border-red-500/60 focus:ring-red-400/40" : ""}`}
+                style={{ colorScheme: "dark" }}
+              >
+                <option value="" disabled>Select a type…</option>
+                {EVENT_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              {fieldErrors.eventType && <p className="mt-1 text-xs text-red-400">{fieldErrors.eventType}</p>}
+            </div>
+
             {/* Date + times */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
@@ -566,6 +721,51 @@ export default function NewEventPage() {
               </span>
             </div>
 
+            {/* Event Scale */}
+            <div className="mb-4">
+              <label className={LABEL_CLS}>Event Scale</label>
+              <select
+                value={eventScale}
+                onChange={(e) => handleEventScaleChange(e.target.value)}
+                className={`${INPUT_CLS} pr-10`}
+                style={{ colorScheme: "dark" }}
+              >
+                <option value="" disabled>Select event scale…</option>
+                {EVENT_SCALES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[11px] font-sans text-text-muted">
+                Combined with the event type to pre-fill recommended volunteer counts.
+              </p>
+            </div>
+
+            {/* Preset pending warning */}
+            {presetPending && (
+              <div
+                className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 mb-4"
+                style={{ backgroundColor: "#2a1f3d", borderColor: "#A855F760" }}
+              >
+                <span className="text-xs text-text-secondary">
+                  Applying this preset will reset your custom roles.
+                </span>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => applyPreset(presetPending.type, presetPending.scale)}
+                    className="text-xs px-2.5 py-1 rounded-lg bg-accent-highlight hover:bg-accent-primary text-white transition-colors"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => setPresetPending(null)}
+                    className="text-xs px-2.5 py-1 rounded-lg border border-border text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    Keep
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Column headers */}
             <div className="grid grid-cols-[1fr_auto_auto_32px] gap-3 mb-2 px-1">
               <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Role</span>
@@ -631,6 +831,52 @@ export default function NewEventPage() {
             {fieldErrors.roles && (
               <p className="mt-2 text-xs text-red-400">{fieldErrors.roles}</p>
             )}
+
+            {/* Add Role */}
+            {(() => {
+              const available = DEFAULT_ROLES.filter(
+                (r) => !roles.some((existing) => existing.id === r.id)
+              );
+              const allAdded = available.length === 0;
+              return (
+                <div className="mt-3">
+                  {showAddRole && !allAdded ? (
+                    <select
+                      autoFocus
+                      defaultValue=""
+                      onChange={(e) => { if (e.target.value) addRole(e.target.value); }}
+                      onBlur={() => setShowAddRole(false)}
+                      className={`${INPUT_CLS} pr-10`}
+                      style={{ colorScheme: "dark" }}
+                    >
+                      <option value="" disabled>Select a role to add…</option>
+                      {available.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.roleName} (+{r.xpReward} XP)
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <button
+                      onClick={() => setShowAddRole(true)}
+                      disabled={allAdded}
+                      title={allAdded ? "All roles added" : undefined}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-heading transition-colors ${
+                        allAdded
+                          ? "opacity-40 cursor-not-allowed border-border text-text-muted"
+                          : "border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10"
+                      }`}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      Add Role
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             <p className="mt-3 text-[11px] font-sans text-text-muted">
               Adjust slot counts as needed. XP values are fixed by the DevQuest system.

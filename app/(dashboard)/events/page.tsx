@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
@@ -10,9 +10,11 @@ import {
   collection,
   query,
   getDocs,
+  getCountFromServer,
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { useSidebar } from "@/context/SidebarContext";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
@@ -47,7 +49,19 @@ interface EventDoc {
   chapterId: string;
   roles: EventRole[];
   bannerUrl?: string;
+  eventType?: string;
 }
+
+const EVENT_TYPES = [
+  "Workshop",
+  "Seminar",
+  "Convention",
+  "Hackathon",
+  "Networking",
+  "Training",
+  "Community Meetup",
+  "Other",
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -88,9 +102,19 @@ function isUpcoming(ts: Timestamp): boolean {
 
 // ─── Event Card ───────────────────────────────────────────────────────────────
 
-function EventCard({ event }: { event: EventDoc }) {
+function EventCard({
+  event,
+  registeredCount,
+  countLoading,
+}: {
+  event: EventDoc;
+  registeredCount: number;
+  countLoading: boolean;
+}) {
   const upcoming = isUpcoming(event.date);
-  const slots = totalSlots(event.roles);
+  const total = totalSlots(event.roles);
+  const remaining = Math.max(0, total - registeredCount);
+  const pct = total > 0 ? Math.min(100, (registeredCount / total) * 100) : 0;
 
   return (
     <Link
@@ -158,16 +182,27 @@ function EventCard({ event }: { event: EventDoc }) {
 
         {/* Slots */}
         <div className="mt-auto pt-1">
-          <div className="flex items-center justify-between text-sm mb-1.5">
-            <span className="text-text-secondary">Slots Available</span>
-            <span className="text-accent-highlight font-semibold">{slots}</span>
+          <div className="flex items-center justify-between text-sm mb-1">
+            <span className="text-text-secondary">Volunteers</span>
+            {countLoading ? (
+              <span className="text-text-muted text-xs">—</span>
+            ) : (
+              <span className="text-accent-highlight font-semibold tabular-nums">
+                {registeredCount} / {total}
+              </span>
+            )}
           </div>
-          <div className="h-1.5 rounded-full bg-border">
+          <div className="h-1.5 rounded-full bg-border mb-1">
             <div
-              className="h-full rounded-full bg-accent-primary"
-              style={{ width: upcoming ? "60%" : "100%" }}
+              className="h-full rounded-full bg-accent-primary transition-all duration-500"
+              style={{ width: countLoading ? "0%" : `${pct}%` }}
             />
           </div>
+          {!countLoading && (
+            <span className="text-[11px] text-text-muted tabular-nums">
+              {remaining} slot{remaining !== 1 ? "s" : ""} remaining
+            </span>
+          )}
         </div>
       </div>
     </Link>
@@ -193,16 +228,22 @@ type FilterType = "all" | "upcoming" | "past";
 
 export default function EventsPage() {
   const router = useRouter();
+  const { openSidebar } = useSidebar();
 
   const [authChecked, setAuthChecked] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [events, setEvents] = useState<EventDoc[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [fetchError, setFetchError] = useState("");
+  const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>({});
+  const [countsLoading, setCountsLoading] = useState(false);
 
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [chapterFilter, setChapterFilter] = useState<string>("all");
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -224,6 +265,17 @@ export default function EventsPage() {
     return () => unsubscribe();
   }, [router]);
 
+  // ── Close filter on outside click ───────────────────────────────────────────
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   // ── Fetch events ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!userData) return;
@@ -237,6 +289,17 @@ export default function EventsPage() {
           .map((d) => ({ eventId: d.id, ...d.data() }) as EventDoc)
           .sort((a, b) => a.date.toMillis() - b.date.toMillis());
         setEvents(docs);
+        setCountsLoading(true);
+        const countEntries = await Promise.all(
+          docs.map(async (event) => {
+            const snap = await getCountFromServer(
+              collection(db, "events", event.eventId, "registrations")
+            );
+            return [event.eventId, snap.data().count] as [string, number];
+          })
+        );
+        setRegistrationCounts(Object.fromEntries(countEntries));
+        setCountsLoading(false);
       } catch (err) {
         console.error("Failed to fetch events:", err);
         setFetchError("Could not load events. Check the console for details.");
@@ -261,8 +324,12 @@ export default function EventsPage() {
       .filter((e) => {
         if (chapterFilter === "all") return true;
         return e.chapterId === chapterFilter;
+      })
+      .filter((e) => {
+        if (eventTypeFilter === "all") return true;
+        return e.eventType === eventTypeFilter;
       });
-  }, [events, search, activeFilter, chapterFilter]);
+  }, [events, search, activeFilter, chapterFilter, eventTypeFilter]);
 
   if (!authChecked || !userData) return null;
 
@@ -282,19 +349,40 @@ export default function EventsPage() {
     return chapter.replace(/^DEVCON Kids\s+/i, "");
   }
 
+  const activeFilterCount =
+    (activeFilter !== "all" ? 1 : 0) +
+    (eventTypeFilter !== "all" ? 1 : 0) +
+    (chapterFilter !== "all" ? 1 : 0);
+
+  const CHIP_ACTIVE = "bg-accent-highlight border-accent-highlight text-white";
+  const CHIP_IDLE = "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary";
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
-        <h1 className="font-heading text-2xl text-text-primary tracking-wide pl-10 lg:pl-0">
-          Events
-        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openSidebar}
+            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+            aria-label="Open sidebar"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <h1 className="font-heading text-2xl text-text-primary tracking-wide">
+            Events
+          </h1>
+        </div>
 
         <div className="flex items-center gap-3">
           {userData.role === "coordinator" && (
             <Link
               href="/events/new"
-              className="flex items-center gap-2 px-4 py-2 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors whitespace-nowrap shrink-0"
             >
               <svg
                 width="14"
@@ -313,25 +401,6 @@ export default function EventsPage() {
             </Link>
           )}
 
-          {/* Bell */}
-          <Link
-            href="/notifications"
-            className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors relative"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-          </Link>
 
           {/* Avatar → dashboard */}
           <Link href="/dashboard">
@@ -349,79 +418,151 @@ export default function EventsPage() {
       {/* ── Content ─────────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto flex flex-col gap-5">
-        {/* Search + filters */}
-        <div className="flex flex-col gap-3">
-          {/* Search bar */}
-          <div className="relative">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search events..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary/50 transition-colors"
-            />
-          </div>
-
-          {/* Status filter chips */}
-          <div className="flex gap-2 flex-wrap">
-            {statusFilters.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setActiveFilter(key)}
-                className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
-                  activeFilter === key
-                    ? "bg-accent-highlight border-accent-highlight text-white"
-                    : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
-                }`}
+        {/* Search + filter button */}
+        <div className="relative" ref={filterRef}>
+          <div className="flex gap-2 items-center">
+            {/* Search */}
+            <div className="relative flex-1">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
               >
-                {label}
-              </button>
-            ))}
-          </div>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search events..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary/50 transition-colors"
+              />
+            </div>
 
-          {/* Chapter filter chips */}
-          <div className="flex gap-2 flex-wrap items-center">
-            <span className="text-xs text-text-muted font-sans uppercase tracking-widest mr-1">
-              Chapter
-            </span>
+            {/* Filter toggle button */}
             <button
-              onClick={() => setChapterFilter("all")}
-              className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
-                chapterFilter === "all"
-                  ? "bg-accent-primary/80 border-accent-primary text-white"
+              onClick={() => setFilterOpen((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-heading transition-colors shrink-0 ${
+                filterOpen || activeFilterCount > 0
+                  ? "bg-accent-primary/20 border-accent-primary text-accent-highlight"
                   : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
               }`}
             >
-              All
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+                <line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="w-4 h-4 flex items-center justify-center rounded-full bg-accent-highlight text-white text-[10px] font-sans leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
-            {CHAPTERS.map((chapter) => (
-              <button
-                key={chapter}
-                onClick={() => setChapterFilter(chapter)}
-                className={`px-4 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
-                  chapterFilter === chapter
-                    ? "bg-accent-primary/80 border-accent-primary text-white"
-                    : "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary"
-                }`}
-              >
-                {shortChapter(chapter)}
-              </button>
-            ))}
           </div>
+
+          {/* Filter panel dropdown */}
+          {filterOpen && (
+            <div
+              className="absolute top-full left-0 right-0 mt-2 z-30 rounded-2xl border border-border p-5 flex flex-col gap-5"
+              style={{ backgroundColor: "#1e1a2e" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-sans uppercase tracking-widest text-text-muted">Filters</span>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={() => {
+                      setActiveFilter("all");
+                      setEventTypeFilter("all");
+                      setChapterFilter("all");
+                    }}
+                    className="text-xs text-text-secondary hover:text-accent-highlight transition-colors"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+
+              {/* Time */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Time</span>
+                <div className="flex gap-2 flex-wrap">
+                  {statusFilters.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setActiveFilter(key)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                        activeFilter === key ? CHIP_ACTIVE : CHIP_IDLE
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Event Type */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Event Type</span>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setEventTypeFilter("all")}
+                    className={`px-3 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                      eventTypeFilter === "all" ? CHIP_ACTIVE : CHIP_IDLE
+                    }`}
+                  >
+                    All
+                  </button>
+                  {EVENT_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setEventTypeFilter(t)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                        eventTypeFilter === t ? CHIP_ACTIVE : CHIP_IDLE
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chapter */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Chapter</span>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setChapterFilter("all")}
+                    className={`px-3 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                      chapterFilter === "all" ? CHIP_ACTIVE : CHIP_IDLE
+                    }`}
+                  >
+                    All
+                  </button>
+                  {CHAPTERS.map((chapter) => (
+                    <button
+                      key={chapter}
+                      onClick={() => setChapterFilter(chapter)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-heading font-medium border transition-colors ${
+                        chapterFilter === chapter ? CHIP_ACTIVE : CHIP_IDLE
+                      }`}
+                    >
+                      {shortChapter(chapter)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Events grid */}
@@ -463,7 +604,12 @@ export default function EventsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((event) => (
-              <EventCard key={event.eventId} event={event} />
+              <EventCard
+                key={event.eventId}
+                event={event}
+                registeredCount={registrationCounts[event.eventId] ?? 0}
+                countLoading={countsLoading}
+              />
             ))}
           </div>
         )}

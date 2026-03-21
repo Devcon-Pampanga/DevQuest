@@ -12,6 +12,7 @@ export const QUESTS: Quest[] = [
       "Participate in both days of the Lead Learner workshop to build foundational facilitation knowledge and get oriented with the program.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Lead Learner Workshop",
   },
   {
     questId: "ll_tm_2",
@@ -44,6 +45,8 @@ export const QUESTS: Quest[] = [
       "Serve as an assisting facilitator in your first code camp, supporting the lead facilitator and learning event-day operations.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
+    triggerRole: "Facilitator",
   },
   {
     questId: "ll_as_2",
@@ -54,6 +57,7 @@ export const QUESTS: Quest[] = [
       "Observe a Specialist Lead Learner as they conduct a teaching demo, taking notes on technique, pacing, and student engagement.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
   },
   {
     questId: "ll_as_3",
@@ -76,6 +80,8 @@ export const QUESTS: Quest[] = [
       "Lead a code camp as the primary facilitator, independently managing the session from start to finish.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
+    triggerRole: "Facilitator",
   },
   {
     questId: "ll_sp_2",
@@ -145,6 +151,7 @@ export const QUESTS: Quest[] = [
       "Help coordinate and facilitate a volunteer orientation session, welcoming new members to the DEVCON Kids community.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Volunteer Orientation",
   },
   {
     questId: "pc_tm_2",
@@ -291,6 +298,7 @@ export const QUESTS: Quest[] = [
       "Capture raw photo or video documentation during a code camp for use in event recaps and chapter archives.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
   },
   {
     questId: "cr_tm_3",
@@ -301,6 +309,7 @@ export const QUESTS: Quest[] = [
       "Help prepare and set up the physical or digital photo wall display at a DEVCON Kids event.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
   },
 
   {
@@ -416,6 +425,7 @@ export const QUESTS: Quest[] = [
       "Conduct a full inventory check of supplies in a code camp kit, documenting all items and flagging anything missing or damaged.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
   },
   {
     questId: "su_tm_2",
@@ -426,6 +436,7 @@ export const QUESTS: Quest[] = [
       "Manage the distribution of snacks, kits, or learning materials to at least 50 students during a code camp.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
   },
   {
     questId: "su_tm_3",
@@ -436,6 +447,7 @@ export const QUESTS: Quest[] = [
       "Assist the logistics team in the full setup or teardown of the event venue, ensuring the space is ready or properly cleared.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
   },
 
   {
@@ -550,6 +562,7 @@ export const QUESTS: Quest[] = [
       "Attend and represent DEVCON Kids at a local school event, sharing the program's mission and recruiting potential participants.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "School Event",
   },
   {
     questId: "ce_tm_2",
@@ -593,6 +606,7 @@ export const QUESTS: Quest[] = [
       "Attend an external workshop or summit as the official DEVCON Kids chapter representative, networking and promoting the program.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "External Workshop",
   },
   {
     questId: "ce_as_3",
@@ -626,6 +640,7 @@ export const QUESTS: Quest[] = [
       "Operate the DEVCON Kids ambassador booth at a technology summit, engaging attendees and collecting leads for new partnerships.",
     xpReward: 0,
     completionMethod: "qr_scan",
+    triggerEventType: "Tech Summit",
   },
   {
     questId: "ce_sp_3",
