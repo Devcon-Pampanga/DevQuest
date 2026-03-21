@@ -2,59 +2,26 @@ import { Quest } from "@/types/quest";
 
 export const QUESTS: Quest[] = [
   // ─── Lead Learners ────────────────────────────────────────────────────────────
-
-  {
-    questId: "ll_tm_1",
-    teamId: "lead_learners",
-    tier: "team_member",
-    name: "Attend a Lead Learner 2-Day Workshop",
-    description:
-      "Participate in both days of the Lead Learner workshop to build foundational facilitation knowledge and get oriented with the program.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Lead Learner Workshop",
-  },
-  {
-    questId: "ll_tm_2",
-    teamId: "lead_learners",
-    tier: "team_member",
-    name: "Complete Lead Learner Candidate Form",
-    description:
-      "Fill out and submit the Lead Learner Candidate Application Form to formally express your intent to join the team.",
-    xpReward: 20,
-    completionMethod: "self_mark",
-  },
-  {
-    questId: "ll_tm_3",
-    teamId: "lead_learners",
-    tier: "team_member",
-    name: "Pass the Basic Skills Knowledge Check",
-    description:
-      "Demonstrate foundational knowledge in your chosen coding specialization by completing the skills knowledge check with a coordinator.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+  // Associate tier (3 quests)
 
   {
     questId: "ll_as_1",
     teamId: "lead_learners",
     tier: "associate",
-    name: "Facilitate 1st Code Camp (Assist Lead)",
+    name: "Attend a 2-Day LL Workshop",
     description:
-      "Serve as an assisting facilitator in your first code camp, supporting the lead facilitator and learning event-day operations.",
+      "Participate in both days of the Lead Learner Workshop to build foundational facilitation knowledge and get oriented with the program.",
     xpReward: 0,
     completionMethod: "qr_scan",
-    triggerEventType: "Code Camp",
-    triggerRole: "Facilitator",
+    triggerEventType: "Lead Learner Workshop",
   },
   {
     questId: "ll_as_2",
     teamId: "lead_learners",
     tier: "associate",
-    name: "Shadow a Specialist during a Demo",
+    name: "Complete Specialized Code Camp Training",
     description:
-      "Observe a Specialist Lead Learner as they conduct a teaching demo, taking notes on technique, pacing, and student engagement.",
+      "Attend a Code Camp as a trainee or shadowing member to observe facilitation techniques and understand event-day operations first-hand.",
     xpReward: 0,
     completionMethod: "qr_scan",
     triggerEventType: "Code Camp",
@@ -63,21 +30,22 @@ export const QUESTS: Quest[] = [
     questId: "ll_as_3",
     teamId: "lead_learners",
     tier: "associate",
-    name: "Complete 1 Curriculum Review Session",
+    name: "Submit the LL Candidate Application Form",
     description:
-      "Participate in a structured curriculum review session with a DEVCON Kids officer or specialist to strengthen your lesson delivery.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
+      "Fill out and submit the Lead Learner Candidate Application Form to formally express your intent to join the facilitation team.",
+    xpReward: 20,
+    completionMethod: "self_mark",
   },
+
+  // Specialist tier (2 quests — sequential, same trigger)
 
   {
     questId: "ll_sp_1",
     teamId: "lead_learners",
     tier: "specialist",
-    name: "Facilitate 2nd Code Camp (Primary Facilitator)",
+    name: "Facilitate Code Camp #1",
     description:
-      "Lead a code camp as the primary facilitator, independently managing the session from start to finish.",
+      "Lead your first Code Camp session as a facilitator, managing the class from start to finish under the guidance of a senior Lead Learner.",
     xpReward: 0,
     completionMethod: "qr_scan",
     triggerEventType: "Code Camp",
@@ -87,32 +55,24 @@ export const QUESTS: Quest[] = [
     questId: "ll_sp_2",
     teamId: "lead_learners",
     tier: "specialist",
-    name: "Co-teach a Specialized Track",
+    name: "Facilitate Code Camp #2",
     description:
-      "Deliver a specialized coding track (e.g., Python, Web Dev, Scratch) in collaboration with another Lead Learner, demonstrating subject mastery.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
+      "Lead your second Code Camp session independently as the primary facilitator, demonstrating improved confidence and classroom management.",
+    xpReward: 0,
+    completionMethod: "qr_scan",
+    triggerEventType: "Code Camp",
+    triggerRole: "Facilitator",
   },
-  {
-    questId: "ll_sp_3",
-    teamId: "lead_learners",
-    tier: "specialist",
-    name: "Pass the Intermediate Facilitation Rubric",
-    description:
-      "Be evaluated by a DEVCON Kids officer using the Intermediate Facilitation Rubric and meet the required competency score.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+
+  // Lead (Certified Lead Learner) tier (3 quests)
 
   {
     questId: "ll_ld_1",
     teamId: "lead_learners",
     tier: "lead",
-    name: "Complete 15-min Live Teaching Demo",
+    name: "Assist as Assistant LL — 2 Sessions",
     description:
-      "Deliver a 15-minute live teaching demonstration to DEVCON Kids officers in the audience, showcasing full facilitation readiness.",
+      "Serve as an Assistant Lead Learner across two separate Code Camp sessions, mentoring new Associates and supporting the lead facilitator.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
@@ -121,9 +81,9 @@ export const QUESTS: Quest[] = [
     questId: "ll_ld_2",
     teamId: "lead_learners",
     tier: "lead",
-    name: "Mentor a New Associate Through Their 1st Camp",
+    name: "Complete 15-min Live Teaching Demo",
     description:
-      "Serve as a mentor to a new Lead Learner Associate during their first code camp, providing guidance and real-time support.",
+      "Deliver a 15-minute live teaching demonstration to DEVCON Kids officers, showcasing full facilitation readiness and subject mastery.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
@@ -132,123 +92,52 @@ export const QUESTS: Quest[] = [
     questId: "ll_ld_3",
     teamId: "lead_learners",
     tier: "lead",
-    name: "Pass Final Certification Rubric Assessment",
+    name: "Pass the Official Certification Rubric",
     description:
-      "Complete the Lead Learner Certification Rubric assessment with DEVCON Kids officers and reflect on your scores together.",
+      "Complete the Lead Learner Certification Rubric assessment with DEVCON Kids officers, meeting the required competency scores to earn your certification.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
   },
 
   // ─── People & Culture ─────────────────────────────────────────────────────────
-
-  {
-    questId: "pc_tm_1",
-    teamId: "people_culture",
-    tier: "team_member",
-    name: "Assist in 1 Volunteer Orientation",
-    description:
-      "Help coordinate and facilitate a volunteer orientation session, welcoming new members to the DEVCON Kids community.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Volunteer Orientation",
-  },
-  {
-    questId: "pc_tm_2",
-    teamId: "people_culture",
-    tier: "team_member",
-    name: "Set up the Chapter Attendance System",
-    description:
-      "Configure and document the chapter's attendance tracking system (bot, spreadsheet, or tool) for use in upcoming events.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "pc_tm_3",
-    teamId: "people_culture",
-    tier: "team_member",
-    name: "Welcome 5 New Members in the Discord/GC",
-    description:
-      "Personally welcome at least 5 new volunteers to the chapter Discord or group chat, introducing them to key channels and resources.",
-    xpReward: 20,
-    completionMethod: "self_mark",
-  },
+  // Associate tier (1 quest)
 
   {
     questId: "pc_as_1",
     teamId: "people_culture",
     tier: "associate",
-    name: "Organize a Volunteer Social Meetup",
+    name: "Invite 5 New Volunteers",
     description:
-      "Plan and run an informal social gathering (online or in-person) to build rapport and strengthen team bonds among volunteers.",
+      "Recruit and onboard at least 5 new volunteers to DEVCON Kids, tracked via unique referral or the DevQuest onboarding flow.",
     xpReward: 75,
     completionMethod: "coordinator_approval",
     approvalType: "standard",
   },
-  {
-    questId: "pc_as_2",
-    teamId: "people_culture",
-    tier: "associate",
-    name: "Track and Report Volunteer Hours for 1 Event",
-    description:
-      "Collect, compile, and submit a volunteer hours report for a single event, ensuring all hours are accurately documented.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "pc_as_3",
-    teamId: "people_culture",
-    tier: "associate",
-    name: "Conduct 3 Check-in Calls with Active Members",
-    description:
-      "Reach out to at least 3 active volunteers through individual check-in calls or messages to assess engagement and wellbeing.",
-    xpReward: 20,
-    completionMethod: "self_mark",
-  },
+
+  // Specialist tier (1 quest)
 
   {
     questId: "pc_sp_1",
     teamId: "people_culture",
     tier: "specialist",
-    name: "Lead a Recruitment Drive at a Local University",
+    name: "Organize 1 Internal Community-Building Event",
     description:
-      "Organize and execute a volunteer recruitment initiative at a local university, attracting new candidates to DEVCON Kids.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
-  },
-  {
-    questId: "pc_sp_2",
-    teamId: "people_culture",
-    tier: "specialist",
-    name: "Solve 1 Internal Conflict or Logistics Bottleneck",
-    description:
-      "Identify and resolve a team conflict or operational bottleneck, documenting the issue and the steps taken to address it.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "pc_sp_3",
-    teamId: "people_culture",
-    tier: "specialist",
-    name: "Design a Volunteer of the Month Spotlight",
-    description:
-      "Create and publish a 'Volunteer of the Month' feature recognizing a standout contributor in the chapter community.",
+      "Plan and run an internal social or team-building event (e.g., Team Dinner, Cabalen Meetup, or online social) to strengthen chapter bonds.",
     xpReward: 75,
     completionMethod: "coordinator_approval",
     approvalType: "standard",
   },
 
+  // Lead (P&C Lead) tier (3 quests)
+
   {
     questId: "pc_ld_1",
     teamId: "people_culture",
     tier: "lead",
-    name: "Draft the Chapter's Volunteer Retention Strategy",
+    name: "Mentor Junior Team Members",
     description:
-      "Write a comprehensive retention strategy for the chapter covering engagement tactics, recognition programs, and feedback loops.",
+      "Guide and support junior P&C members through their milestone quests, providing regular check-ins, feedback, and encouragement.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
@@ -257,136 +146,63 @@ export const QUESTS: Quest[] = [
     questId: "pc_ld_2",
     teamId: "people_culture",
     tier: "lead",
-    name: "Onboard a New Batch of 20+ Volunteers",
+    name: "Conduct Wellness Check-ins",
     description:
-      "Lead the full onboarding process for a new cohort of 20 or more volunteers, from orientation to team assignment.",
-    xpReward: 150,
+      "Carry out structured wellness check-ins with active volunteers across the chapter to monitor engagement, burnout risk, and overall morale.",
+    xpReward: 75,
     completionMethod: "coordinator_approval",
-    approvalType: "major",
+    approvalType: "standard",
   },
   {
     questId: "pc_ld_3",
     teamId: "people_culture",
     tier: "lead",
-    name: "Present an Engagement Report to National",
+    name: "Generate Chapter Engagement Reports",
     description:
-      "Prepare and deliver a volunteer engagement report to national DEVCON Kids officers, covering metrics, insights, and recommendations.",
+      "Produce a comprehensive volunteer engagement report for the chapter, covering participation metrics, retention insights, and recommendations.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
   },
 
   // ─── Creatives ────────────────────────────────────────────────────────────────
-
-  {
-    questId: "cr_tm_1",
-    teamId: "creatives",
-    tier: "team_member",
-    name: "Create 3 Social Media Save the Date Posts",
-    description:
-      "Design and submit three 'Save the Date' posts for upcoming DEVCON Kids events that follow brand guidelines.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "cr_tm_2",
-    teamId: "creatives",
-    tier: "team_member",
-    name: "Shoot Raw Footage or Photos for 1 Code Camp",
-    description:
-      "Capture raw photo or video documentation during a code camp for use in event recaps and chapter archives.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Code Camp",
-  },
-  {
-    questId: "cr_tm_3",
-    teamId: "creatives",
-    tier: "team_member",
-    name: "Assist in Setting Up the Event Photo Wall",
-    description:
-      "Help prepare and set up the physical or digital photo wall display at a DEVCON Kids event.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Code Camp",
-  },
+  // Associate tier (1 quest)
 
   {
     questId: "cr_as_1",
     teamId: "creatives",
     tier: "associate",
-    name: "Edit a 1-Minute Event Recap Video",
+    name: "Produce 5 Publicity Materials",
     description:
-      "Produce a polished 1-minute recap video from raw event footage, suitable for sharing on DEVCON Kids social channels.",
+      "Design and deliver at least 5 graphics or social media posts promoting chapter events, following DEVCON Kids brand guidelines.",
     xpReward: 75,
     completionMethod: "coordinator_approval",
     approvalType: "standard",
   },
-  {
-    questId: "cr_as_2",
-    teamId: "creatives",
-    tier: "associate",
-    name: "Design a Set of Chapter-Specific Stickers",
-    description:
-      "Create a set of original, on-brand sticker designs unique to your chapter for use in events and merchandise.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "cr_as_3",
-    teamId: "creatives",
-    tier: "associate",
-    name: "Layout 1 Event Program or Poster",
-    description:
-      "Design the program booklet or promotional poster for a DEVCON Kids event following the visual identity guidelines.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+
+  // Specialist tier (1 quest)
 
   {
     questId: "cr_sp_1",
     teamId: "creatives",
     tier: "specialist",
-    name: "Direct the Visual Branding for a Major Event",
+    name: "Produce 1 Official Event Video",
     description:
-      "Own the end-to-end visual identity for a major DEVCON Kids event — from brief to final delivery of all design assets.",
+      "Create a polished teaser or recap video for an official DEVCON Kids event, suitable for publishing on chapter social media channels.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
   },
-  {
-    questId: "cr_sp_2",
-    teamId: "creatives",
-    tier: "specialist",
-    name: "Manage the Chapter's Social Media for 1 Month",
-    description:
-      "Take ownership of all chapter social media content for one full month, including planning, posting, and engagement.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "cr_sp_3",
-    teamId: "creatives",
-    tier: "specialist",
-    name: "Create a Custom DevQuest UI Asset",
-    description:
-      "Design an original UI asset (icon set, illustration, or component graphic) for use within the DevQuest platform.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+
+  // Lead (Creative Director) tier (2 quests)
 
   {
     questId: "cr_ld_1",
     teamId: "creatives",
     tier: "lead",
-    name: "Launch a Full Chapter Marketing Campaign",
+    name: "Set Visual Direction for a Major Event",
     description:
-      "Plan and execute a complete multi-channel marketing campaign for the chapter, covering social, print, and digital assets.",
+      "Own the end-to-end visual identity for a major DEVCON Kids event — from initial brief to the final delivery of all design assets.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
@@ -395,135 +211,52 @@ export const QUESTS: Quest[] = [
     questId: "cr_ld_2",
     teamId: "creatives",
     tier: "lead",
-    name: "Mentor a Team of 3 Junior Creatives",
+    name: "Review and Approve Designs",
     description:
-      "Guide three Creatives Associates through their milestone quests, providing feedback and creative direction throughout.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
-  },
-  {
-    questId: "cr_ld_3",
-    teamId: "creatives",
-    tier: "lead",
-    name: "Finalize the Chapter Brand Identity Guide",
-    description:
-      "Produce a comprehensive brand identity guide for your chapter, documenting colors, typography, logo usage, and tone of voice.",
+      "Serve as the final approver for design outputs from Associates and Specialists, providing structured feedback and ensuring brand consistency.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
   },
 
   // ─── Sustainability ───────────────────────────────────────────────────────────
-
-  {
-    questId: "su_tm_1",
-    teamId: "sustainability",
-    tier: "team_member",
-    name: "Inventory Check for 1 Code Camp Kit",
-    description:
-      "Conduct a full inventory check of supplies in a code camp kit, documenting all items and flagging anything missing or damaged.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Code Camp",
-  },
-  {
-    questId: "su_tm_2",
-    teamId: "sustainability",
-    tier: "team_member",
-    name: "Distribute Materials to 50+ Students",
-    description:
-      "Manage the distribution of snacks, kits, or learning materials to at least 50 students during a code camp.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Code Camp",
-  },
-  {
-    questId: "su_tm_3",
-    teamId: "sustainability",
-    tier: "team_member",
-    name: "Help Set Up or Tear Down the Event Venue",
-    description:
-      "Assist the logistics team in the full setup or teardown of the event venue, ensuring the space is ready or properly cleared.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "Code Camp",
-  },
+  // Associate tier (1 quest)
 
   {
     questId: "su_as_1",
     teamId: "sustainability",
     tier: "associate",
-    name: "Coordinate Transport for 10+ Volunteers",
+    name: "Send 5 Fundraising/Sponsorship Letters",
     description:
-      "Organize transportation logistics for at least 10 volunteers to and from a DEVCON Kids event, ensuring no one is left behind.",
+      "Draft and send at least 5 formal fundraising or sponsorship outreach letters to potential partners or donors on behalf of the chapter.",
     xpReward: 75,
     completionMethod: "coordinator_approval",
     approvalType: "standard",
   },
-  {
-    questId: "su_as_2",
-    teamId: "sustainability",
-    tier: "associate",
-    name: "Procure 3 New Venue Options for Future Camps",
-    description:
-      "Research, visit (if possible), and document at least 3 viable venue options for future code camps with capacity and cost details.",
-    xpReward: 20,
-    completionMethod: "self_mark",
-  },
-  {
-    questId: "su_as_3",
-    teamId: "sustainability",
-    tier: "associate",
-    name: "Manage the Event Budget Sheet for 1 Month",
-    description:
-      "Own and maintain the chapter's event budget tracking sheet for one full month, keeping all entries accurate and up to date.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+
+  // Specialist tier (1 quest)
 
   {
     questId: "su_sp_1",
     teamId: "sustainability",
     tier: "specialist",
-    name: "Secure 1 Local Food or Venue Sponsorship",
+    name: "Complete 5 Grant Applications",
     description:
-      "Identify, pitch, and close a sponsorship deal with a local food provider or venue for use at a DEVCON Kids event.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
-  },
-  {
-    questId: "su_sp_2",
-    teamId: "sustainability",
-    tier: "specialist",
-    name: "Optimize the Chapter Resource Inventory",
-    description:
-      "Audit the current resource inventory, identify inefficiencies, and implement a new system or process to improve tracking and reuse.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
-  {
-    questId: "su_sp_3",
-    teamId: "sustainability",
-    tier: "specialist",
-    name: "Draft a Grant Proposal or Donation Letter",
-    description:
-      "Write a formal grant proposal or donation request letter targeting a potential sponsor or funding body for the chapter.",
+      "Research, write, and submit at least 5 grant applications targeting funding bodies that support youth tech education or community programs.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
   },
 
+  // Lead (Sustainability Lead) tier (2 quests)
+
   {
     questId: "su_ld_1",
     teamId: "sustainability",
     tier: "lead",
-    name: "Close a Major Financial or Venue Partnership",
+    name: "Produce the Annual Finance Report",
     description:
-      "Negotiate and finalize a significant financial or venue partnership that provides long-term value for the chapter's operations.",
+      "Compile and publish the chapter's annual finance report, documenting all income, expenses, sponsorships, and budget variances for the year.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
@@ -532,135 +265,63 @@ export const QUESTS: Quest[] = [
     questId: "su_ld_2",
     teamId: "sustainability",
     tier: "lead",
-    name: "Oversee Logistics for a 100+ Student Event",
+    name: "Draft the Annual Program Budget",
     description:
-      "Serve as the lead logistics coordinator for a large-scale DEVCON Kids event with 100 or more student participants.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
-  },
-  {
-    questId: "su_ld_3",
-    teamId: "sustainability",
-    tier: "lead",
-    name: "Draft a 1-Year Chapter Sustainability Plan",
-    description:
-      "Produce a comprehensive sustainability plan for the chapter covering budgeting, resource management, and partnership goals for the year ahead.",
+      "Collaborate with chapter directors to draft a comprehensive annual program budget, projecting costs for events, materials, and operations.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
   },
 
   // ─── Community Engagement ─────────────────────────────────────────────────────
-
-  {
-    questId: "ce_tm_1",
-    teamId: "community_engagement",
-    tier: "team_member",
-    name: "Represent DEVCON Kids at 1 School Event",
-    description:
-      "Attend and represent DEVCON Kids at a local school event, sharing the program's mission and recruiting potential participants.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "School Event",
-  },
-  {
-    questId: "ce_tm_2",
-    teamId: "community_engagement",
-    tier: "team_member",
-    name: "Distribute 50 Flyers for an Upcoming Camp",
-    description:
-      "Personally distribute at least 50 physical or digital flyers promoting an upcoming DEVCON Kids code camp.",
-    xpReward: 20,
-    completionMethod: "self_mark",
-  },
-  {
-    questId: "ce_tm_3",
-    teamId: "community_engagement",
-    tier: "team_member",
-    name: "Document 3 Success Stories from Parents",
-    description:
-      "Gather and write up at least 3 testimonial stories from parents of students who participated in DEVCON Kids programs.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+  // Associate tier (1 quest)
 
   {
     questId: "ce_as_1",
     teamId: "community_engagement",
     tier: "associate",
-    name: "Facilitate a 1st Meeting with a Partner Org",
+    name: "Document and Create Content for 5 Events",
     description:
-      "Set up and lead an initial exploratory meeting with a potential partner organization to discuss collaboration opportunities.",
+      "Attend and document at least 5 separate chapter events, producing written, photo, or social media content that captures each event's impact.",
     xpReward: 75,
     completionMethod: "coordinator_approval",
     approvalType: "standard",
   },
-  {
-    questId: "ce_as_2",
-    teamId: "community_engagement",
-    tier: "associate",
-    name: "Act as Chapter Rep at 1 External Workshop",
-    description:
-      "Attend an external workshop or summit as the official DEVCON Kids chapter representative, networking and promoting the program.",
-    xpReward: 0,
-    completionMethod: "qr_scan",
-    triggerEventType: "External Workshop",
-  },
-  {
-    questId: "ce_as_3",
-    teamId: "community_engagement",
-    tier: "associate",
-    name: "Draft 1 Partnership Invitation Letter",
-    description:
-      "Write a formal partnership invitation letter to a prospective organization, clearly articulating the mutual benefits of collaboration.",
-    xpReward: 75,
-    completionMethod: "coordinator_approval",
-    approvalType: "standard",
-  },
+
+  // Specialist tier (2 quests — different triggerEventType, not sequential)
 
   {
     questId: "ce_sp_1",
     teamId: "community_engagement",
     tier: "specialist",
-    name: "Negotiate 1 New Venue or Logistics Partnership",
+    name: "Represent at External Tech Event #1",
     description:
-      "Lead negotiations with a new venue or logistics provider, securing favorable terms for the chapter's upcoming events.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
+      "Attend and officially represent DEVCON Kids at an external community workshop, networking with attendees and promoting the chapter's programs.",
+    xpReward: 0,
+    completionMethod: "qr_scan",
+    triggerEventType: "External Workshop",
   },
   {
     questId: "ce_sp_2",
     teamId: "community_engagement",
     tier: "specialist",
-    name: "Manage the Ambassador Booth at a Tech Summit",
+    name: "Represent at External Tech Event #2",
     description:
-      "Operate the DEVCON Kids ambassador booth at a technology summit, engaging attendees and collecting leads for new partnerships.",
+      "Attend and officially represent DEVCON Kids at a technology summit or conference, engaging with industry stakeholders and expanding the chapter's network.",
     xpReward: 0,
     completionMethod: "qr_scan",
     triggerEventType: "Tech Summit",
   },
-  {
-    questId: "ce_sp_3",
-    teamId: "community_engagement",
-    tier: "specialist",
-    name: "Onboard 2 New Community Partner Organizations",
-    description:
-      "Successfully bring two new organizations into the DEVCON Kids partner network, completing the onboarding process for each.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
-  },
+
+  // Lead (CE Lead) tier (2 quests)
 
   {
     questId: "ce_ld_1",
     teamId: "community_engagement",
     tier: "lead",
-    name: "Secure a Formal MOU/MOA with a Local Gov/LGU",
+    name: "Initiate Partnership Outreach",
     description:
-      "Negotiate and formalize a Memorandum of Understanding or Agreement with a local government unit or official body.",
+      "Proactively reach out to external organizations, schools, or communities to explore collaboration opportunities that expand DEVCON Kids' presence.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",
@@ -669,20 +330,9 @@ export const QUESTS: Quest[] = [
     questId: "ce_ld_2",
     teamId: "community_engagement",
     tier: "lead",
-    name: "Lead the Chapter's Outreach Strategy for the Quarter",
+    name: "Develop Synergies with New Partner Organizations",
     description:
-      "Own and execute the chapter's full community outreach strategy for an entire quarter, setting goals and reporting outcomes.",
-    xpReward: 150,
-    completionMethod: "coordinator_approval",
-    approvalType: "major",
-  },
-  {
-    questId: "ce_ld_3",
-    teamId: "community_engagement",
-    tier: "lead",
-    name: "Organize a Multi-Org Tech Synergy Event",
-    description:
-      "Conceptualize, plan, and execute a collaborative event bringing together multiple organizations for knowledge sharing and networking.",
+      "Formalize and deepen relationships with at least two new partner organizations, co-creating events or initiatives that benefit both communities.",
     xpReward: 150,
     completionMethod: "coordinator_approval",
     approvalType: "major",

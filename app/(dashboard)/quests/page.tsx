@@ -208,7 +208,7 @@ function HeroProgressCard({
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <p className="text-xs font-semibold tracking-widest mb-1" style={{ color }}>
-              CURRENT TIER
+              NEXT MILESTONE
             </p>
             <h2 className="font-heading text-2xl text-text-primary leading-tight">
               {tierLabel} Journey
@@ -267,6 +267,53 @@ function HeroProgressCard({
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${pct}%`, backgroundColor: color }}
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EarnedTierCard — shows the tier the volunteer currently holds ──────────────
+function EarnedTierCard({
+  teamId,
+  earnedTier,
+  earnedTierLabel,
+  color,
+  isMaxTier,
+}: {
+  teamId: string;
+  earnedTier: Quest["tier"];
+  earnedTierLabel: string;
+  color: string;
+  isMaxTier: boolean;
+}) {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-[#27272A]"
+      style={{ background: `linear-gradient(135deg, #1a1a2e 0%, ${color}12 100%)` }}
+    >
+      <div className="h-1 w-full" style={{ backgroundColor: color }} />
+      <div className="p-5 flex items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/badges/${teamId}_${earnedTier}.png`}
+          alt={earnedTierLabel}
+          width={60}
+          height={60}
+          className="object-contain drop-shadow-lg shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold tracking-widest mb-0.5" style={{ color }}>
+            CURRENT TIER
+          </p>
+          <h2 className="font-heading text-xl text-text-primary leading-tight">
+            {earnedTierLabel}
+          </h2>
+          <p className="text-sm text-text-secondary mt-0.5">
+            {isMaxTier
+              ? "You've reached the highest tier — your title is fully earned."
+              : "Complete the milestones below to advance to the next tier."}
+          </p>
         </div>
       </div>
     </div>
@@ -1027,6 +1074,27 @@ export default function QuestsPage() {
       : TIER_LABELS[nextTier]
     : null;
 
+  // Earned tier: highest tier where ALL quests are complete.
+  // team_member has 0 quests → vacuously complete → always the floor.
+  let earnedTier: Quest["tier"] = "team_member";
+  if (activeMeta) {
+    for (const tier of TIER_ORDER) {
+      const tierQs = quests.filter(q => q.teamId === activeTab && q.tier === tier);
+      if (tierQs.every(q => completions[q.questId]?.status === "completed")) {
+        earnedTier = tier;
+      } else {
+        break;
+      }
+    }
+  }
+  const earnedTierLabel = earnedTier === "lead"
+    ? (activeMeta?.leadTitle ?? TIER_LABELS["lead"])
+    : TIER_LABELS[earnedTier];
+  // isMaxTier: volunteer holds the lead title AND has completed every lead quest
+  const isMaxTier = earnedTier === "lead" &&
+    quests.filter(q => q.teamId === activeTab && q.tier === "lead")
+          .every(q => completions[q.questId]?.status === "completed");
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Top Bar ───────────────────────────────────────────────────────────── */}
@@ -1162,16 +1230,27 @@ export default function QuestsPage() {
           {!loadingCompletions && activeTab !== "approvals" && activeMeta && (
             <div className="flex flex-col gap-5 max-w-2xl">
 
-                {/* Hero Progress Card */}
-                <HeroProgressCard
+                {/* Current Tier card — what the volunteer holds right now */}
+                <EarnedTierCard
                   teamId={activeTab}
-                  currentTier={currentTier}
-                  tierLabel={currentTierLabel}
-                  nextTierLabel={nextTierLabel}
+                  earnedTier={earnedTier}
+                  earnedTierLabel={earnedTierLabel}
                   color={activeMeta.color}
-                  quests={currentTierQuests}
-                  completions={completions}
+                  isMaxTier={isMaxTier}
                 />
+
+                {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
+                {!isMaxTier && (
+                  <HeroProgressCard
+                    teamId={activeTab}
+                    currentTier={currentTier}
+                    tierLabel={currentTierLabel}
+                    nextTierLabel={nextTierLabel}
+                    color={activeMeta.color}
+                    quests={currentTierQuests}
+                    completions={completions}
+                  />
+                )}
 
                 {/* Milestones card */}
                 <div
