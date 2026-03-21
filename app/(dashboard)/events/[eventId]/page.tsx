@@ -56,6 +56,7 @@ interface EventDoc {
   location: string;
   chapterId: string;
   eventType?: string;
+  isInternal?: boolean;
   roles: EventRole[];
   lumaUrl?: string;
   bannerUrl?: string;
@@ -127,15 +128,6 @@ function IconBack() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 12H5M12 5l-7 7 7 7" />
-    </svg>
-  );
-}
-
-function IconBell() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   );
 }
@@ -576,6 +568,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDoc | null>(null);
   const [myReg, setMyReg] = useState<Registration | null>(null);
   const [allRegs, setAllRegs] = useState<Registration[]>([]);
+  const [publicRegs, setPublicRegs] = useState<{ userId: string; username: string; role: string; avatarOptions?: AvatarOptions }[]>([]);
   const [eventQuests, setEventQuests] = useState<Quest[]>([]);
   const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -585,6 +578,7 @@ export default function EventDetailPage() {
   const [joiningLoading, setJoiningLoading] = useState(false);
   const [showQrScanner, setShowQrScanner] = useState(false);
   const [coordTab, setCoordTab] = useState<CoordTab>("details");
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [scanFeedback, setScanFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -657,6 +651,24 @@ export default function EventDetailPage() {
           })
         );
         setAllRegs(withNames);
+      } else if (regs.some((r) => r.userId === userData.uid)) {
+        // Volunteer has joined — enrich public reg list (username + avatar only)
+        const enriched = await Promise.all(
+          regs.map(async (reg) => {
+            try {
+              const uSnap = await getDoc(doc(db, "users", reg.userId));
+              return {
+                userId:        reg.userId,
+                username:      uSnap.data()?.username ?? reg.userId,
+                role:          reg.role,
+                avatarOptions: uSnap.data()?.avatarOptions as AvatarOptions | undefined,
+              };
+            } catch {
+              return { userId: reg.userId, username: reg.userId, role: reg.role };
+            }
+          })
+        );
+        setPublicRegs(enriched);
       }
 
       setSlotCounts(counts);
@@ -1052,6 +1064,11 @@ export default function EventDetailPage() {
           <span className="text-xs px-2.5 py-1 rounded-full bg-accent-primary/20 text-accent-highlight font-medium">
             {event.chapterId}
           </span>
+          {event.isInternal && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-700/50 text-zinc-300 font-medium">
+              Internal
+            </span>
+          )}
           {event.lumaUrl && (
             <a
               href={event.lumaUrl}
@@ -1108,9 +1125,9 @@ export default function EventDetailPage() {
   const RolesSection = () => (
     <div>
       <h2 className="font-heading text-sm text-text-muted uppercase tracking-wider mb-3">
-        Volunteer Roles
+        {event.isInternal ? "Attendee Seats" : "Volunteer Roles"}
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className={event.isInternal ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-3"}>
         {event.roles.map((role) => {
           const filled = slotCounts[role.roleName] ?? 0;
           const pct = role.slots > 0 ? Math.min(100, (filled / role.slots) * 100) : 0;
@@ -1175,9 +1192,6 @@ export default function EventDetailPage() {
               <IconTrash />
               Delete
             </button>
-            <Link href="/notifications" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
-              <IconBell />
-            </Link>
             <Link href="/dashboard">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
@@ -1197,7 +1211,7 @@ export default function EventDetailPage() {
                   : "border-transparent text-text-secondary hover:text-text-primary"
               }`}
             >
-              {tab === "volunteers" ? `Volunteers (${allRegs.length})` : "Details"}
+              {tab === "volunteers" ? `${event.isInternal ? "Attendees" : "Volunteers"} (${allRegs.length})` : "Details"}
             </button>
           ))}
         </div>
@@ -1225,6 +1239,30 @@ export default function EventDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Role filter chips — hidden for single-role (internal) events */}
+              {event.roles.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setRoleFilter(null)}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${roleFilter === null ? "bg-accent-highlight text-white" : "border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50"}`}
+                  >
+                    All ({allRegs.length})
+                  </button>
+                  {event.roles.map((r) => {
+                    const count = allRegs.filter((reg) => reg.role === r.roleName).length;
+                    return (
+                      <button
+                        key={r.roleName}
+                        onClick={() => setRoleFilter(r.roleName)}
+                        className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${roleFilter === r.roleName ? "bg-accent-highlight text-white" : "border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50"}`}
+                      >
+                        {r.roleName} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Action buttons */}
               <div className="flex gap-2 flex-wrap">
@@ -1257,14 +1295,18 @@ export default function EventDetailPage() {
               </div>
 
               {/* Volunteer list */}
-              {allRegs.length === 0 ? (
-                <div className="text-center py-16 text-text-muted text-sm">No volunteers registered yet.</div>
-              ) : (
-                <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                  {allRegs.map((reg, idx) => (
+              {(() => {
+                const filteredRegs = roleFilter ? allRegs.filter((r) => r.role === roleFilter) : allRegs;
+                return allRegs.length === 0 ? (
+                  <div className="text-center py-16 text-text-muted text-sm">No volunteers registered yet.</div>
+                ) : filteredRegs.length === 0 ? (
+                  <div className="text-center py-16 text-text-muted text-sm">No volunteers in this role.</div>
+                ) : (
+                  <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+                  {filteredRegs.map((reg, idx) => (
                     <div
                       key={reg.userId}
-                      className={`flex items-center gap-4 px-5 py-4 ${idx < allRegs.length - 1 ? "border-b border-border" : ""}`}
+                      className={`flex items-center gap-4 px-5 py-4 ${idx < filteredRegs.length - 1 ? "border-b border-border" : ""}`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -1304,7 +1346,8 @@ export default function EventDetailPage() {
                     </div>
                   ))}
                 </div>
-              )}
+                );
+              })()}
 
               {/* Energy report (post-event) */}
               {!upcoming && reflections > 0 && (
@@ -1407,9 +1450,6 @@ export default function EventDetailPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/notifications" className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
-            <IconBell />
-          </Link>
           <Link href="/dashboard">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
@@ -1483,6 +1523,44 @@ export default function EventDetailPage() {
               </p>
             </div>
           )}
+
+          {/* Who's Joining */}
+          {joined && publicRegs.length > 0 && (
+            <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h3 className="font-heading text-base text-text-primary">
+                  {event.isInternal ? "Fellow Attendees" : "Who's Joining"}
+                </h3>
+                <span className="text-xs text-text-muted font-sans">{publicRegs.length} registered</span>
+              </div>
+              <div className="flex flex-col">
+                {publicRegs.map((reg, idx) => {
+                  const isMe = reg.userId === firebaseUser?.uid;
+                  return (
+                    <div
+                      key={reg.userId}
+                      className={`flex items-center gap-3 px-5 py-3.5 ${idx < publicRegs.length - 1 ? "border-b border-border" : ""} ${isMe ? "bg-accent-primary/5" : ""}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={buildAvatarUrl(reg.username, reg.avatarOptions)}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="rounded-lg border border-border shrink-0"
+                      />
+                      <span className="flex-1 text-sm text-text-primary font-medium truncate">
+                        {reg.username}{isMe && <span className="text-text-muted font-normal"> (You)</span>}
+                      </span>
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-accent-primary/20 text-accent-highlight font-medium shrink-0">
+                        {reg.role}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1491,17 +1569,18 @@ export default function EventDetailPage() {
         <div className="fixed bottom-0 left-0 right-0 lg:left-56 p-4 bg-gradient-to-t from-base via-base/95 to-transparent">
           <div className="max-w-2xl mx-auto">
             <button
-              onClick={() => setShowRoleModal(true)}
-              className="w-full py-4 bg-accent-highlight hover:bg-accent-primary rounded-2xl text-white font-heading font-medium text-base transition-colors shadow-lg shadow-accent-primary/25"
+              onClick={() => event.isInternal ? handleJoin(event.roles[0]) : setShowRoleModal(true)}
+              disabled={joiningLoading}
+              className="w-full py-4 bg-accent-highlight hover:bg-accent-primary disabled:opacity-60 disabled:cursor-not-allowed rounded-2xl text-white font-heading font-medium text-base transition-colors shadow-lg shadow-accent-primary/25"
             >
-              Join Event
+              {joiningLoading ? "Joining..." : event.isInternal ? "Join as Attendee" : "Join Event"}
             </button>
           </div>
         </div>
       )}
 
-      {/* Role modal */}
-      {showRoleModal && (
+      {/* Role modal — only for non-internal events */}
+      {showRoleModal && !event.isInternal && (
         <RoleModal
           roles={event.roles}
           slotCounts={slotCounts}
