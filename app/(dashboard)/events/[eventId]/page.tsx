@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
@@ -69,7 +69,8 @@ interface Registration {
   reflectionDeadline?: Timestamp;
   confirmedAt?: Timestamp;
   confirmedBy?: string;
-  username?: string; // populated client-side for coordinator view
+  username?: string;       // populated client-side for coordinator view
+  avatarOptions?: AvatarOptions; // populated client-side for coordinator view
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -489,34 +490,36 @@ function QrScannerModal({
   const [scanError, setScanError] = useState("");
 
   useEffect(() => {
-    let scanner: { clear: () => void } | null = null;
+    let cancelled = false;
+    let qrInstance: { stop: () => Promise<void> } | null = null;
 
     (async () => {
       try {
-        const { Html5QrcodeScanner } = await import("html5-qrcode");
-        const s = new Html5QrcodeScanner(
-          "qr-reader",
+        const { Html5Qrcode } = await import("html5-qrcode");
+        if (cancelled) return; // React Strict Mode: first mount already cleaned up
+        const container = document.getElementById("qr-reader");
+        if (container) container.innerHTML = ""; // evict any leftover DOM from previous mount
+        const qr = new Html5Qrcode("qr-reader");
+        await qr.start(
+          { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          false
-        );
-        s.render(
           (decodedText: string) => {
             onScan(decodedText);
-            s.clear().catch(() => {});
+            try { qr.stop().catch(() => {}); } catch { /* scanner already stopped */ }
           },
-          () => {}
+          () => {} // ignore per-frame scan errors (blurry, no QR found, etc.)
         );
-        scanner = s;
+        if (cancelled) { qr.stop().catch(() => {}); return; } // started but cleanup ran mid-way
+        qrInstance = qr;
         setScannerReady(true);
       } catch {
-        setScanError("Camera not available or permission denied.");
+        if (!cancelled) setScanError("Camera not available or permission denied.");
       }
     })();
 
     return () => {
-      if (scanner) {
-        try { scanner.clear(); } catch { /* ignore */ }
-      }
+      cancelled = true;
+      try { qrInstance?.stop().catch(() => {}); } catch { /* ignore */ }
     };
   }, [onScan]);
 
@@ -639,7 +642,11 @@ export default function EventDetailPage() {
           regs.map(async (reg) => {
             try {
               const uSnap = await getDoc(doc(db, "users", reg.userId));
-              return { ...reg, username: uSnap.data()?.username ?? reg.userId };
+              return {
+                ...reg,
+                username: uSnap.data()?.username ?? reg.userId,
+                avatarOptions: uSnap.data()?.avatarOptions as AvatarOptions | undefined,
+              };
             } catch {
               return { ...reg, username: reg.userId };
             }
@@ -684,7 +691,7 @@ export default function EventDetailPage() {
   }
 
   // ── Confirm attendance (coordinator) ─────────────────────────────────────────
-  async function confirmAttendance(reg: Registration) {
+  async function confirmAttendance(reg: Registration, options?: { skipRefresh?: boolean }) {
     if (!firebaseUser) return;
     setConfirmingId(reg.userId);
     try {
@@ -717,13 +724,20 @@ export default function EventDetailPage() {
         createdAt: serverTimestamp(),
       });
 
-      await fetchData();
+      if (!options?.skipRefresh) {
+        await fetchData();
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setConfirmingId(null);
     }
   }
+
+  // Keep a ref to the latest confirmAttendance so handleQrScan (memoised on
+  // eventId only) never calls a stale closure that has firebaseUser/fetchData = null.
+  const confirmAttendanceRef = useRef(confirmAttendance);
+  confirmAttendanceRef.current = confirmAttendance;
 
   // ── Confirm all ──────────────────────────────────────────────────────────────
   async function confirmAll() {
@@ -739,32 +753,66 @@ export default function EventDetailPage() {
   // ── QR scan handler ──────────────────────────────────────────────────────────
   const handleQrScan = useCallback(async (data: string) => {
     setShowQrScanner(false);
+    setCoordTab("volunteers");
     try {
+      // 1. Must be a DevQuest QR code
+      if (!data.startsWith("devquest://")) {
+        setScanFeedback({ ok: false, msg: "Not a DevQuest QR code." });
+        setTimeout(() => setScanFeedback(null), 4000);
+        return;
+      }
+
+      // 2. Must be an attendance QR specifically
+      if (!data.startsWith("devquest://attendance?")) {
+        setScanFeedback({ ok: false, msg: "Invalid DevQuest QR code type." });
+        setTimeout(() => setScanFeedback(null), 4000);
+        return;
+      }
+
+      // 3. Parse and extract params
       const url = new URL(data.replace("devquest://", "https://devquest.app/"));
       const scannedEventId = url.searchParams.get("eventId");
       const scannedUserId = url.searchParams.get("userId");
 
-      if (scannedEventId !== eventId || !scannedUserId) {
-        setScanFeedback({ ok: false, msg: "Invalid QR code — wrong event." });
+      // 4. Required params must be present
+      if (!scannedEventId || !scannedUserId) {
+        setScanFeedback({ ok: false, msg: "QR code is missing required data." });
+        setTimeout(() => setScanFeedback(null), 4000);
         return;
       }
 
+      // 5. Must match this event
+      if (scannedEventId !== eventId) {
+        setScanFeedback({ ok: false, msg: "QR code is for a different event." });
+        setTimeout(() => setScanFeedback(null), 4000);
+        return;
+      }
+
+      // 6. Volunteer must be registered
       const regSnap = await getDoc(doc(db, "events", eventId, "registrations", scannedUserId));
       if (!regSnap.exists()) {
         setScanFeedback({ ok: false, msg: "No registration found for this volunteer." });
+        setTimeout(() => setScanFeedback(null), 4000);
         return;
       }
 
       const reg = regSnap.data() as Registration;
+
+      // 7. Must not already be attended
       if (reg.attended) {
         setScanFeedback({ ok: false, msg: "Already marked as attended." });
+        setTimeout(() => setScanFeedback(null), 4000);
         return;
       }
 
-      await confirmAttendance(reg);
-      setScanFeedback({ ok: true, msg: `Attendance confirmed for ${reg.userId}.` });
-    } catch {
-      setScanFeedback({ ok: false, msg: "Failed to parse QR code." });
+      await confirmAttendanceRef.current(reg, { skipRefresh: true });
+      setAllRegs(prev => prev.map(r =>
+        r.userId === reg.userId ? { ...r, attended: true } : r
+      ));
+      setScanFeedback({ ok: true, msg: "Attendance confirmed! ✓" });
+    } catch (err) {
+      console.error(err);
+      setScanFeedback({ ok: false, msg: "Failed to read QR code." });
     }
     setTimeout(() => setScanFeedback(null), 4000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1089,14 +1137,6 @@ export default function EventDetailPage() {
 
           {coordTab === "volunteers" && (
             <div className="max-w-3xl mx-auto flex flex-col gap-5">
-              {/* Scan feedback */}
-              {scanFeedback && (
-                <div className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2 ${scanFeedback.ok ? "bg-green-500/10 border border-green-500/30 text-green-400" : "bg-red-500/10 border border-red-500/30 text-red-400"}`}>
-                  {scanFeedback.ok ? <IconCheck /> : <IconX size={14} />}
-                  {scanFeedback.msg}
-                </div>
-              )}
-
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -1152,7 +1192,7 @@ export default function EventDetailPage() {
                       className={`flex items-center gap-4 px-5 py-4 ${idx < allRegs.length - 1 ? "border-b border-border" : ""}`}
                     >
                       <img
-                        src={buildAvatarUrl(reg.username ?? reg.userId)}
+                        src={buildAvatarUrl(reg.username ?? reg.userId, reg.avatarOptions)}
                         alt=""
                         width={36}
                         height={36}
@@ -1219,6 +1259,20 @@ export default function EventDetailPage() {
             onClose={() => setShowEditModal(false)}
             saving={saving}
           />
+        )}
+
+        {/* Scan feedback toast */}
+        {scanFeedback && (
+          <div
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 rounded-xl text-sm flex items-center gap-2 shadow-lg whitespace-nowrap ${
+              scanFeedback.ok
+                ? "bg-green-500/20 border border-green-500/40 text-green-400"
+                : "bg-red-500/20 border border-red-500/40 text-red-400"
+            }`}
+          >
+            {scanFeedback.ok ? <IconCheck /> : <IconX size={14} />}
+            {scanFeedback.msg}
+          </div>
         )}
 
         {/* Delete confirm */}
