@@ -92,15 +92,6 @@ function IconBack() {
   );
 }
 
-function IconBell() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  );
-}
-
 function IconX() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -142,6 +133,16 @@ function SectionCard({
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+// Event types that default to attendee-only (no volunteer role selection)
+const INTERNAL_EVENT_TYPES = new Set(["Lead Learner Workshop", "Volunteer Orientation"]);
+
+// XP tiers for internal / attendee-only events
+const ATTENDEE_XP_TIERS = [
+  { label: "Brief Session",  description: "1–2 hour drop-in or orientation", xp: 20 },
+  { label: "Full Session",   description: "Half-day to full-day workshop",   xp: 35 },
+  { label: "Intensive",      description: "Multi-day or demanding program",   xp: 60 },
+] as const;
 
 const EVENT_TYPES = [
   // Quest-triggering types — auto-complete qr_scan milestones on attendance
@@ -268,6 +269,11 @@ export default function NewEventPage() {
   // Add role dropdown
   const [showAddRole, setShowAddRole] = useState(false);
 
+  // Internal event (attendee-only)
+  const [isInternal, setIsInternal] = useState(false);
+  const [attendeeSlots, setAttendeeSlots] = useState(30);
+  const [attendeeXP, setAttendeeXP] = useState(35); // default: Full Session
+
   // Submit state
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -344,6 +350,7 @@ export default function NewEventPage() {
 
   function handleEventTypeChange(newType: string) {
     setEventType(newType);
+    setIsInternal(INTERNAL_EVENT_TYPES.has(newType));
     triggerPreset(newType, eventScale);
   }
 
@@ -399,7 +406,8 @@ export default function NewEventPage() {
     if (!eventType)         errors.eventType = "Event type is required.";
     if (!eventDate)         errors.date      = "Date is required.";
     if (!location.trim())   errors.location  = "Location is required.";
-    if (roles.length === 0) errors.roles     = "At least one volunteer role is required.";
+    if (!isInternal && roles.length === 0) errors.roles = "At least one volunteer role is required.";
+    if (isInternal && attendeeSlots < 1)   errors.roles = "At least 1 attendee seat is required.";
 
     if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
     setFieldErrors({});
@@ -432,11 +440,14 @@ export default function NewEventPage() {
         ...(bannerUrl ? { bannerUrl }          : {}),
         chapterId:   userData!.chapterId,
         createdBy:   firebaseUser!.uid,
-        roles: roles.map(({ roleName, xpReward, slots }) => ({
-          roleName,
-          xpReward,
-          slots: Number(slots) || 1,
-        })),
+        ...(isInternal ? { isInternal: true } : {}),
+        roles: isInternal
+          ? [{ roleName: "Attendee", xpReward: Number(attendeeXP) || 30, slots: Number(attendeeSlots) || 1 }]
+          : roles.map(({ roleName, xpReward, slots }) => ({
+              roleName,
+              xpReward,
+              slots: Number(slots) || 1,
+            })),
         createdAt: serverTimestamp(),
       });
 
@@ -470,12 +481,6 @@ export default function NewEventPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/notifications"
-            className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-          >
-            <IconBell />
-          </Link>
           <Link href="/dashboard">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -586,21 +591,41 @@ export default function NewEventPage() {
               />
             </div>
 
-            {/* Event Type */}
-            <div className="mb-4">
-              <label className={LABEL_CLS}>Event Type *</label>
-              <select
-                value={eventType}
-                onChange={(e) => handleEventTypeChange(e.target.value)}
-                className={`${INPUT_CLS} pr-10 ${fieldErrors.eventType ? "border-red-500/60 focus:ring-red-400/40" : ""}`}
-                style={{ colorScheme: "dark" }}
+            {/* Event Type + Internal toggle (same row) */}
+            <div className="flex items-end gap-3 mb-4">
+              {/* Event Type */}
+              <div className="flex-1 min-w-0">
+                <label className={LABEL_CLS}>Event Type *</label>
+                <select
+                  value={eventType}
+                  onChange={(e) => handleEventTypeChange(e.target.value)}
+                  className={`${INPUT_CLS} pr-10 ${fieldErrors.eventType ? "border-red-500/60 focus:ring-red-400/40" : ""}`}
+                  style={{ colorScheme: "dark" }}
+                >
+                  <option value="" disabled>Select a type…</option>
+                  {EVENT_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                {fieldErrors.eventType && <p className="mt-1 text-xs text-red-400">{fieldErrors.eventType}</p>}
+              </div>
+
+              {/* Internal toggle */}
+              <button
+                onClick={() => setIsInternal((v) => !v)}
+                className="shrink-0 flex flex-col items-center gap-1.5 pb-[11px]"
               >
-                <option value="" disabled>Select a type…</option>
-                {EVENT_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              {fieldErrors.eventType && <p className="mt-1 text-xs text-red-400">{fieldErrors.eventType}</p>}
+                <span className={LABEL_CLS} style={{ marginBottom: 0 }}>Internal</span>
+                <div
+                  className="relative w-10 h-[22px] rounded-full transition-colors duration-200"
+                  style={{ backgroundColor: isInternal ? "#A855F7" : "#27272A" }}
+                >
+                  <div
+                    className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                    style={{ transform: isInternal ? "translateX(22px)" : "translateX(3px)" }}
+                  />
+                </div>
+              </button>
             </div>
 
             {/* Date + times */}
@@ -713,7 +738,54 @@ export default function NewEventPage() {
             )}
           </SectionCard>
 
-          {/* ── D: Volunteer Roles ──────────────────────────────────────────── */}
+          {/* ── D: Volunteer Roles / Attendee Config ────────────────────────── */}
+          {isInternal ? (
+          <SectionCard stripe="#A855F7" className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="font-heading text-base text-text-primary">Attendee Configuration</h2>
+            </div>
+            <p className="text-xs text-text-secondary mb-5">
+              All registered volunteers will join as attendees. Coordinators confirm attendance by scanning each volunteer&apos;s QR code.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={LABEL_CLS}>Attendee Seats *</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={attendeeSlots}
+                  onChange={(e) => setAttendeeSlots(Math.max(1, Number(e.target.value)))}
+                  className={`${INPUT_CLS} ${fieldErrors.roles ? "border-red-500/60" : ""}`}
+                  style={{ colorScheme: "dark" }}
+                />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>XP per Attendance</label>
+                <select
+                  value={attendeeXP}
+                  onChange={(e) => setAttendeeXP(Number(e.target.value))}
+                  className={`${INPUT_CLS} pr-10`}
+                  style={{ colorScheme: "dark" }}
+                >
+                  {ATTENDEE_XP_TIERS.map((t) => (
+                    <option key={t.xp} value={t.xp}>
+                      {t.label} (+{t.xp} XP)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {fieldErrors.roles && (
+              <p className="mt-2 text-xs text-red-400">{fieldErrors.roles}</p>
+            )}
+
+            <p className="mt-3 text-[11px] font-sans text-text-muted">
+              XP is granted when a coordinator confirms a volunteer&apos;s attendance.
+            </p>
+          </SectionCard>
+          ) : (
           <SectionCard stripe="#A855F7" className="flex-1">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-base text-text-primary">Volunteer Roles</h2>
@@ -883,6 +955,7 @@ export default function NewEventPage() {
               Adjust slot counts as needed. XP values are fixed by the DevQuest system.
             </p>
           </SectionCard>
+          )}
 
           </div>
 
