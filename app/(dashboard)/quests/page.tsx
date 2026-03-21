@@ -26,7 +26,6 @@ import {
   TIER_ORDER,
   TIER_LABELS,
   TEAM_META,
-  getQuestsForTier,
 } from "@/lib/seed/quests";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 
