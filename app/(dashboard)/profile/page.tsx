@@ -788,7 +788,7 @@ function BadgeTile({ badge }: { badge: BadgeDef }) {
 
 function BadgesGrid({ badges }: { badges: BadgeDef[] }) {
   return (
-    <div className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-4">
+    <div id="badges" className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-4 scroll-mt-24">
       <h3 className="font-heading text-lg text-text-primary">Badges</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {badges.map((b) => (
