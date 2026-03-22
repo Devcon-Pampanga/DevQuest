@@ -3,18 +3,14 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   onAuthStateChanged,
-  signOut,
-  deleteUser,
   User as FirebaseUser,
 } from "firebase/auth";
 import {
   doc,
   getDoc,
   getDocs,
-  deleteDoc,
   updateDoc,
   collection,
   query,
@@ -23,7 +19,7 @@ import {
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { useSidebar } from "@/context/SidebarContext";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import { TIER_ORDER, TIER_LABELS, TEAM_META } from "@/lib/seed/quests";
 import { Quest, QuestCompletion } from "@/types/quest";
 import { getXpLevelProgress } from "@/lib/xpLevel";
@@ -118,14 +114,6 @@ function CloseIcon() {
   );
 }
 
-function BellIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  );
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -241,12 +229,60 @@ function totalSlots(roles: EventDoc["roles"]): number {
   return roles.reduce((sum, r) => sum + r.slots, 0);
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function DashboardSkeleton() {
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-10">
+      {/* Hero card */}
+      <div className="rounded-2xl border border-[#27272A] p-5 flex gap-4">
+        <SkeletonBlock className="w-24 h-24 rounded-2xl shrink-0" />
+        <div className="flex flex-col gap-3 flex-1">
+          <SkeletonLine className="w-40" />
+          <SkeletonLine className="w-28" />
+          <SkeletonLine className="w-full" />
+          <SkeletonBlock className="h-2 rounded-full w-full" />
+        </div>
+      </div>
+      {/* XP band */}
+      <div className="rounded-2xl border border-[#27272A] p-5">
+        <SkeletonLine className="w-20 mb-2" />
+        <SkeletonBlock className="h-8 w-32 mb-3 rounded-lg" />
+        <SkeletonBlock className="h-2 rounded-full w-full" />
+      </div>
+      {/* 2-col stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <SkeletonBlock className="h-20 rounded-2xl" />
+        <SkeletonBlock className="h-20 rounded-2xl" />
+      </div>
+      {/* Active quests */}
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between">
+          <SkeletonLine className="w-24" />
+          <SkeletonLine className="w-12" />
+        </div>
+        <SkeletonBlock className="h-16 rounded-2xl" />
+        <SkeletonBlock className="h-16 rounded-2xl" />
+      </div>
+      {/* Upcoming events */}
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between">
+          <SkeletonLine className="w-32" />
+          <SkeletonLine className="w-12" />
+        </div>
+        <div className="flex gap-3">
+          <SkeletonBlock className="h-24 rounded-2xl w-[240px] shrink-0" />
+          <SkeletonBlock className="h-24 rounded-2xl w-[240px] shrink-0" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { openSidebar } = useSidebar();
-
   const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -265,11 +301,7 @@ export default function DashboardPage() {
 
   const [upcomingRegCounts, setUpcomingRegCounts] = useState<Record<string, number>>({});
 
-  const [loading, setLoading] = useState(false);
-  const [loadingAction, setLoadingAction] = useState<"logout" | "delete" | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
-  const [accountOpen, setAccountOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
@@ -365,7 +397,7 @@ export default function DashboardPage() {
 
         const upcoming = chapterEvents
           .filter((e) => e.date.toDate() > now)
-          .slice(0, 2);
+          .slice(0, 5);
         const countEntries = await Promise.all(
           upcoming.map(async (ev) => {
             const snap = await getCountFromServer(collection(db, "events", ev.eventId, "registrations"));
@@ -488,7 +520,7 @@ export default function DashboardPage() {
     return events
       .filter((e) => e.chapterId === userData.chapterId && e.date.toDate() > now)
       .sort((a, b) => a.date.toMillis() - b.date.toMillis())
-      .slice(0, 2);
+      .slice(0, 5);
   }, [events, userData]);
 
   const completedQuestCount = useMemo(
@@ -514,42 +546,6 @@ export default function DashboardPage() {
     void navigator.clipboard.writeText(url);
     setCopiedShare(true);
     window.setTimeout(() => setCopiedShare(false), 2000);
-  }
-
-  async function handleLogout() {
-    setError("");
-    setLoading(true);
-    setLoadingAction("logout");
-    try {
-      await signOut(auth);
-      router.replace("/");
-    } catch {
-      setError("Failed to sign out. Please try again.");
-      setLoading(false);
-      setLoadingAction(null);
-    }
-  }
-
-  async function handleDeleteAccount() {
-    if (!firebaseUser) return;
-    setError("");
-    setLoading(true);
-    setLoadingAction("delete");
-    try {
-      await deleteDoc(doc(db, "users", firebaseUser.uid));
-      await deleteUser(firebaseUser);
-      router.replace("/");
-    } catch (err: unknown) {
-      const msg = (err as Error).message ?? "";
-      setError(
-        msg.includes("requires-recent-login")
-          ? "For security, please sign out and sign in again before deleting your account."
-          : "Failed to delete account. Please try again."
-      );
-      setLoading(false);
-      setLoadingAction(null);
-      setConfirmDelete(false);
-    }
   }
 
   async function handleSaveAvatar() {
@@ -593,7 +589,13 @@ export default function DashboardPage() {
     );
   }
 
-  if (!authChecked || !userData) return null;
+  if (!authChecked || !userData) {
+    return (
+      <PageShell title="Dashboard" loading skeleton={<DashboardSkeleton />}>
+        {null}
+      </PageShell>
+    );
+  }
 
   const activeAvatar = userData.avatarOptions ?? DEFAULT_AVATAR;
   const avatarUrl = buildAvatarUrl(userData.username, activeAvatar);
@@ -601,56 +603,17 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="flex flex-col flex-1 min-h-0">
-        <div className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border shrink-0 bg-base">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={openSidebar}
-              className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors shrink-0"
-              aria-label="Open sidebar"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
-            <Image src="/icon.png" alt="" width={28} height={28} className="shrink-0 rounded-lg" aria-hidden />
-            <div className="min-w-0">
-              <p className="font-heading text-lg text-text-primary tracking-wide leading-tight truncate">DevQuest</p>
-              <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Dashboard</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/notifications"
-              className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-              aria-label="Notifications"
-            >
-              <BellIcon />
-            </Link>
-            <Link href="/profile" className="shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={avatarUrl}
-                alt="Profile"
-                width={36}
-                height={36}
-                className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-              />
-            </Link>
-          </div>
-        </div>
-
+      <PageShell
+        title="Dashboard"
+        avatarUrl={avatarUrl}
+        loading={dashboardLoading}
+        skeleton={<DashboardSkeleton />}
+      >
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-10">
             {error ? <p className="text-red-400 text-sm text-center">{error}</p> : null}
 
-            {dashboardLoading ? (
-              <p className="text-text-secondary text-sm font-sans text-center py-12">Loading your dashboard…</p>
-            ) : (
-              <>
+            <>
                 {/* Hero */}
                 <div
                   className="rounded-2xl border border-border overflow-hidden relative"
@@ -681,9 +644,9 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0 flex flex-col gap-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <h1 className="font-heading text-xl sm:text-2xl text-text-primary truncate">
-                          {displayName(userData.username)}
+                          {displayName(userData!.username)}
                         </h1>
-                        {userData.role === "coordinator" ? (
+                        {userData!.role === "coordinator" ? (
                           <span
                             className="text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full border shrink-0"
                             style={{ borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }}
@@ -693,7 +656,7 @@ export default function DashboardPage() {
                         ) : null}
                       </div>
                       <p className="text-sm text-text-secondary font-sans">
-                        <span className="text-text-primary font-medium">{userData.chapterId}</span>
+                        <span className="text-text-primary font-medium">{userData!.chapterId}</span>
                       </p>
                       {primaryMeta && currentTier ? (
                         <p className="text-sm font-sans" style={{ color: teamColor }}>
@@ -764,7 +727,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-1">Level {xpProgress.level}</p>
                         <p className="font-sans font-bold text-3xl tabular-nums text-text-primary">
-                          {(userData.xp ?? 0).toLocaleString()}
+                          {(userData!.xp ?? 0).toLocaleString()}
                           <span className="text-sm font-sans font-normal text-text-muted ml-1.5">XP</span>
                         </p>
                       </div>
@@ -813,7 +776,7 @@ export default function DashboardPage() {
                   </div>
                 ) : null}
 
-                {userData.role === "coordinator" ? (
+                {userData!.role === "coordinator" ? (
                   <div className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4">
                     <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Coordinator</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -841,7 +804,7 @@ export default function DashboardPage() {
                       <div className="rounded-xl border border-border p-4">
                         <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Events this month</p>
                         <p className="font-heading text-2xl text-text-primary tabular-nums">{eventsThisMonthCount}</p>
-                        <p className="text-[10px] text-text-muted font-sans mt-1">Scheduled in {userData.chapterId}</p>
+                        <p className="text-[10px] text-text-muted font-sans mt-1">Scheduled in {userData!.chapterId}</p>
                       </div>
                     </div>
                   </div>
@@ -900,7 +863,7 @@ export default function DashboardPage() {
                       No upcoming events in your chapter. Check back soon.
                     </p>
                   ) : (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-minimal -mx-4 px-4 sm:-mx-6 sm:px-6">
                       {upcomingChapterEvents.map((ev) => {
                         const total = totalSlots(ev.roles);
                         const reg = upcomingRegCounts[ev.eventId] ?? 0;
@@ -909,20 +872,18 @@ export default function DashboardPage() {
                           <Link
                             key={ev.eventId}
                             href={`/events/${ev.eventId}`}
-                            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 transition-colors"
+                            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 transition-colors snap-start shrink-0 w-[240px]"
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-heading text-sm text-text-primary">{ev.name}</p>
-                              <span className="text-[10px] font-sans uppercase tracking-wide text-green-400 shrink-0">Upcoming</span>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <p className="font-heading text-sm text-text-primary leading-snug line-clamp-2">{ev.name}</p>
+                              <span className="text-[10px] font-sans uppercase tracking-wide text-green-400 shrink-0 mt-0.5">Upcoming</span>
                             </div>
-                            <p className="text-xs text-text-secondary font-sans mt-2">{formatEventDate(ev.date)}</p>
+                            <p className="text-xs text-text-secondary font-sans">{formatEventDate(ev.date)}</p>
                             {total > 0 ? (
                               <div className="mt-3">
                                 <div className="flex justify-between text-[10px] text-text-muted font-sans mb-1">
                                   <span>Slots</span>
-                                  <span className="tabular-nums">
-                                    {reg}/{total}
-                                  </span>
+                                  <span className="tabular-nums">{reg}/{total}</span>
                                 </div>
                                 <div className="h-1.5 rounded-full bg-black/30 overflow-hidden">
                                   <div className="h-full rounded-full bg-accent-highlight" style={{ width: `${pct}%` }} />
@@ -935,87 +896,11 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </section>
-              </>
-            )}
-
-            {/* Account footer */}
-            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setAccountOpen((o) => !o)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/[0.03] transition-colors"
-              >
-                <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Account</span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className={`text-text-muted transition-transform ${accountOpen ? "rotate-180" : ""}`}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              {accountOpen ? (
-                <div className="px-4 pb-4 pt-0 flex flex-col gap-3 border-t border-border">
-                  <p className="text-xs text-text-secondary font-sans pt-3">{userData.email}</p>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={loading}
-                    className="w-full bg-accent-highlight hover:bg-accent-primary text-white font-heading text-sm tracking-widest uppercase py-3 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {loadingAction === "logout" ? "Signing out…" : "Log Out"}
-                  </button>
-                  {!confirmDelete ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setConfirmDelete(true);
-                        setError("");
-                      }}
-                      disabled={loading}
-                      className="w-full bg-transparent border border-border hover:border-red-500/40 text-text-muted hover:text-red-400 font-sans text-sm py-3 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      Delete Account
-                    </button>
-                  ) : (
-                    <div className="rounded-xl border border-red-500/25 overflow-hidden" style={{ backgroundColor: "#1a0d0d" }}>
-                      <div className="px-4 pt-4 pb-3">
-                        <p className="text-text-secondary text-xs text-center leading-relaxed mb-4">
-                          This will permanently delete your account and all associated data.
-                          <span className="block text-red-400/80 mt-1">This cannot be undone.</span>
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDelete(false)}
-                            disabled={loading}
-                            className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleDeleteAccount}
-                            disabled={loading}
-                            className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                            style={{ backgroundColor: "#ff000010" }}
-                          >
-                            {loadingAction === "delete" ? "Deleting…" : "Yes, Delete"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </div>
+            </>
           </div>
         </div>
-      </div>
+      </PageShell>
+
 
       {showAvatarEditor && userData ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">

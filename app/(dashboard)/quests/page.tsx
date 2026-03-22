@@ -20,7 +20,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { useSidebar } from "@/context/SidebarContext";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import {
   QUESTS,
   TIER_ORDER,
@@ -806,12 +806,54 @@ function ApprovalItem({
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function QuestsSkeleton() {
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-10">
+      {/* Team tabs */}
+      <div className="flex gap-2">
+        <SkeletonBlock className="h-9 w-28 rounded-full" />
+        <SkeletonBlock className="h-9 w-28 rounded-full" />
+        <SkeletonBlock className="h-9 w-28 rounded-full" />
+      </div>
+      {/* Tier section 1 */}
+      <div className="flex flex-col gap-3">
+        <SkeletonLine className="w-20" />
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex flex-col gap-2"
+          >
+            <SkeletonLine className="w-40" />
+            <SkeletonLine className="w-full" />
+            <SkeletonBlock className="h-1.5 rounded-full w-full" />
+          </div>
+        ))}
+      </div>
+      {/* Tier section 2 — locked look */}
+      <div className="flex flex-col gap-3 opacity-50">
+        <SkeletonLine className="w-20" />
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex flex-col gap-2"
+          >
+            <SkeletonLine className="w-40" />
+            <SkeletonLine className="w-full" />
+            <SkeletonBlock className="h-1.5 rounded-full w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function QuestsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { openSidebar } = useSidebar();
 
   const [authChecked, setAuthChecked] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -1051,14 +1093,14 @@ function QuestsPageContent() {
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
-  if (!authChecked || !userData) return null;
-
-  const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
-  const userTeams = userData.teams ?? [];
+  const avatarUrl = userData
+    ? buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR)
+    : undefined;
+  const userTeams = userData?.teams ?? [];
 
   const tabs = [
     ...userTeams.map((t) => ({ key: t, label: TEAM_META[t]?.label ?? t, isApprovals: false })),
-    ...(userData.role === "coordinator"
+    ...(userData?.role === "coordinator"
       ? [{ key: "approvals", label: "Approvals", isApprovals: true }]
       : []),
   ];
@@ -1105,41 +1147,12 @@ function QuestsPageContent() {
           .every(q => completions[q.questId]?.status === "completed");
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* ── Top Bar ───────────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={openSidebar}
-            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-            aria-label="Open sidebar"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-          <h1 className="font-heading text-2xl text-text-primary tracking-wide">
-            Quests
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatarUrl}
-              alt="Profile"
-              width={36}
-              height={36}
-              className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-            />
-          </Link>
-        </div>
-      </div>
-
-
-      {/* ── Content ───────────────────────────────────────────────────────────── */}
+    <PageShell
+      title="Quests"
+      avatarUrl={avatarUrl}
+      loading={!authChecked || loadingCompletions}
+      skeleton={<QuestsSkeleton />}
+    >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-2xl mx-auto flex flex-col gap-5">
 
@@ -1175,17 +1188,6 @@ function QuestsPageContent() {
                   </button>
                 );
               })}
-            </div>
-          )}
-
-          {/* Loading spinner */}
-          {loadingCompletions && (
-            <div className="flex items-center justify-center py-20">
-              <div className="flex gap-2">
-                {WAVE_COLORS.map((color, i) => (
-                  <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
-                ))}
-              </div>
             </div>
           )}
 
@@ -1331,7 +1333,7 @@ function QuestsPageContent() {
           <div className="h-4" />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
 
