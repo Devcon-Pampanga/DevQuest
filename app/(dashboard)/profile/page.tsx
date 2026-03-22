@@ -181,8 +181,7 @@ function computeTierStatus(
   teamId: string,
   tier: Quest["tier"],
   completions: Record<string, QuestCompletion>,
-  allQuests: Quest[],
-  userCreatedAt: Timestamp | undefined
+  allQuests: Quest[]
 ): TierLadderStatus {
   if (tier === "team_member") return "completed";
   if (!isTierUnlocked(teamId, tier, completions, allQuests)) return "locked";
@@ -585,7 +584,7 @@ function MilestonesSection({
       <div className="flex flex-col gap-1">
         {TIER_ORDER.map((tier) => {
           const createdAt = userData.createdAt;
-          const status = computeTierStatus(activeTeam, tier, completions, allQuests, createdAt);
+          const status = computeTierStatus(activeTeam, tier, completions, allQuests);
           const tierQuests = questsForTier(activeTeam, tier, allQuests);
           const completedCount = tierQuests.filter((q) => completions[q.questId]?.status === "completed").length;
           const totalQuests = tierQuests.length;
@@ -676,7 +675,6 @@ function ActivityFeed({
 // ─── Portfolio Card ───────────────────────────────────────────────────────────
 
 function PortfolioCard({
-  userData,
   completions,
   allQuests,
   eventCount,
@@ -685,7 +683,6 @@ function PortfolioCard({
   onCopyShare,
   copied,
 }: {
-  userData: UserData;
   completions: Record<string, QuestCompletion>;
   allQuests: Quest[];
   eventCount: number;
@@ -1123,7 +1120,6 @@ export default function ProfilePage() {
                 />
               ) : null}
               <PortfolioCard
-                userData={userData}
                 completions={completions}
                 allQuests={allQuests}
                 eventCount={eventCount}

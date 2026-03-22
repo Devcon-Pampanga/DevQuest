@@ -155,16 +155,17 @@ export async function generateResumeSectionsWithGemini(
   }
 
   for (const modelName of modelChain) {
-    let { text, quotaExceeded, modelNotFound } = await runOnce(modelName, true);
-    if (quotaExceeded) {
+    const first = await runOnce(modelName, true);
+    if (first.quotaExceeded) {
       if (debug) console.warn(`[resume-enhance/gemini] Skipping remainder of ${modelName} (quota); trying next model if any`);
       continue;
     }
-    if (modelNotFound) {
+    if (first.modelNotFound) {
       if (debug) console.warn(`[resume-enhance/gemini] Skipping ${modelName} (model not available for this API key); trying next`);
       continue;
     }
 
+    let text = first.text;
     let parsed = text ? parseResumeJson(text) : null;
 
     if (!parsed || sectionsEmpty(parsed)) {
