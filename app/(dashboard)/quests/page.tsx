@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -808,8 +808,9 @@ function ApprovalItem({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function QuestsPage() {
+function QuestsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { openSidebar } = useSidebar();
 
   const [authChecked, setAuthChecked] = useState(false);
@@ -844,6 +845,14 @@ export default function QuestsPage() {
     });
     return () => unsub();
   }, [router]);
+
+  useEffect(() => {
+    if (!userData) return;
+    const tab = searchParams.get("tab");
+    if (tab === "approvals" && userData.role === "coordinator") {
+      setActiveTab("approvals");
+    }
+  }, [searchParams, userData]);
 
   // ── Load quests (from Firestore) + completions ──────────────────────────────
   useEffect(() => {
@@ -1323,5 +1332,19 @@ export default function QuestsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function QuestsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-base flex items-center justify-center">
+          <p className="text-text-secondary text-sm font-sans">Loading quests…</p>
+        </div>
+      }
+    >
+      <QuestsPageContent />
+    </Suspense>
   );
 }
