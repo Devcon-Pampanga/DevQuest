@@ -130,16 +130,8 @@ function EventCard({
           alt=""
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        {!event.bannerUrl && (
-          <div
-            className="absolute inset-0 opacity-40"
-            style={{
-              background: upcoming
-                ? "linear-gradient(135deg, #7C3AED, #A855F7)"
-                : "rgba(39,39,42,0.8)",
-            }}
-          />
+        {event.bannerUrl && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         )}
       </div>
 
