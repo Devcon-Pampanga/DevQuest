@@ -17,11 +17,10 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { useSidebar } from "@/context/SidebarContext";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import { TIER_ORDER, TIER_LABELS, TEAM_META } from "@/lib/seed/quests";
 import { Quest, QuestCompletion } from "@/types/quest";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -312,7 +311,7 @@ function HeaderCard({
           <h2 className="font-heading text-2xl text-text-primary leading-tight mb-0.5 truncate">
             {profileDisplayName(userData.username)}
           </h2>
-          {hasSocialLinks && email ? (
+          {email ? (
             <a
               href={`mailto:${encodeURIComponent(email)}`}
               className="text-text-secondary text-xs font-sans truncate block hover:text-accent-highlight transition-colors"
@@ -422,7 +421,7 @@ function HeaderCard({
             </div>
           ) : null}
 
-          <div className="border-t border-border pt-5">
+          <div className="border-t border-border pt-5 flex flex-col gap-2">
             <button
               type="button"
               onClick={() => void onGenerateResume()}
@@ -436,6 +435,16 @@ function HeaderCard({
               </svg>
               {isGeneratingResume ? "Generating…" : "Generate resume"}
             </button>
+            <Link
+              href="/settings"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-heading text-sm border border-border text-text-muted hover:text-text-primary hover:border-accent-primary/40 transition-colors"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              Account Settings
+            </Link>
           </div>
         </div>
       </div>
@@ -787,12 +796,92 @@ function BadgeTile({ badge }: { badge: BadgeDef }) {
 }
 
 function BadgesGrid({ badges }: { badges: BadgeDef[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const LIMIT = 6;
+
+  const earned = badges.filter((b) => b.earned);
+  const unearned = badges.filter((b) => !b.earned);
+  // Fill up to LIMIT: all earned first, then as many unearned as fit
+  const preview = [...earned, ...unearned].slice(0, LIMIT);
+  const displayed = expanded ? badges : preview;
+  const hasMore = badges.length > LIMIT;
+
   return (
     <div id="badges" className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-4 scroll-mt-24">
-      <h3 className="font-heading text-lg text-text-primary">Badges</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-heading text-lg text-text-primary">Badges</h3>
+        <span className="text-xs text-text-muted font-sans">{earned.length} / {badges.length} earned</span>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {badges.map((b) => (
+        {displayed.map((b) => (
           <BadgeTile key={b.id} badge={b} />
+        ))}
+      </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full py-2 rounded-xl border border-border text-xs font-heading uppercase tracking-widest text-text-secondary hover:text-text-primary hover:border-accent-primary/50 transition-colors"
+        >
+          {expanded ? "Show Less" : `Show All ${badges.length} Badges`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function ProfileSkeleton() {
+  return (
+    <div className="max-w-2xl mx-auto flex flex-col gap-5 pb-10">
+      {/* Header card */}
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] animate-pulse p-5">
+        <div className="flex gap-4">
+          <SkeletonBlock className="w-[72px] h-[72px] rounded-2xl shrink-0" />
+          <div className="flex flex-col gap-3 flex-1">
+            <SkeletonLine className="w-32" />
+            <SkeletonLine className="w-48" />
+            <SkeletonLine className="w-24" />
+          </div>
+        </div>
+        <div className="border-t border-[#27272A] mt-5 pt-5 flex flex-col gap-3">
+          <SkeletonLine className="w-full" />
+          <SkeletonLine className="w-3/4" />
+          <SkeletonLine className="w-full" />
+          <SkeletonLine className="w-1/2" />
+        </div>
+      </div>
+      {/* Milestones section */}
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] animate-pulse p-5 flex flex-col gap-4">
+        <SkeletonLine className="w-32" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex gap-3">
+            <SkeletonBlock className="w-10 h-10 rounded-full shrink-0" />
+            <div className="flex flex-col gap-2 flex-1">
+              <SkeletonLine className="w-28" />
+              <SkeletonLine className="w-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-3">
+        <SkeletonBlock className="h-16 rounded-xl" />
+        <SkeletonBlock className="h-16 rounded-xl" />
+        <SkeletonBlock className="h-16 rounded-xl" />
+      </div>
+      {/* Activity feed */}
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] animate-pulse p-5 flex flex-col gap-4">
+        <SkeletonLine className="w-24" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex gap-3">
+            <SkeletonBlock className="w-2 h-2 rounded-full mt-1 shrink-0" />
+            <div className="flex flex-col gap-2 flex-1">
+              <SkeletonLine className="w-full" />
+              <SkeletonLine className="w-32" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -803,7 +892,6 @@ function BadgesGrid({ badges }: { badges: BadgeDef[] }) {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { openSidebar } = useSidebar();
 
   const [authChecked, setAuthChecked] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -1052,58 +1140,28 @@ export default function ProfilePage() {
     };
   }, []);
 
-  if (!authChecked || !userData) return null;
+  if (!authChecked || !userData) {
+    return (
+      <PageShell title="Profile" loading skeleton={<ProfileSkeleton />}>
+        {null}
+      </PageShell>
+    );
+  }
 
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
   const teams = userData.teams ?? [];
   const milestoneTeam = activeTeam && teams.includes(activeTeam) ? activeTeam : teams[0] ?? "";
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={openSidebar}
-            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-            aria-label="Open sidebar"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-          <h1 className="font-heading text-2xl text-text-primary tracking-wide">Profile</h1>
-        </div>
-        <Link href="/dashboard">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={avatarUrl}
-            alt="Dashboard"
-            width={36}
-            height={36}
-            className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-          />
-        </Link>
-      </div>
-
+    <PageShell
+      title="Profile"
+      avatarUrl={avatarUrl}
+      loading={loading}
+      skeleton={<ProfileSkeleton />}
+    >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-2xl mx-auto flex flex-col gap-5">
-          {loading ? (
-            <div className="flex items-center justify-center py-32">
-              <div className="flex gap-2">
-                {WAVE_COLORS.map((color, i) => (
-                  <span
-                    key={i}
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <>
+          <>
               <HeaderCard
                 userData={userData}
                 avatarUrl={avatarUrl}
@@ -1131,9 +1189,8 @@ export default function ProfilePage() {
               <BadgesGrid badges={badges} />
               <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
             </>
-          )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
