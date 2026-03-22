@@ -1,21 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import {
   onAuthStateChanged,
   signOut,
   deleteUser,
   User as FirebaseUser,
 } from "firebase/auth";
-import { doc, getDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getCountFromServer,
+} from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useSidebar } from "@/context/SidebarContext";
+import { TIER_ORDER, TIER_LABELS, TEAM_META } from "@/lib/seed/quests";
+import { Quest, QuestCompletion } from "@/types/quest";
+import { getXpLevelProgress } from "@/lib/xpLevel";
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+// ─── Avatar (editor) ─────────────────────────────────────────────────────────
 
 interface AvatarOptions {
-  backgroundColor: string;           // hex without # or "transparent"
+  backgroundColor: string;
   backgroundType: "solid" | "gradientLinear";
   eyes: string;
   mouth: string;
@@ -29,46 +45,46 @@ const DEFAULT_AVATAR: AvatarOptions = {
 };
 
 const BG_COLORS: { hex: string; label: string }[] = [
-  { hex: "transparent", label: "None"   },
-  { hex: "ffb300",      label: "Amber"  },
-  { hex: "fdd835",      label: "Yellow" },
-  { hex: "43a047",      label: "Green"  },
-  { hex: "00acc1",      label: "Teal"   },
-  { hex: "039be5",      label: "Blue"   },
-  { hex: "1e88e5",      label: "Indigo" },
-  { hex: "5e35b1",      label: "Purple" },
-  { hex: "8e24aa",      label: "Violet" },
-  { hex: "d81b60",      label: "Pink"   },
-  { hex: "e53935",      label: "Red"    },
-  { hex: "f4511e",      label: "Orange" },
-  { hex: "00897b",      label: "Mint"   },
+  { hex: "transparent", label: "None" },
+  { hex: "ffb300", label: "Amber" },
+  { hex: "fdd835", label: "Yellow" },
+  { hex: "43a047", label: "Green" },
+  { hex: "00acc1", label: "Teal" },
+  { hex: "039be5", label: "Blue" },
+  { hex: "1e88e5", label: "Indigo" },
+  { hex: "5e35b1", label: "Purple" },
+  { hex: "8e24aa", label: "Violet" },
+  { hex: "d81b60", label: "Pink" },
+  { hex: "e53935", label: "Red" },
+  { hex: "f4511e", label: "Orange" },
+  { hex: "00897b", label: "Mint" },
 ];
 
 const EYES_OPTIONS: { id: string; label: string }[] = [
-  { id: "bulging",      label: "Bulging"       },
-  { id: "dizzy",        label: "Dizzy"         },
-  { id: "eva",          label: "Eva"           },
-  { id: "frame1",       label: "Frame 1"       },
-  { id: "frame2",       label: "Frame 2"       },
-  { id: "glow",         label: "Glow"          },
-  { id: "happy",        label: "Happy"         },
-  { id: "hearts",       label: "Hearts"        },
-  { id: "robocop",      label: "Robocop"       },
-  { id: "round",        label: "Round"         },
+  { id: "bulging", label: "Bulging" },
+  { id: "dizzy", label: "Dizzy" },
+  { id: "eva", label: "Eva" },
+  { id: "frame1", label: "Frame 1" },
+  { id: "frame2", label: "Frame 2" },
+  { id: "glow", label: "Glow" },
+  { id: "happy", label: "Happy" },
+  { id: "hearts", label: "Hearts" },
+  { id: "robocop", label: "Robocop" },
+  { id: "round", label: "Round" },
   { id: "roundFrame01", label: "Round Frame 1" },
   { id: "roundFrame02", label: "Round Frame 2" },
-  { id: "sensor",       label: "Sensor"        },
-  { id: "shade01",      label: "Shade"         },
+  { id: "sensor", label: "Sensor" },
+  { id: "shade01", label: "Shade" },
 ];
 
 const MOUTH_OPTIONS: { id: string; label: string }[] = [
-  { id: "bite",     label: "Bite"     },
-  { id: "diagram",  label: "Diagram"  },
-  { id: "grill01",  label: "Grill 1"  },
-  { id: "grill02",  label: "Grill 2"  },
-  { id: "grill03",  label: "Grill 3"  },
-  { id: "smile01",  label: "Smile 1"  },
-  { id: "smile02",  label: "Smile 2"  },
+  { id: "bite", label: "Bite" },
+  { id: "diagram", label: "Diagram" },
+  { id: "grill01", label: "Grill 1" },
+  { id: "grill02", label: "Grill 2" },
+  { id: "grill03", label: "Grill 3" },
+  { id: "smile01", label: "Smile 1" },
+  { id: "smile02", label: "Smile 2" },
   { id: "square01", label: "Square 1" },
   { id: "square02", label: "Square 2" },
 ];
@@ -77,74 +93,16 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
   const params: Record<string, string> = {
     seed,
     backgroundColor: opts.backgroundColor,
-    backgroundType:  opts.backgroundType,
-    eyes:            opts.eyes,
-    mouth:           opts.mouth,
+    backgroundType: opts.backgroundType,
+    eyes: opts.eyes,
+    mouth: opts.mouth,
   };
   return `https://api.dicebear.com/9.x/bottts-neutral/svg?${new URLSearchParams(params).toString()}`;
 }
 
-// ─── Team config ──────────────────────────────────────────────────────────────
-
-const TEAMS = [
-  { id: "lead_learners",        name: "Lead Learners",        color: "#F5C518" },
-  { id: "people_culture",       name: "People & Culture",     color: "#F97316" },
-  { id: "community_engagement", name: "Community Engagement", color: "#06B6D4" },
-  { id: "creatives",            name: "Creatives",            color: "#9333EA" },
-  { id: "sustainability",       name: "Sustainability",       color: "#22C55E" },
-];
-
-const TEAM_MAP: Record<string, { name: string; color: string }> = Object.fromEntries(
-  TEAMS.map((t) => [t.id, { name: t.name, color: t.color }])
-);
-
-// ─── Inline SVG Icons ─────────────────────────────────────────────────────────
-
-function LinkedInIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-      <rect width="16" height="16" rx="3" fill="#0A66C2" />
-      <rect x="3" y="6" width="2.5" height="7" fill="white" />
-      <circle cx="4.25" cy="3.75" r="1.5" fill="white" />
-      <path d="M7.5 6h2.3v1h.05C10.2 6.4 11 6 12 6c2 0 2.5 1.3 2.5 3v4h-2.5v-3.5c0-.8-.3-1.5-1-1.5s-1.2.7-1.2 1.5V13H7.5V6z" fill="white" />
-    </svg>
-  );
-}
-
-function GitHubIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="8" fill="#341539" />
-      <path
-        fillRule="evenodd" clipRule="evenodd"
-        d="M8 1.5C4.41 1.5 1.5 4.41 1.5 8c0 2.9 1.88 5.36 4.48 6.23.33.06.45-.14.45-.31
-           0-.16-.01-.67-.01-1.22-1.65.3-2.08-.4-2.21-.77-.07-.19-.4-.77-.67-.93
-           -.23-.12-.56-.42-.01-.43.52-.01.89.48 1.01.67.59.99 1.54.71 1.92.54
-           .06-.42.23-.71.42-.88-1.46-.17-2.99-.73-2.99-3.24 0-.71.25-1.3.67-1.76
-           -.07-.17-.3-.83.07-1.74 0 0 .55-.17 1.8.67.52-.14 1.08-.22 1.64-.22
-           .56 0 1.12.08 1.64.22 1.25-.85 1.8-.67 1.8-.67.37.9.14 1.57.07 1.74
-           .42.46.67 1.04.67 1.76 0 2.52-1.54 3.07-3 3.24.24.2.44.6.44 1.21
-           0 .87-.01 1.58-.01 1.8 0 .17.12.38.45.31C12.62 13.36 14.5 10.9 14.5 8
-           14.5 4.41 11.59 1.5 8 1.5z"
-        fill="white"
-      />
-    </svg>
-  );
-}
-
-function XPIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
-
 function PencilIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
     </svg>
@@ -153,10 +111,18 @@ function PencilIcon() {
 
 function CloseIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   );
 }
@@ -164,86 +130,411 @@ function CloseIcon() {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface UserData {
-  username:      string;
-  email:         string;
-  role:          "volunteer" | "coordinator";
+  username: string;
+  email: string;
+  role: "volunteer" | "coordinator";
   contactNumber: string;
-  chapterId:     string;
-  teams:         string[];
-  xp:            number;
-  linkedinUrl?:  string;
-  githubUrl?:    string;
+  chapterId: string;
+  teams: string[];
+  xp: number;
   avatarOptions?: AvatarOptions;
 }
 
-// ─── Page Component ───────────────────────────────────────────────────────────
+interface EventDoc {
+  eventId: string;
+  name: string;
+  date: Timestamp;
+  location: string;
+  chapterId: string;
+  roles: { roleName: string; slots: number; xpReward: number }[];
+}
+
+interface RegistrationDoc {
+  attended: boolean;
+  reflectionSubmitted: boolean;
+  reflectionDeadline?: Timestamp;
+}
+
+type UIQuestStatus = "locked" | "available" | "in_progress" | "pending_approval" | "completed";
+
+interface PendingReflection {
+  eventId: string;
+  eventName: string;
+  hoursLeft: number;
+}
+
+// ─── Quest / tier helpers (aligned with quests page) ───────────────────────────
+
+function isTierUnlocked(
+  teamId: string,
+  tier: Quest["tier"],
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
+): boolean {
+  const idx = TIER_ORDER.indexOf(tier);
+  if (idx === 0) return true;
+  const prevTier = TIER_ORDER[idx - 1];
+  const prevQuests = allQuests.filter((q) => q.teamId === teamId && q.tier === prevTier);
+  return prevQuests.every((q) => completions[q.questId]?.status === "completed");
+}
+
+function getCurrentTier(
+  teamId: string,
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
+): Quest["tier"] {
+  for (const tier of TIER_ORDER) {
+    if (!isTierUnlocked(teamId, tier, completions, allQuests)) continue;
+    const tierQuests = allQuests.filter((q) => q.teamId === teamId && q.tier === tier);
+    const allDone = tierQuests.every((q) => completions[q.questId]?.status === "completed");
+    if (!allDone) return tier;
+  }
+  return TIER_ORDER[TIER_ORDER.length - 1];
+}
+
+function getQuestUIStatus(
+  quest: Quest,
+  completions: Record<string, QuestCompletion>,
+  tierUnlocked: boolean
+): UIQuestStatus {
+  if (!tierUnlocked) return "locked";
+  const c = completions[quest.questId];
+  if (!c) return "available";
+  return c.status as UIQuestStatus;
+}
+
+function pickPrimaryTeam(teamIds: string[], completions: Record<string, QuestCompletion>, allQuests: Quest[]): string {
+  if (teamIds.length === 0) return "";
+  let best = teamIds[0];
+  let bestCount = -1;
+  for (const tid of teamIds) {
+    const count = allQuests.filter(
+      (q) => q.teamId === tid && completions[q.questId]?.status === "completed"
+    ).length;
+    if (count > bestCount) {
+      bestCount = count;
+      best = tid;
+    }
+  }
+  return best;
+}
+
+function hoursUntil(ts: Timestamp): number {
+  return Math.max(0, Math.floor((ts.toDate().getTime() - Date.now()) / 3600000));
+}
+
+function tierDisplayLabel(teamId: string, tier: Quest["tier"]): string {
+  const meta = TEAM_META[teamId];
+  if (tier === "lead" && meta?.leadTitle) return meta.leadTitle;
+  return TIER_LABELS[tier] ?? tier;
+}
+
+function formatEventDate(ts: Timestamp): string {
+  return ts.toDate().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function totalSlots(roles: EventDoc["roles"]): number {
+  return roles.reduce((sum, r) => sum + r.slots, 0);
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter();
   const { openSidebar } = useSidebar();
 
-  const [authChecked, setAuthChecked]   = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [userData, setUserData]         = useState<UserData | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [firebaseUid, setFirebaseUid] = useState("");
 
-  // Page-level loading / actions
-  const [loading, setLoading]             = useState(false);
+  const [allQuests, setAllQuests] = useState<Quest[]>([]);
+  const [completions, setCompletions] = useState<Record<string, QuestCompletion>>({});
+  const [eventsAttendedCount, setEventsAttendedCount] = useState(0);
+  const [events, setEvents] = useState<EventDoc[]>([]);
+  const [pendingReflection, setPendingReflection] = useState<PendingReflection | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+
+  const [approvalsCount, setApprovalsCount] = useState(0);
+  const [chapterVolunteersActive, setChapterVolunteersActive] = useState<number | null>(null);
+  const [eventsThisMonthCount, setEventsThisMonthCount] = useState(0);
+
+  const [upcomingRegCounts, setUpcomingRegCounts] = useState<Record<string, number>>({});
+
+  const [loading, setLoading] = useState(false);
   const [loadingAction, setLoadingAction] = useState<"logout" | "delete" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [error, setError]                 = useState("");
+  const [error, setError] = useState("");
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
 
-  // Avatar editor
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
-  const [draftOptions, setDraftOptions]         = useState<AvatarOptions>(DEFAULT_AVATAR);
-  const [savingAvatar, setSavingAvatar]         = useState(false);
+  const [draftOptions, setDraftOptions] = useState<AvatarOptions>(DEFAULT_AVATAR);
+  const [savingAvatar, setSavingAvatar] = useState(false);
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.replace("/"); return; }
-
+      if (!user) {
+        router.replace("/");
+        return;
+      }
       const snap = await getDoc(doc(db, "users", user.uid));
       if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
         router.replace("/onboarding");
         return;
       }
       setFirebaseUser(user);
+      setFirebaseUid(user.uid);
       setUserData(snap.data() as UserData);
       setAuthChecked(true);
     });
     return () => unsubscribe();
   }, [router]);
 
-  if (!authChecked || !userData) return null;
+  useEffect(() => {
+    if (!firebaseUid || !userData) return;
+    const chapterId = userData.chapterId;
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+    async function load() {
+      setDashboardLoading(true);
+      try {
+        const xpCol = collection(db, "users", firebaseUid, "xpLog");
+        const [questsSnap, completionsSnap, eventCountSnap, eventsSnap] = await Promise.all([
+          getDocs(collection(db, "quests")),
+          getDocs(collection(db, "users", firebaseUid, "questCompletions")),
+          getCountFromServer(query(xpCol, where("source", "==", "event_attendance"))),
+          getDocs(collection(db, "events")),
+        ]);
+
+        setAllQuests(questsSnap.docs.map((d) => d.data() as Quest));
+        const map: Record<string, QuestCompletion> = {};
+        completionsSnap.docs.forEach((d) => {
+          map[d.id] = d.data() as QuestCompletion;
+        });
+        setCompletions(map);
+        setEventsAttendedCount(eventCountSnap.data().count);
+
+        const eventDocs = eventsSnap.docs
+          .map((d) => ({ eventId: d.id, ...d.data() }) as EventDoc)
+          .sort((a, b) => a.date.toMillis() - b.date.toMillis());
+        setEvents(eventDocs);
+
+        const chapterEvents = eventDocs.filter((e) => e.chapterId === chapterId);
+        const now = new Date();
+        let best: PendingReflection | null = null;
+        let bestDeadlineMs = Infinity;
+
+        await Promise.all(
+          chapterEvents.map(async (ev) => {
+            const regSnap = await getDoc(doc(db, "events", ev.eventId, "registrations", firebaseUid));
+            if (!regSnap.exists()) return;
+            const reg = regSnap.data() as RegistrationDoc;
+            const deadline = reg.reflectionDeadline;
+            if (
+              !reg.attended ||
+              reg.reflectionSubmitted ||
+              !deadline ||
+              deadline.toDate() <= now
+            ) {
+              return;
+            }
+            const ms = deadline.toMillis();
+            if (ms < bestDeadlineMs) {
+              bestDeadlineMs = ms;
+              best = {
+                eventId: ev.eventId,
+                eventName: ev.name,
+                hoursLeft: hoursUntil(deadline),
+              };
+            }
+          })
+        );
+        setPendingReflection(best);
+
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const thisMonth = chapterEvents.filter((e) => {
+          const d = e.date.toDate();
+          return d.getFullYear() === y && d.getMonth() === m;
+        }).length;
+        setEventsThisMonthCount(thisMonth);
+
+        const upcoming = chapterEvents
+          .filter((e) => e.date.toDate() > now)
+          .slice(0, 2);
+        const countEntries = await Promise.all(
+          upcoming.map(async (ev) => {
+            const snap = await getCountFromServer(collection(db, "events", ev.eventId, "registrations"));
+            return [ev.eventId, snap.data().count] as [string, number];
+          })
+        );
+        setUpcomingRegCounts(Object.fromEntries(countEntries));
+      } finally {
+        setDashboardLoading(false);
+      }
+    }
+
+    void load();
+  }, [firebaseUid, userData]);
+
+  const loadApprovalsCount = useCallback(async () => {
+    if (!userData || userData.role !== "coordinator") return;
+    try {
+      const usersSnap = await getDocs(
+        query(collection(db, "users"), where("chapterId", "==", userData.chapterId))
+      );
+      let n = 0;
+      await Promise.all(
+        usersSnap.docs.map(async (userDoc) => {
+          const completionsSnap = await getDocs(
+            query(
+              collection(db, "users", userDoc.id, "questCompletions"),
+              where("status", "==", "pending_approval")
+            )
+          );
+          n += completionsSnap.size;
+        })
+      );
+      setApprovalsCount(n);
+    } catch {
+      setApprovalsCount(0);
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    void loadApprovalsCount();
+  }, [loadApprovalsCount]);
+
+  const loadChapterVolunteers = useCallback(async () => {
+    if (!userData || userData.role !== "coordinator") return;
+    try {
+      const usersSnap = await getDocs(
+        query(collection(db, "users"), where("chapterId", "==", userData.chapterId))
+      );
+      const active = usersSnap.docs.filter((d) => d.data()?.onboardingComplete === true).length;
+      setChapterVolunteersActive(active);
+    } catch {
+      setChapterVolunteersActive(null);
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    void loadChapterVolunteers();
+  }, [loadChapterVolunteers]);
+
+  const primaryTeamId = useMemo(
+    () => pickPrimaryTeam(userData?.teams ?? [], completions, allQuests),
+    [userData?.teams, completions, allQuests]
+  );
+
+  const primaryMeta = primaryTeamId ? TEAM_META[primaryTeamId] : undefined;
+
+  const currentTier = useMemo(() => {
+    if (!primaryTeamId) return null;
+    return getCurrentTier(primaryTeamId, completions, allQuests);
+  }, [primaryTeamId, completions, allQuests]);
+
+  const tierProgress = useMemo(() => {
+    if (!primaryTeamId || currentTier === null) return null;
+    const tierQuests = allQuests.filter((q) => q.teamId === primaryTeamId && q.tier === currentTier);
+    if (tierQuests.length === 0) return { done: true as const, pct: 100, completed: 0, total: 0, nextLabel: "" };
+    const completed = tierQuests.filter((q) => completions[q.questId]?.status === "completed").length;
+    const total = tierQuests.length;
+    const allLeadDone =
+      currentTier === "lead" &&
+      tierQuests.every((q) => completions[q.questId]?.status === "completed");
+    if (allLeadDone) {
+      return { done: true as const, pct: 100, completed, total, nextLabel: "" };
+    }
+    const nextIdx = TIER_ORDER.indexOf(currentTier) + 1;
+    const nextTier = nextIdx < TIER_ORDER.length ? TIER_ORDER[nextIdx] : null;
+    const nextLabel = nextTier && primaryTeamId ? tierDisplayLabel(primaryTeamId, nextTier) : "";
+    return {
+      done: false as const,
+      pct: Math.round((completed / total) * 100),
+      completed,
+      total,
+      nextLabel,
+    };
+  }, [primaryTeamId, currentTier, allQuests, completions]);
+
+  const currentTierLabel =
+    primaryTeamId && currentTier ? tierDisplayLabel(primaryTeamId, currentTier) : "";
+
+  const activeQuestCards = useMemo(() => {
+    if (!primaryTeamId || currentTier === null) return [];
+    const tierUnlocked = isTierUnlocked(primaryTeamId, currentTier, completions, allQuests);
+    const tierQuests = allQuests.filter((q) => q.teamId === primaryTeamId && q.tier === currentTier);
+    const withStatus = tierQuests.map((q) => ({
+      quest: q,
+      status: getQuestUIStatus(q, completions, tierUnlocked),
+    }));
+    const interesting = withStatus.filter((x) => x.status === "in_progress" || x.status === "available");
+    interesting.sort((a, b) => {
+      if (a.status === "in_progress" && b.status !== "in_progress") return -1;
+      if (a.status !== "in_progress" && b.status === "in_progress") return 1;
+      return 0;
+    });
+    return interesting.slice(0, 3).map((x) => x.quest);
+  }, [primaryTeamId, currentTier, allQuests, completions]);
+
+  const upcomingChapterEvents = useMemo(() => {
+    if (!userData) return [];
+    const now = new Date();
+    return events
+      .filter((e) => e.chapterId === userData.chapterId && e.date.toDate() > now)
+      .sort((a, b) => a.date.toMillis() - b.date.toMillis())
+      .slice(0, 2);
+  }, [events, userData]);
+
+  const completedQuestCount = useMemo(
+    () => Object.values(completions).filter((c) => c.status === "completed").length,
+    [completions]
+  );
+
+  const xpProgress = useMemo(() => getXpLevelProgress(userData?.xp ?? 0), [userData?.xp]);
+
   function displayName(raw: string) {
     return raw.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   }
 
-  const activeAvatar   = userData.avatarOptions ?? DEFAULT_AVATAR;
-  const currentAvatarUrl = buildAvatarUrl(userData.username, activeAvatar);
-
   function openAvatarEditor() {
-    setDraftOptions(activeAvatar);
+    if (!userData) return;
+    setDraftOptions(userData.avatarOptions ?? DEFAULT_AVATAR);
     setShowAvatarEditor(true);
   }
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  function handleCopyShare() {
+    if (!userData || typeof window === "undefined") return;
+    const url = `${window.location.origin}/profile/${encodeURIComponent(userData.username)}`;
+    void navigator.clipboard.writeText(url);
+    setCopiedShare(true);
+    window.setTimeout(() => setCopiedShare(false), 2000);
+  }
+
   async function handleLogout() {
-    setError(""); setLoading(true); setLoadingAction("logout");
+    setError("");
+    setLoading(true);
+    setLoadingAction("logout");
     try {
       await signOut(auth);
       router.replace("/");
     } catch {
       setError("Failed to sign out. Please try again.");
-      setLoading(false); setLoadingAction(null);
+      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
   async function handleDeleteAccount() {
     if (!firebaseUser) return;
-    setError(""); setLoading(true); setLoadingAction("delete");
+    setError("");
+    setLoading(true);
+    setLoadingAction("delete");
     try {
       await deleteDoc(doc(db, "users", firebaseUser.uid));
       await deleteUser(firebaseUser);
@@ -255,7 +546,9 @@ export default function DashboardPage() {
           ? "For security, please sign out and sign in again before deleting your account."
           : "Failed to delete account. Please try again."
       );
-      setLoading(false); setLoadingAction(null); setConfirmDelete(false);
+      setLoading(false);
+      setLoadingAction(null);
+      setConfirmDelete(false);
     }
   }
 
@@ -266,7 +559,7 @@ export default function DashboardPage() {
       await updateDoc(doc(db, "users", firebaseUser.uid), {
         avatarOptions: draftOptions,
       });
-      setUserData((prev) => prev ? { ...prev, avatarOptions: draftOptions } : prev);
+      setUserData((prev) => (prev ? { ...prev, avatarOptions: draftOptions } : prev));
       setShowAvatarEditor(false);
     } catch {
       setError("Failed to save avatar. Please try again.");
@@ -275,7 +568,6 @@ export default function DashboardPage() {
     }
   }
 
-  // ── Shared subcomponent: option chip ────────────────────────────────────────
   function OptionChip({
     label,
     selected,
@@ -287,6 +579,7 @@ export default function DashboardPage() {
   }) {
     return (
       <button
+        type="button"
         onClick={onClick}
         className="px-3 py-1.5 rounded-lg text-xs font-sans border transition-all"
         style={
@@ -300,433 +593,551 @@ export default function DashboardPage() {
     );
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  if (!authChecked || !userData) return null;
+
+  const activeAvatar = userData.avatarOptions ?? DEFAULT_AVATAR;
+  const avatarUrl = buildAvatarUrl(userData.username, activeAvatar);
+  const teamColor = primaryMeta?.color ?? "#A855F7";
+
   return (
     <>
-    {/* Mobile-only sticky header */}
-    <div className="sticky top-0 z-40 lg:hidden flex items-center px-4 py-3 border-b border-border bg-base shrink-0">
-      <button
-        onClick={openSidebar}
-        className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-        aria-label="Open sidebar"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-    </div>
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-6 py-14"
-      style={{
-        background: "radial-gradient(ellipse 100% 60% at 30% 20%, rgba(124,58,237,0.22) 0%, transparent 60%)",
-        backgroundColor: "#0a0a0f",
-      }}
-    >
-      <div className="w-full max-w-sm">
-
-        {/* ── Header: avatar + identity ──────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-7">
-
-          {/* Avatar with edit button */}
-          <div className="relative flex-shrink-0">
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border shrink-0 bg-base">
+          <div className="flex items-center gap-2 min-w-0">
             <button
-              onClick={openAvatarEditor}
-              className="w-[72px] h-[72px] rounded-2xl overflow-hidden border border-border block focus:outline-none focus:ring-2 focus:ring-accent-highlight"
-              style={{ backgroundColor: "#100c1a" }}
-              aria-label="Edit avatar"
+              type="button"
+              onClick={openSidebar}
+              className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors shrink-0"
+              aria-label="Open sidebar"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentAvatarUrl}
-                alt={`${userData.username}'s avatar`}
-                width={72}
-                height={72}
-                className="w-full h-full"
-              />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
             </button>
-            {/* Edit badge */}
-            <div
-              className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center border border-border pointer-events-none"
-              style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
-            >
-              <PencilIcon />
+            <Image src="/icon.png" alt="" width={28} height={28} className="shrink-0 rounded-lg" aria-hidden />
+            <div className="min-w-0">
+              <p className="font-heading text-lg text-text-primary tracking-wide leading-tight truncate">DevQuest</p>
+              <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Dashboard</p>
             </div>
           </div>
-
-          {/* Name + email */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-sans uppercase tracking-widest text-accent-highlight mb-1">
-              Temporary · Home
-            </p>
-            <h1 className="font-heading text-2xl text-text-primary leading-tight mb-0.5 truncate">
-              {displayName(userData.username)}
-            </h1>
-            <p className="text-text-secondary text-xs font-sans truncate">{userData.email}</p>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              href="/notifications"
+              className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+              aria-label="Notifications"
+            >
+              <BellIcon />
+            </Link>
+            <Link href="/profile" className="shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarUrl}
+                alt="Profile"
+                width={36}
+                height={36}
+                className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
+              />
+            </Link>
           </div>
         </div>
 
-        {/* ── Profile card ───────────────────────────────────────────────── */}
-        <div
-          className="border border-border rounded-2xl overflow-hidden mb-4"
-          style={{ backgroundColor: "#100c1a" }}
-        >
-          {/* Role strip */}
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-            <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">
-              Account
-            </span>
-            <span
-              className="text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full border"
-              style={
-                userData.role === "coordinator"
-                  ? { borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }
-                  : { borderColor: "#27272A",   backgroundColor: "#ffffff08",  color: "#71717A" }
-              }
-            >
-              {userData.role}
-            </span>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-10">
+            {error ? <p className="text-red-400 text-sm text-center">{error}</p> : null}
+
+            {dashboardLoading ? (
+              <p className="text-text-secondary text-sm font-sans text-center py-12">Loading your dashboard…</p>
+            ) : (
+              <>
+                {/* Hero */}
+                <div
+                  className="rounded-2xl border border-border overflow-hidden relative"
+                  style={{
+                    background: `linear-gradient(135deg, ${teamColor}22 0%, #1a1a2e 45%, #0f0f18 100%)`,
+                  }}
+                >
+                  <div className="p-5 sm:p-6 flex flex-col sm:flex-row gap-6">
+                    <div className="relative shrink-0 mx-auto sm:mx-0">
+                      <button
+                        type="button"
+                        onClick={openAvatarEditor}
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-border block focus:outline-none focus:ring-2 focus:ring-accent-highlight"
+                        style={{ backgroundColor: "#100c1a" }}
+                        aria-label="Edit avatar"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={avatarUrl} alt="" width={112} height={112} className="w-full h-full object-cover" />
+                      </button>
+                      <div
+                        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border border-border pointer-events-none"
+                        style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
+                      >
+                        <PencilIcon />
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0 flex flex-col gap-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="font-heading text-xl sm:text-2xl text-text-primary truncate">
+                          {displayName(userData.username)}
+                        </h1>
+                        {userData.role === "coordinator" ? (
+                          <span
+                            className="text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full border shrink-0"
+                            style={{ borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }}
+                          >
+                            Coordinator
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-sm text-text-secondary font-sans">
+                        <span className="text-text-primary font-medium">{userData.chapterId}</span>
+                      </p>
+                      {primaryMeta && currentTier ? (
+                        <p className="text-sm font-sans" style={{ color: teamColor }}>
+                          {primaryMeta.label} — {currentTierLabel}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-text-muted font-sans">Select teams in your profile to track quest progress.</p>
+                      )}
+
+                      {tierProgress && primaryMeta ? (
+                        tierProgress.done && tierProgress.total > 0 ? (
+                          <div>
+                            <p className="text-xs font-sans text-text-secondary mb-2">
+                              All quests complete for {primaryMeta.label}. Outstanding work.
+                            </p>
+                            <div className="h-2 rounded-full bg-black/30 overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: "100%", backgroundColor: teamColor }} />
+                            </div>
+                          </div>
+                        ) : tierProgress.total > 0 ? (
+                          <div>
+                            <p className="text-xs font-sans text-text-secondary mb-2">
+                              {tierProgress.completed} of {tierProgress.total} quests
+                              {tierProgress.nextLabel
+                                ? ` to ${tierProgress.nextLabel}`
+                                : primaryMeta
+                                  ? ` toward ${primaryMeta.leadTitle}`
+                                  : ""}
+                            </p>
+                            <div className="h-2 rounded-full bg-black/30 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${tierProgress.pct}%`, backgroundColor: teamColor }}
+                              />
+                            </div>
+                          </div>
+                        ) : null
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href="/profile#badges"
+                          className="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
+                        >
+                          View Badges
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleCopyShare}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                            <circle cx="18" cy="5" r="3" />
+                            <circle cx="6" cy="12" r="3" />
+                            <circle cx="18" cy="19" r="3" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                          </svg>
+                          {copiedShare ? "Copied" : "Share"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* XP band */}
+                  <div className="px-5 sm:px-6 py-4 border-t border-border/80 bg-black/20">
+                    <div className="flex flex-wrap items-end justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-1">Level {xpProgress.level}</p>
+                        <p className="font-sans font-bold text-3xl tabular-nums text-text-primary">
+                          {(userData.xp ?? 0).toLocaleString()}
+                          <span className="text-sm font-sans font-normal text-text-muted ml-1.5">XP</span>
+                        </p>
+                      </div>
+                      <p className="text-xs text-text-secondary font-sans text-right max-w-[14rem]">
+                        {xpProgress.xpToNextLevel > 0 ? (
+                          <>
+                            {xpProgress.xpToNextLevel.toLocaleString()} XP to Level {xpProgress.level + 1}
+                          </>
+                        ) : (
+                          <>Max band progress</>
+                        )}
+                      </p>
+                    </div>
+                    <div className="h-2 rounded-full bg-black/35 overflow-hidden mb-1">
+                      <div
+                        className="h-full rounded-full bg-accent-highlight"
+                        style={{ width: `${xpProgress.pctToNextLevel}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-text-muted font-sans">
+                      {Math.round(xpProgress.pctToNextLevel)}% toward your next level — keep earning XP through events, quests, and reflections.
+                    </p>
+                  </div>
+                </div>
+
+                {pendingReflection ? (
+                  <div className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className="text-2xl shrink-0" aria-hidden>
+                        ⏳
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-heading text-amber-100/95">
+                          {pendingReflection.eventName} — Reflection due in {pendingReflection.hoursLeft} hour
+                          {pendingReflection.hoursLeft !== 1 ? "s" : ""}
+                        </p>
+                        <p className="text-xs text-text-muted font-sans mt-1">Submit before the deadline to earn reflection XP.</p>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/events/${pendingReflection.eventId}/reflect`}
+                      className="shrink-0 inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#ea580c] text-white text-sm font-heading font-semibold transition-colors"
+                    >
+                      Submit Now →
+                    </Link>
+                  </div>
+                ) : null}
+
+                {userData.role === "coordinator" ? (
+                  <div className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4">
+                    <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Coordinator</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Link
+                        href="/quests?tab=approvals"
+                        className="rounded-xl border border-border p-4 hover:border-accent-primary/40 transition-colors"
+                      >
+                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Pending approvals</p>
+                        <p className="font-heading text-2xl text-accent-highlight tabular-nums">{approvalsCount}</p>
+                      </Link>
+                      <Link
+                        href="/events/new"
+                        className="rounded-xl border border-border p-4 hover:border-accent-primary/40 transition-colors flex flex-col justify-center"
+                      >
+                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Quick action</p>
+                        <p className="font-heading text-lg text-text-primary">Add Event</p>
+                      </Link>
+                      <div className="rounded-xl border border-border p-4">
+                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Active volunteers</p>
+                        <p className="font-heading text-2xl text-text-primary tabular-nums">
+                          {chapterVolunteersActive === null ? "—" : chapterVolunteersActive}
+                        </p>
+                        <p className="text-[10px] text-text-muted font-sans mt-1">Onboarding complete · your chapter</p>
+                      </div>
+                      <div className="rounded-xl border border-border p-4">
+                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Events this month</p>
+                        <p className="font-heading text-2xl text-text-primary tabular-nums">{eventsThisMonthCount}</p>
+                        <p className="text-[10px] text-text-muted font-sans mt-1">Scheduled in {userData.chapterId}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-surface border border-border p-4">
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Achievements</p>
+                    <p className="font-heading text-2xl text-accent-highlight tabular-nums">{completedQuestCount}</p>
+                    <p className="text-[10px] text-text-muted font-sans mt-1">Quests completed</p>
+                  </div>
+                  <div className="rounded-2xl bg-surface border border-border p-4">
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Events</p>
+                    <p className="font-heading text-2xl text-[#22C55E] tabular-nums">{eventsAttendedCount}</p>
+                    <p className="text-[10px] text-text-muted font-sans mt-1">Events attended</p>
+                  </div>
+                </div>
+
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Active quests</h2>
+                    <Link href="/quests" className="text-xs font-heading text-accent-highlight hover:underline">
+                      View All
+                    </Link>
+                  </div>
+                  {activeQuestCards.length === 0 ? (
+                    <p className="text-sm text-text-muted font-sans rounded-2xl border border-border bg-surface px-4 py-6 text-center">
+                      No active quests right now. Head to Quests to see what is available.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {activeQuestCards.map((q) => (
+                        <Link
+                          key={q.questId}
+                          href="/quests"
+                          className="rounded-2xl border bg-surface p-4 hover:border-accent-primary/50 transition-colors"
+                          style={{ borderColor: `${teamColor}44` }}
+                        >
+                          <p className="font-heading text-sm text-text-primary leading-snug">{q.name}</p>
+                          <p className="text-[11px] text-text-muted font-sans mt-2 line-clamp-2">{q.description}</p>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Upcoming events</h2>
+                    <Link href="/events" className="text-xs font-heading text-accent-highlight hover:underline">
+                      View All
+                    </Link>
+                  </div>
+                  {upcomingChapterEvents.length === 0 ? (
+                    <p className="text-sm text-text-muted font-sans rounded-2xl border border-border bg-surface px-4 py-6 text-center">
+                      No upcoming events in your chapter. Check back soon.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {upcomingChapterEvents.map((ev) => {
+                        const total = totalSlots(ev.roles);
+                        const reg = upcomingRegCounts[ev.eventId] ?? 0;
+                        const pct = total > 0 ? Math.min(100, (reg / total) * 100) : 0;
+                        return (
+                          <Link
+                            key={ev.eventId}
+                            href={`/events/${ev.eventId}`}
+                            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-heading text-sm text-text-primary">{ev.name}</p>
+                              <span className="text-[10px] font-sans uppercase tracking-wide text-green-400 shrink-0">Upcoming</span>
+                            </div>
+                            <p className="text-xs text-text-secondary font-sans mt-2">{formatEventDate(ev.date)}</p>
+                            {total > 0 ? (
+                              <div className="mt-3">
+                                <div className="flex justify-between text-[10px] text-text-muted font-sans mb-1">
+                                  <span>Slots</span>
+                                  <span className="tabular-nums">
+                                    {reg}/{total}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-black/30 overflow-hidden">
+                                  <div className="h-full rounded-full bg-accent-highlight" style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                            ) : null}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+
+            {/* Account footer */}
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAccountOpen((o) => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/[0.03] transition-colors"
+              >
+                <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Account</span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className={`text-text-muted transition-transform ${accountOpen ? "rotate-180" : ""}`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {accountOpen ? (
+                <div className="px-4 pb-4 pt-0 flex flex-col gap-3 border-t border-border">
+                  <p className="text-xs text-text-secondary font-sans pt-3">{userData.email}</p>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loading}
+                    className="w-full bg-accent-highlight hover:bg-accent-primary text-white font-heading text-sm tracking-widest uppercase py-3 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {loadingAction === "logout" ? "Signing out…" : "Log Out"}
+                  </button>
+                  {!confirmDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDelete(true);
+                        setError("");
+                      }}
+                      disabled={loading}
+                      className="w-full bg-transparent border border-border hover:border-red-500/40 text-text-muted hover:text-red-400 font-sans text-sm py-3 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      Delete Account
+                    </button>
+                  ) : (
+                    <div className="rounded-xl border border-red-500/25 overflow-hidden" style={{ backgroundColor: "#1a0d0d" }}>
+                      <div className="px-4 pt-4 pb-3">
+                        <p className="text-text-secondary text-xs text-center leading-relaxed mb-4">
+                          This will permanently delete your account and all associated data.
+                          <span className="block text-red-400/80 mt-1">This cannot be undone.</span>
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(false)}
+                            disabled={loading}
+                            className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDeleteAccount}
+                            disabled={loading}
+                            className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                            style={{ backgroundColor: "#ff000010" }}
+                          >
+                            {loadingAction === "delete" ? "Deleting…" : "Yes, Delete"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="px-5 py-5 space-y-5">
-
-            {/* XP */}
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-1">
-                  Total XP
-                </p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-heading text-2xl" style={{ color: "#A855F7" }}>
-                    {userData.xp.toLocaleString()}
-                  </span>
-                  <span className="text-xs text-text-muted font-sans">xp</span>
+      {showAvatarEditor && userData ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !savingAvatar && setShowAvatarEditor(false)} role="presentation" />
+          <div
+            className="relative border border-border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl"
+            style={{ backgroundColor: "#1a1625" }}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+              <h2 className="font-heading text-[1rem] text-white">Customize Avatar</h2>
+              <button
+                type="button"
+                onClick={() => !savingAvatar && setShowAvatarEditor(false)}
+                className="text-gray-300 hover:text-white transition-colors"
+                aria-label="Close"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="overflow-y-auto scrollbar-minimal px-5 py-5 space-y-6">
+              <div className="flex justify-center">
+                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-border" style={{ backgroundColor: "#100c1a" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={buildAvatarUrl(userData.username, draftOptions)} alt="" width={96} height={96} className="w-full h-full" />
                 </div>
               </div>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: "#A855F714", color: "#A855F7" }}
-              >
-                <XPIcon />
-              </div>
-            </div>
-
-            <div className="border-t border-border" />
-
-            {/* Chapter */}
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-1">
-                Chapter
-              </p>
-              <p className="text-text-primary text-sm font-sans">{userData.chapterId}</p>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-1">
-                Contact
-              </p>
-              <p className="text-text-primary text-sm font-sans">{userData.contactNumber}</p>
-            </div>
-
-            {/* Teams */}
-            {userData.teams.length > 0 && (
               <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-2">
-                  Teams
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {userData.teams.map((teamId) => {
-                    const team = TEAM_MAP[teamId];
-                    if (!team) return null;
+                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Background Color</p>
+                <div className="flex flex-wrap gap-2.5">
+                  {BG_COLORS.map(({ hex, label }) => {
+                    const isSelected = draftOptions.backgroundColor === hex;
                     return (
-                      <span
-                        key={teamId}
-                        className="px-3 py-1.5 rounded-lg text-xs font-sans border"
-                        style={{
-                          borderColor: `${team.color}66`,
-                          backgroundColor: `${team.color}14`,
-                          color: team.color,
-                        }}
-                      >
-                        {team.name}
-                      </span>
+                      <button
+                        key={hex}
+                        type="button"
+                        title={label}
+                        onClick={() => setDraftOptions((p) => ({ ...p, backgroundColor: hex }))}
+                        className="w-7 h-7 rounded-full transition-all focus:outline-none"
+                        style={
+                          hex === "transparent"
+                            ? {
+                                background: "repeating-conic-gradient(#3f3f46 0% 25%, #2a2a3e 0% 50%) 0 0 / 8px 8px",
+                                outline: isSelected ? "2px solid #A855F7" : "2px solid transparent",
+                                outlineOffset: "2px",
+                              }
+                            : {
+                                backgroundColor: `#${hex}`,
+                                outline: isSelected ? "2px solid #A855F7" : "2px solid transparent",
+                                outlineOffset: "2px",
+                              }
+                        }
+                      />
                     );
                   })}
                 </div>
               </div>
-            )}
-
-            {/* Links */}
-            {(userData.linkedinUrl || userData.githubUrl) && (
               <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-2">
-                  Links
-                </p>
-                <div className="flex flex-col gap-2">
-                  {userData.linkedinUrl && (
-                    <a
-                      href={userData.linkedinUrl}
-                      target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm font-sans text-text-secondary hover:text-text-primary transition-colors group"
-                    >
-                      <LinkedInIcon />
-                      <span className="truncate group-hover:text-accent-highlight transition-colors">
-                        {userData.linkedinUrl.replace(/^https?:\/\//, "")}
-                      </span>
-                    </a>
-                  )}
-                  {userData.githubUrl && (
-                    <a
-                      href={userData.githubUrl}
-                      target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm font-sans text-text-secondary hover:text-text-primary transition-colors group"
-                    >
-                      <GitHubIcon />
-                      <span className="truncate group-hover:text-accent-highlight transition-colors">
-                        {userData.githubUrl.replace(/^https?:\/\//, "")}
-                      </span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <p className="text-red-400 text-sm mb-4 text-center">{error}</p>
-        )}
-
-        {/* ── Actions ────────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={handleLogout}
-            disabled={loading}
-            className="w-full bg-accent-highlight hover:bg-accent-primary text-white font-heading text-sm tracking-widest uppercase py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingAction === "logout" ? "Signing out…" : "Log Out"}
-          </button>
-
-          {!confirmDelete ? (
-            <button
-              onClick={() => { setConfirmDelete(true); setError(""); }}
-              disabled={loading}
-              className="w-full bg-transparent border border-border hover:border-red-500/40 text-text-muted hover:text-red-400 font-sans text-sm py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Delete Account
-            </button>
-          ) : (
-            <div className="rounded-xl border border-red-500/25 overflow-hidden" style={{ backgroundColor: "#1a0d0d" }}>
-              <div className="px-4 pt-4 pb-3">
-                <p className="text-text-secondary text-xs text-center leading-relaxed mb-4">
-                  This will permanently delete your account and all associated data.
-                  <span className="block text-red-400/80 mt-1">This cannot be undone.</span>
-                </p>
+                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Background Style</p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    disabled={loading}
-                    className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={loading}
-                    className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                    style={{ backgroundColor: "#ff000010" }}
-                  >
-                    {loadingAction === "delete" ? "Deleting…" : "Yes, Delete"}
-                  </button>
+                  {(
+                    [
+                      { id: "solid" as const, label: "Solid" },
+                      { id: "gradientLinear" as const, label: "Gradient" },
+                    ] as const
+                  ).map(({ id, label }) => (
+                    <OptionChip
+                      key={id}
+                      label={label}
+                      selected={draftOptions.backgroundType === id}
+                      onClick={() => setDraftOptions((p) => ({ ...p, backgroundType: id }))}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Eyes</p>
+                <div className="flex flex-wrap gap-2">
+                  {EYES_OPTIONS.map(({ id, label }) => (
+                    <OptionChip
+                      key={id}
+                      label={label}
+                      selected={draftOptions.eyes === id}
+                      onClick={() => setDraftOptions((p) => ({ ...p, eyes: id }))}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Mouth</p>
+                <div className="flex flex-wrap gap-2">
+                  {MOUTH_OPTIONS.map(({ id, label }) => (
+                    <OptionChip
+                      key={id}
+                      label={label}
+                      selected={draftOptions.mouth === id}
+                      onClick={() => setDraftOptions((p) => ({ ...p, mouth: id }))}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Team color dots */}
-        <div className="flex justify-center gap-2 mt-10">
-          {TEAMS.map((team, i) => (
-            <div
-              key={team.id}
-              className="w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: team.color,
-                ...(loading && {
-                  animation: "wave-dot 0.6s ease-in-out infinite",
-                  animationDelay: `${i * 0.1}s`,
-                }),
-              }}
-            />
-          ))}
-        </div>
-
-      </div>
-    </div>
-
-    {/* ── Avatar Editor Dialog ───────────────────────────────────────────────── */}
-    {showAvatarEditor && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={() => !savingAvatar && setShowAvatarEditor(false)}
-        />
-
-        {/* Panel */}
-        <div
-          className="relative border border-border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl"
-          style={{ backgroundColor: "#1a1625" }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
-            <h2 className="font-heading text-[1rem] text-white">Customize Avatar</h2>
-            <button
-              onClick={() => !savingAvatar && setShowAvatarEditor(false)}
-              className="text-gray-300 hover:text-white transition-colors"
-              aria-label="Close"
-            >
-              <CloseIcon />
-            </button>
-          </div>
-
-          {/* Scrollable content */}
-          <div className="overflow-y-auto scrollbar-minimal px-5 py-5 space-y-6">
-
-            {/* Live preview */}
-            <div className="flex justify-center">
-              <div
-                className="w-24 h-24 rounded-2xl overflow-hidden border border-border"
-                style={{ backgroundColor: "#100c1a" }}
+            <div className="flex gap-2 px-5 py-4 border-t border-border flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAvatarEditor(false)}
+                disabled={savingAvatar}
+                className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={buildAvatarUrl(userData.username, draftOptions)}
-                  alt="Avatar preview"
-                  width={96}
-                  height={96}
-                  className="w-full h-full"
-                />
-              </div>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAvatar}
+                disabled={savingAvatar}
+                className="flex-1 bg-accent-highlight hover:bg-accent-primary text-white font-heading text-xs tracking-widest uppercase py-2.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {savingAvatar ? "Saving…" : "Save"}
+              </button>
             </div>
-
-            {/* Background Color */}
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">
-                Background Color
-              </p>
-              <div className="flex flex-wrap gap-2.5">
-                {BG_COLORS.map(({ hex, label }) => {
-                  const isSelected = draftOptions.backgroundColor === hex;
-                  return (
-                    <button
-                      key={hex}
-                      title={label}
-                      onClick={() => setDraftOptions((p) => ({ ...p, backgroundColor: hex }))}
-                      className="w-7 h-7 rounded-full transition-all focus:outline-none"
-                      style={
-                        hex === "transparent"
-                          ? {
-                              background:
-                                "repeating-conic-gradient(#3f3f46 0% 25%, #2a2a3e 0% 50%) 0 0 / 8px 8px",
-                              outline: isSelected ? "2px solid #A855F7" : "2px solid transparent",
-                              outlineOffset: "2px",
-                            }
-                          : {
-                              backgroundColor: `#${hex}`,
-                              outline: isSelected ? "2px solid #A855F7" : "2px solid transparent",
-                              outlineOffset: "2px",
-                            }
-                      }
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Background Style */}
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">
-                Background Style
-              </p>
-              <div className="flex gap-2">
-                {(
-                  [
-                    { id: "solid",          label: "Solid"    },
-                    { id: "gradientLinear", label: "Gradient" },
-                  ] as const
-                ).map(({ id, label }) => (
-                  <OptionChip
-                    key={id}
-                    label={label}
-                    selected={draftOptions.backgroundType === id}
-                    onClick={() => setDraftOptions((p) => ({ ...p, backgroundType: id }))}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Eyes */}
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">
-                Eyes
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {EYES_OPTIONS.map(({ id, label }) => (
-                  <OptionChip
-                    key={id}
-                    label={label}
-                    selected={draftOptions.eyes === id}
-                    onClick={() => setDraftOptions((p) => ({ ...p, eyes: id }))}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Mouth */}
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">
-                Mouth
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {MOUTH_OPTIONS.map(({ id, label }) => (
-                  <OptionChip
-                    key={id}
-                    label={label}
-                    selected={draftOptions.mouth === id}
-                    onClick={() => setDraftOptions((p) => ({ ...p, mouth: id }))}
-                  />
-                ))}
-              </div>
-            </div>
-
           </div>
-
-          {/* Footer */}
-          <div className="flex gap-2 px-5 py-4 border-t border-border flex-shrink-0">
-            <button
-              onClick={() => setShowAvatarEditor(false)}
-              disabled={savingAvatar}
-              className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveAvatar}
-              disabled={savingAvatar}
-              className="flex-1 bg-accent-highlight hover:bg-accent-primary text-white font-heading text-xs tracking-widest uppercase py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {savingAvatar ? "Saving…" : "Save"}
-            </button>
-          </div>
-
         </div>
-      </div>
-    )}
+      ) : null}
     </>
   );
 }
