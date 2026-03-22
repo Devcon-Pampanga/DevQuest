@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
@@ -227,6 +228,23 @@ function buildRolesFromPreset(type: string, scale: EventScale): RoleEntry[] {
   return DEFAULT_ROLES
     .filter((r) => (loadout[r.roleName] ?? 0) > 0)
     .map((r) => ({ ...r, slots: loadout[r.roleName] }));
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function NewEventSkeleton() {
+  return (
+    <div className="max-w-2xl mx-auto flex flex-col gap-5 pb-10">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="flex flex-col gap-2">
+          <SkeletonLine className="w-24" />
+          <SkeletonBlock className="h-11 rounded-xl w-full" />
+        </div>
+      ))}
+      <SkeletonBlock className="h-32 rounded-2xl w-full" />
+      <SkeletonBlock className="h-12 rounded-xl w-full" />
+    </div>
+  );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -461,7 +479,19 @@ export default function NewEventPage() {
   }
 
   // ── Render guard ─────────────────────────────────────────────────────────────
-  if (!authChecked || !userData) return null;
+  if (!authChecked) {
+    return (
+      <PageShell
+        title="Add Event"
+        loading={true}
+        skeleton={<NewEventSkeleton />}
+      >
+        {null}
+      </PageShell>
+    );
+  }
+
+  if (!userData) return null;
 
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
 

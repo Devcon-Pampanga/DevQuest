@@ -14,9 +14,8 @@ import {
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { useSidebar } from "@/context/SidebarContext";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -207,6 +206,67 @@ function EventCard({
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function EventsSkeleton() {
+  return (
+    <div className="max-w-5xl mx-auto flex flex-col gap-5 pb-10">
+      {/* Search + filter bar */}
+      <div className="flex gap-2 items-center">
+        <SkeletonBlock className="h-10 flex-1 rounded-xl" />
+        <SkeletonBlock className="h-10 w-24 rounded-xl shrink-0" />
+      </div>
+
+      {/* Cards grid — mirrors grid-cols-1 md:grid-cols-2 xl:grid-cols-3 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] overflow-hidden flex flex-col animate-pulse"
+          >
+            {/* Banner area */}
+            <SkeletonBlock className="h-36 w-full rounded-none" />
+
+            {/* Card body */}
+            <div className="p-5 flex flex-col gap-3 flex-1">
+              {/* Status pill */}
+              <div className="flex items-center gap-2">
+                <SkeletonBlock className="h-5 w-20 rounded-full" />
+              </div>
+
+              {/* Event name */}
+              <SkeletonLine className="w-4/5" />
+              <SkeletonLine className="w-1/2" />
+
+              {/* Date row */}
+              <div className="flex items-center gap-2">
+                <SkeletonBlock className="h-3.5 w-3.5 rounded-sm shrink-0" />
+                <SkeletonLine className="w-28" />
+              </div>
+
+              {/* Location row */}
+              <div className="flex items-center gap-2">
+                <SkeletonBlock className="h-3.5 w-3.5 rounded-sm shrink-0" />
+                <SkeletonLine className="w-36" />
+              </div>
+
+              {/* Slots section */}
+              <div className="mt-auto pt-1 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <SkeletonLine className="w-20" />
+                  <SkeletonLine className="w-12" />
+                </div>
+                <SkeletonBlock className="h-1.5 w-full rounded-full" />
+                <SkeletonLine className="w-24" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 const CHAPTERS = [
@@ -226,8 +286,6 @@ type FilterType = "all" | "upcoming" | "past";
 
 export default function EventsPage() {
   const router = useRouter();
-  const { openSidebar } = useSidebar();
-
   const [authChecked, setAuthChecked] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [events, setEvents] = useState<EventDoc[]>([]);
@@ -329,12 +387,9 @@ export default function EventsPage() {
       });
   }, [events, search, activeFilter, chapterFilter, eventTypeFilter]);
 
-  if (!authChecked || !userData) return null;
-
-  const avatarUrl = buildAvatarUrl(
-    userData.username,
-    userData.avatarOptions ?? DEFAULT_AVATAR
-  );
+  const avatarUrl = userData
+    ? buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR)
+    : undefined;
 
   const statusFilters: { key: FilterType; label: string }[] = [
     { key: "all", label: "All" },
@@ -356,65 +411,35 @@ export default function EventsPage() {
   const CHIP_IDLE = "border-border text-text-secondary hover:text-text-primary hover:border-text-secondary";
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={openSidebar}
-            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-            aria-label="Open sidebar"
+    <PageShell
+      title="Events"
+      avatarUrl={avatarUrl}
+      loading={!authChecked || loadingEvents}
+      skeleton={<EventsSkeleton />}
+      actions={
+        userData?.role === "coordinator" ? (
+          <Link
+            href="/events/new"
+            className="flex items-center gap-2 px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors whitespace-nowrap shrink-0"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-          <h1 className="font-heading text-2xl text-text-primary tracking-wide">
-            Events
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {userData.role === "coordinator" && (
-            <Link
-              href="/events/new"
-              className="flex items-center gap-2 px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors whitespace-nowrap shrink-0"
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add Event
-            </Link>
-          )}
-
-
-          {/* Avatar → dashboard */}
-          <Link href="/dashboard">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatarUrl}
-              alt="Profile"
-              width={36}
-              height={36}
-              className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-            />
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Event
           </Link>
-        </div>
-      </div>
-
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
+        ) : null
+      }
+    >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto flex flex-col gap-5">
         {/* Search + filter button */}
@@ -565,19 +590,7 @@ export default function EventsPage() {
         </div>
 
         {/* Events grid */}
-        {loadingEvents ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="flex gap-2">
-              {WAVE_COLORS.map((color, i) => (
-                <span
-                  key={i}
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
-                />
-              ))}
-            </div>
-          </div>
-        ) : fetchError ? (
+        {fetchError ? (
           <div className="flex flex-col items-center justify-center py-24 text-red-400 gap-3 text-sm">
             {fetchError}
           </div>
@@ -614,6 +627,6 @@ export default function EventsPage() {
         )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

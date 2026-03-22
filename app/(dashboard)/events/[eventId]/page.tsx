@@ -19,6 +19,7 @@ import {
 import { Timestamp } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { Quest, QuestCompletion } from "@/types/quest";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
@@ -550,6 +551,40 @@ function QrScannerModal({
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function EventDetailSkeleton() {
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-10">
+      {/* Header block */}
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-5 animate-pulse flex flex-col gap-3">
+        <SkeletonLine className="w-56" />
+        <SkeletonLine className="w-40" />
+        <SkeletonLine className="w-32" />
+        <SkeletonBlock className="h-10 w-32 rounded-xl" />
+      </div>
+      {/* Roles section label */}
+      <SkeletonLine className="w-20" />
+      {/* Role rows */}
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex items-center justify-between"
+        >
+          <SkeletonLine className="w-28" />
+          <SkeletonBlock className="h-8 w-20 rounded-lg" />
+        </div>
+      ))}
+      {/* Description block */}
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-5 animate-pulse flex flex-col gap-2">
+        <SkeletonLine className="w-full" />
+        <SkeletonLine className="w-full" />
+        <SkeletonLine className="w-3/4" />
+      </div>
+    </div>
+  );
+}
+
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 type CoordTab = "details" | "volunteers";
@@ -973,7 +1008,19 @@ export default function EventDetailPage() {
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
-  if (!authChecked || !userData) return null;
+  if (!authChecked) {
+    return (
+      <PageShell
+        title="Event"
+        loading={true}
+        skeleton={<EventDetailSkeleton />}
+      >
+        {null}
+      </PageShell>
+    );
+  }
+
+  if (!userData) return null;
 
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions);
   const isCoord = userData.role === "coordinator";

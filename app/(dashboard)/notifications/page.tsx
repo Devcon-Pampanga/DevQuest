@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { useSidebar } from "@/context/SidebarContext";
+import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 
 interface AvatarOptions {
   backgroundColor: string;
@@ -39,9 +37,30 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
   return `https://api.dicebear.com/9.x/bottts-neutral/svg?${new URLSearchParams(p)}`;
 }
 
+function NotificationsSkeleton() {
+  return (
+    <div className="max-w-2xl mx-auto pb-10">
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] animate-pulse overflow-hidden">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="px-5 py-4 border-b border-[#27272A] flex items-start gap-3"
+          >
+            <SkeletonBlock className="w-2 h-2 rounded-full mt-1.5 shrink-0" />
+            <div className="flex-1 flex flex-col gap-2">
+              <SkeletonLine className="w-full" />
+              <SkeletonLine className="w-40" />
+            </div>
+            <SkeletonLine className="w-12 shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function NotificationsPage() {
   const router = useRouter();
-  const { openSidebar } = useSidebar();
 
   const [authChecked, setAuthChecked] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -63,41 +82,17 @@ export default function NotificationsPage() {
     return () => unsub();
   }, [router]);
 
-  if (!authChecked || !userData) return null;
-
-  const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
+  const avatarUrl = userData
+    ? buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR)
+    : undefined;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border shrink-0 bg-base">
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={openSidebar}
-            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors shrink-0"
-            aria-label="Open sidebar"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-          <Image src="/icon.png" alt="" width={28} height={28} className="shrink-0 rounded-lg" aria-hidden />
-          <h1 className="font-heading text-2xl text-text-primary tracking-wide truncate">Notifications</h1>
-        </div>
-        <Link href="/profile" className="shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={avatarUrl}
-            alt="Profile"
-            width={36}
-            height={36}
-            className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-          />
-        </Link>
-      </div>
-
+    <PageShell
+      title="Notifications"
+      avatarUrl={avatarUrl}
+      loading={!authChecked}
+      skeleton={<NotificationsSkeleton />}
+    >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-lg mx-auto rounded-2xl border border-border bg-surface p-8 text-center">
           <p className="font-heading text-lg text-text-primary mb-2">No notifications yet</p>
@@ -106,6 +101,6 @@ export default function NotificationsPage() {
           </p>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
