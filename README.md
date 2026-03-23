@@ -16,7 +16,7 @@
   </p>
 
   <p align="center">
-    <a href="https://dev-quest-lilac.vercel.app/">View Demo</a>
+    <a target="_blank" href="https://dev-quest-lilac.vercel.app/">View Demo</a>
     ·
     <a href="https://github.com/Devcon-Pampanga/DevQuest/issues/new?labels=bug">Report Bug</a>
     ·
@@ -71,10 +71,47 @@ npm run dev
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Screenshots / Demo Link
+## Screenshots
+ 
+**1. Authentication & Onboarding**
+<br>
+<img height="300" src="https://github.com/user-attachments/assets/0808073e-a9dd-47dd-81fb-55dc41c5923e">
+<img height="300" src="https://github.com/user-attachments/assets/905e4ec1-563c-4510-9ffa-e0e7a28bf3f3">
+<img height="300" src="https://github.com/user-attachments/assets/e878f754-71b4-4c8a-bf0b-2e3ba85b0ccf">
+<br>
 
-- Demo link: `TBD`
-- Screenshots: `TBD`
+**2. Dashboard**
+<br>
+<img height="300" src="https://github.com/user-attachments/assets/0f07ad99-76fd-4bec-a472-413dad2ec6a2">
+<img height="300" src="https://github.com/user-attachments/assets/90c53ccf-d627-4a3a-b614-7bddc451e1fd">
+<br>
+
+**3. Quests & Milestones**
+<br>
+<img height="300" src="https://github.com/user-attachments/assets/f6dab79a-b5d8-4049-a508-80032cfdc8c4">
+<img height="300" src="https://github.com/user-attachments/assets/d157effd-bb22-4159-ab50-0ce236694982">
+<br>
+
+**4. Events & Details**
+<br>
+<img height="300" src="https://github.com/user-attachments/assets/5009b19e-d0e3-44c4-b698-b101b5075cb4">
+<img height="300" src="https://github.com/user-attachments/assets/59cee562-2bad-445d-a0d2-2971d18caf66">
+<img height="300" src="https://github.com/user-attachments/assets/558b9410-a23b-4348-8f66-f5dd1fd69201">
+<img height="300" src="https://github.com/user-attachments/assets/baa56c0f-bf41-4b46-a7e9-45ae6eb9c03a">
+<br>
+
+**5. Chapter Profile**
+<br>
+_Pending..._
+
+**6. Rewards & Marketplace**
+<br>
+_Pending..._
+
+**7. Volunteer Profile**
+<br>
+<img height="300" src="https://github.com/user-attachments/assets/a5db123c-15c1-4145-83b2-905001bc5cad">
+<br>
 
 ## Team Members
 
