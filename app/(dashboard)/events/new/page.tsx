@@ -234,7 +234,7 @@ function buildRolesFromPreset(type: string, scale: EventScale): RoleEntry[] {
 
 function NewEventSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-5 pb-10">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
       {[0, 1, 2, 3].map((i) => (
         <div key={i} className="flex flex-col gap-2">
           <SkeletonLine className="w-24" />
@@ -532,7 +532,7 @@ export default function NewEventPage() {
             "radial-gradient(ellipse 80% 40% at 60% 0%, rgba(124,58,237,0.12) 0%, transparent 70%)",
         }}
       >
-        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <div className="flex flex-col gap-5">
 
           {/* ── A: Import from Luma ─────────────────────────────────────────── */}

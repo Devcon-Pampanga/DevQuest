@@ -210,15 +210,15 @@ function EventCard({
 
 function EventsSkeleton() {
   return (
-    <div className="max-w-5xl mx-auto flex flex-col gap-5 pb-10">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
       {/* Search + filter bar */}
       <div className="flex gap-2 items-center">
         <SkeletonBlock className="h-10 flex-1 rounded-xl" />
         <SkeletonBlock className="h-10 w-24 rounded-xl shrink-0" />
       </div>
 
-      {/* Cards grid — mirrors grid-cols-1 md:grid-cols-2 xl:grid-cols-3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {/* Cards grid — mirrors grid-cols-1 sm:grid-cols-2 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
@@ -441,7 +441,7 @@ export default function EventsPage() {
       }
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-5xl mx-auto flex flex-col gap-5">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
         {/* Search + filter button */}
         <div className="relative" ref={filterRef}>
           <div className="flex gap-2 items-center">
@@ -614,7 +614,7 @@ export default function EventsPage() {
             <p className="text-sm">No events found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((event) => (
               <EventCard
                 key={event.eventId}
