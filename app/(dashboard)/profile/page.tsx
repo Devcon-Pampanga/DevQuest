@@ -324,7 +324,7 @@ function HeaderCard({
 
       <div className="border border-border rounded-2xl overflow-hidden" style={{ backgroundColor: "#100c1a" }}>
         <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-          <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Account</span>
+          <span className="font-heading text-sm text-text-primary">Account</span>
           <span
             className="text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full border"
             style={
@@ -462,6 +462,7 @@ function TierLadderRow({
   completedAt,
   completedCount,
   totalQuests,
+  barsReady,
 }: {
   tier: Quest["tier"];
   status: TierLadderStatus;
@@ -470,6 +471,7 @@ function TierLadderRow({
   completedAt: Timestamp | null;
   completedCount: number;
   totalQuests: number;
+  barsReady?: boolean;
 }) {
   const label = tier === "lead" ? leadTitle : (TIER_LABELS[tier] ?? tier);
 
@@ -528,10 +530,13 @@ function TierLadderRow({
             </p>
             <div className="h-2 rounded-full bg-border mt-2 overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full"
                 style={{
-                  width: `${totalQuests ? (completedCount / totalQuests) * 100 : 0}%`,
+                  width: "100%",
                   backgroundColor: teamColor,
+                  transformOrigin: "left center",
+                  transform: `scaleX(${barsReady ? (totalQuests ? completedCount / totalQuests : 0) : 0})`,
+                  transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
                 }}
               />
             </div>
@@ -562,6 +567,13 @@ function MilestonesSection({
   const meta = TEAM_META[activeTeam];
   const color = meta?.color ?? "#A855F7";
   const leadTitle = meta?.leadTitle ?? TIER_LABELS.lead;
+
+  const [barsReady, setBarsReady] = useState(false);
+  useEffect(() => {
+    setBarsReady(false);
+    const t = setTimeout(() => setBarsReady(true), 300);
+    return () => clearTimeout(t);
+  }, [activeTeam]);
 
   return (
     <div className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-4">
@@ -608,6 +620,7 @@ function MilestonesSection({
               completedAt={date}
               completedCount={completedCount}
               totalQuests={totalQuests}
+              barsReady={barsReady}
             />
           );
         })}
@@ -656,7 +669,7 @@ function ActivityFeed({
             const bg = xpLogSourceIconColor(e.source);
             const ts = e.createdAt;
             return (
-              <li key={`${e.logId ?? ts?.toMillis?.() ?? i}-${i}`} className="flex gap-3 items-start">
+              <li key={`${e.logId ?? ts?.toMillis?.() ?? i}-${i}`} className="flex gap-3 items-start" style={{ animation: `fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(i, 7) * 45}ms both` }}>
                 <div
                   className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center"
                   style={{ backgroundColor: `${bg}33` }}
@@ -735,15 +748,15 @@ function PortfolioCard({
       </div>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-[#0a0a0f] border border-border py-2 px-1">
-          <p className="text-lg font-heading text-[#06B6D4] tabular-nums">{eventCount}</p>
+          <p className="text-lg font-heading text-[#06B6D4] tabular-nums" style={{ animation: "count-pulse 600ms cubic-bezier(0.16, 1, 0.3, 1) 350ms 1 both" }}>{eventCount}</p>
           <p className="text-[10px] text-text-muted font-sans leading-tight">Events contributed</p>
         </div>
         <div className="rounded-lg bg-[#0a0a0f] border border-border py-2 px-1">
-          <p className="text-lg font-heading text-[#FACC15] tabular-nums">{reflectionCount}</p>
+          <p className="text-lg font-heading text-[#FACC15] tabular-nums" style={{ animation: "count-pulse 600ms cubic-bezier(0.16, 1, 0.3, 1) 450ms 1 both" }}>{reflectionCount}</p>
           <p className="text-[10px] text-text-muted font-sans leading-tight">Reflections</p>
         </div>
         <div className="rounded-lg bg-[#0a0a0f] border border-border py-2 px-1">
-          <p className="text-lg font-heading text-[#A855F7] tabular-nums">{badgesEarned}</p>
+          <p className="text-lg font-heading text-[#A855F7] tabular-nums" style={{ animation: "count-pulse 600ms cubic-bezier(0.16, 1, 0.3, 1) 550ms 1 both" }}>{badgesEarned}</p>
           <p className="text-[10px] text-text-muted font-sans leading-tight">Badges earned</p>
         </div>
       </div>
@@ -752,7 +765,9 @@ function PortfolioCard({
         onClick={onCopyShare}
         className="w-full py-3 rounded-xl font-heading font-semibold bg-accent-highlight text-white hover:bg-accent-primary transition-colors"
       >
-        {copied ? "Copied!" : "Copy Share Link"}
+        <span key={copied ? "copied" : "share"} style={copied ? { animation: "pop 250ms cubic-bezier(0.16, 1, 0.3, 1) both", display: "inline-block" } : undefined}>
+          {copied ? "Copied!" : "Copy Share Link"}
+        </span>
       </button>
     </div>
   );
@@ -770,7 +785,7 @@ interface BadgeDef {
 function BadgeTile({ badge }: { badge: BadgeDef }) {
   return (
     <div
-      className="relative rounded-xl border border-border bg-[#0a0a0f] p-4 flex flex-col items-center gap-2 text-center group"
+      className="relative rounded-xl border border-border bg-[#0a0a0f] p-4 flex flex-col items-center gap-2 text-center group hover:scale-[1.03] transition-transform duration-200"
       title={badge.earned ? "Earned" : badge.description}
     >
       <div
@@ -1162,32 +1177,42 @@ export default function ProfilePage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <>
-              <HeaderCard
-                userData={userData}
-                avatarUrl={avatarUrl}
-                onGenerateResume={handleGenerateResume}
-                isGeneratingResume={isGeneratingResume}
-              />
-              {milestoneTeam ? (
-                <MilestonesSection
+              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}>
+                <HeaderCard
                   userData={userData}
+                  avatarUrl={avatarUrl}
+                  onGenerateResume={handleGenerateResume}
+                  isGeneratingResume={isGeneratingResume}
+                />
+              </div>
+              {milestoneTeam ? (
+                <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both" }}>
+                  <MilestonesSection
+                    userData={userData}
+                    completions={completions}
+                    allQuests={allQuests}
+                    activeTeam={milestoneTeam}
+                    onTeamChange={setActiveTeam}
+                  />
+                </div>
+              ) : null}
+              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both" }}>
+                <PortfolioCard
                   completions={completions}
                   allQuests={allQuests}
-                  activeTeam={milestoneTeam}
-                  onTeamChange={setActiveTeam}
+                  eventCount={eventCount}
+                  reflectionCount={reflectionCount}
+                  badgesEarned={badgesEarned}
+                  onCopyShare={handleCopyShare}
+                  copied={copied}
                 />
-              ) : null}
-              <PortfolioCard
-                completions={completions}
-                allQuests={allQuests}
-                eventCount={eventCount}
-                reflectionCount={reflectionCount}
-                badgesEarned={badgesEarned}
-                onCopyShare={handleCopyShare}
-                copied={copied}
-              />
-              <BadgesGrid badges={badges} />
-              <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
+              </div>
+              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both" }}>
+                <BadgesGrid badges={badges} />
+              </div>
+              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both" }}>
+                <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
+              </div>
             </>
         </div>
       </div>
