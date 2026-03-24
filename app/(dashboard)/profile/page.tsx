@@ -834,7 +834,7 @@ function BadgesGrid({ badges }: { badges: BadgeDef[] }) {
 
 function ProfileSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-5 pb-10">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
       {/* Header card */}
       <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] animate-pulse p-5">
         <div className="flex gap-4">
@@ -1160,7 +1160,7 @@ export default function ProfilePage() {
       skeleton={<ProfileSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <>
               <HeaderCard
                 userData={userData}

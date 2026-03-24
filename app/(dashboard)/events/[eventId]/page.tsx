@@ -555,7 +555,7 @@ function QrScannerModal({
 
 function EventDetailSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-10">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
       {/* Header block */}
       <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-5 animate-pulse flex flex-col gap-3">
         <SkeletonLine className="w-56" />
@@ -1265,14 +1265,14 @@ export default function EventDetailPage() {
 
         <div className="flex-1 p-6">
           {coordTab === "details" && (
-            <div className="max-w-2xl mx-auto flex flex-col gap-5">
+            <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
               <HeaderCard />
               <RolesSection />
             </div>
           )}
 
           {coordTab === "volunteers" && (
-            <div className="max-w-3xl mx-auto flex flex-col gap-5">
+            <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -1505,7 +1505,7 @@ export default function EventDetailPage() {
       </div>
 
       <div className="flex-1 p-6">
-        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <HeaderCard />
 
           {/* Registration banner */}
@@ -1614,7 +1614,7 @@ export default function EventDetailPage() {
       {/* Floating Join button */}
       {upcoming && !joined && (
         <div className="fixed bottom-0 left-0 right-0 lg:left-56 p-4 bg-gradient-to-t from-base via-base/95 to-transparent">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-3xl lg:max-w-5xl mx-auto">
             <button
               onClick={() => event.isInternal ? handleJoin(event.roles[0]) : setShowRoleModal(true)}
               disabled={joiningLoading}

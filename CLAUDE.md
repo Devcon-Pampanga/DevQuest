@@ -399,3 +399,41 @@ attendance confirmation resolves.
 - **Reflection page** must validate all three conditions server-side before rendering: attended, not yet submitted, within deadline.
 - **Public portfolio page** (`/profile/[username]`) must never expose contact number or email — only username, chapter, team, tier, milestones, badges, and impact numbers.
 - When adding new pages, update this file and the project context document (`DevQuest_Project_Context.md`).
+
+---
+
+## Design Context
+
+### Users
+
+Filipino student volunteers (ages ~16–22) in the DEVCON Kids program. Two roles: volunteers and coordinators. Often on mobile, between school and volunteer commitments. This is frequently their first structured career-building experience.
+
+**The job to be done:** Transform "I helped run an event" into a verifiable, exportable career milestone — something credible enough to share with a recruiter.
+
+### Brand Personality
+
+**Bold · Playful · Energetic.** DevQuest feels like a coach genuinely excited about your progress — not a corporate HR system logging hours. Celebratory and forward-moving.
+
+### Emotional Goal
+
+**Proud of their progress.** The UI constantly reflects how far volunteers have come — XP history, tier badges, milestone counts front and center. Progress is never invisible; every interaction reinforces that effort is real, tracked, and valued.
+
+### Aesthetic Direction
+
+Dark-only. Purple-dominant (#7C3AED / #A855F7) with team colors as first-class identity markers. The dark base (#0a0a0f) is the stage; team colors and accent purples are the lights. Closer to a polished indie game dashboard than a career tool — RPG character sheet meets professional portfolio.
+
+**Anti-reference:** Generic SaaS / corporate (Jira, Linear, Google Workspace). No cold blues, no sterile white space, no enterprise-dashboard energy. If it could belong to a B2B productivity startup, it's wrong.
+
+**Accessibility:** Standard contrast, keyboard nav, semantic HTML. No formal WCAG compliance requirement.
+
+### Design Principles
+
+1. **Progress is always visible.** XP, tier, quest completion, milestone count — never bury these. A volunteer should feel their effort reflected back on every page.
+
+2. **Team identity shapes the interface.** Team colors (#F5C518 learners · #F97316 culture · #06B6D4 community · #9333EA creatives · #22C55E sustainability) should appear on all team-contextual content. Never render cards in neutral gray when team context is available.
+
+3. **Bold over subtle.** Stronger color, heavier type, larger numbers. Quiet designs read as low-effort here. When in doubt, push further.
+
+4. **Gamified but credible.** XP, tier badges, and quest completions are real professional milestones — treat them with visual weight, not novelty. The gamification should feel earned.
+
+5. **No corporate sterility.** Every component needs at least one moment of personality — a team color, a glowing border, a bold stat. If a section looks like it belongs in a business dashboard, it needs more.

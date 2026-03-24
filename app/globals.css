@@ -46,3 +46,30 @@ body {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-7px); }
 }
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes count-pulse {
+  0%, 100% { transform: scale(1); }
+  45%       { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes fade-up {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes count-pulse {
+    0%, 100% { opacity: 1; }
+    45%       { opacity: 0.6; }
+  }
+}

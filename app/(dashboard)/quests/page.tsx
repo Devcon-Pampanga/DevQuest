@@ -809,7 +809,7 @@ function ApprovalItem({
 
 function QuestsSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-10">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
       {/* Team tabs */}
       <div className="flex gap-2">
         <SkeletonBlock className="h-9 w-28 rounded-full" />
@@ -1153,7 +1153,7 @@ function QuestsPageContent() {
       skeleton={<QuestsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
 
           {/* ── Team pill switcher ─────────────────────────────────────────────── */}
           {tabs.length > 1 && (
@@ -1192,7 +1192,7 @@ function QuestsPageContent() {
 
           {/* ── Approvals tab ─────────────────────────────────────────────────── */}
           {!loadingCompletions && activeTab === "approvals" && (
-            <div className="max-w-2xl">
+            <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-heading text-lg text-text-primary">Pending Approvals</h2>
                 <button
@@ -1238,7 +1238,7 @@ function QuestsPageContent() {
 
           {/* ── Volunteer quest view ──────────────────────────────────────────── */}
           {!loadingCompletions && activeTab !== "approvals" && activeMeta && (
-            <div className="flex flex-col gap-5 max-w-2xl">
+            <div className="flex flex-col gap-5">
 
                 {/* Current Tier card — what the volunteer holds right now */}
                 <EarnedTierCard
