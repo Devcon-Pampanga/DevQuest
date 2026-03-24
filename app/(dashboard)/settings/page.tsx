@@ -349,7 +349,7 @@ export default function SettingsPage() {
           {/* ── Profile info ── */}
           <section className="rounded-2xl border border-border bg-surface overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
-              <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Profile Info</span>
+              <span className="font-heading text-sm text-text-primary">Profile Info</span>
             </div>
             <div className="px-5 py-5 flex flex-col gap-4">
               <Field label="Username">
@@ -411,7 +411,7 @@ export default function SettingsPage() {
           {/* ── Volunteer teams ── */}
           <section className="rounded-2xl border border-border bg-surface overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
-              <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Volunteer Teams</span>
+              <span className="font-heading text-sm text-text-primary">Volunteer Teams</span>
             </div>
             <div className="px-5 py-5 flex flex-col gap-3">
               <p className="text-xs text-text-muted font-sans">
@@ -448,7 +448,7 @@ export default function SettingsPage() {
                         className="shrink-0 px-3 py-1.5 rounded-lg border border-border text-xs font-sans text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         title={isOnly ? "You must remain on at least one team" : undefined}
                       >
-                        {isLoading ? "…" : "Leave"}
+                        {isLoading ? "Leaving…" : "Leave"}
                       </button>
                     ) : (
                       <button
@@ -464,7 +464,7 @@ export default function SettingsPage() {
                           color: meta.color,
                         }}
                       >
-                        {isLoading ? "…" : "Join"}
+                        {isLoading ? "Joining…" : "Join"}
                       </button>
                     )}
                   </div>
@@ -476,7 +476,7 @@ export default function SettingsPage() {
           {/* ── Danger zone ── */}
           <section className="rounded-2xl border border-border bg-surface overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
-              <span className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Account</span>
+              <span className="font-heading text-sm text-text-primary">Account</span>
             </div>
             <div className="px-5 py-5 flex flex-col gap-3">
               <button
@@ -488,46 +488,48 @@ export default function SettingsPage() {
                 {logoutLoading ? "Signing out…" : "Log Out"}
               </button>
 
-              {!confirmDelete ? (
-                <button
-                  type="button"
-                  onClick={() => { setConfirmDelete(true); setDeleteError(""); }}
-                  disabled={logoutLoading || deleteLoading}
-                  className="w-full py-2.5 px-4 rounded-xl font-sans text-sm border border-border text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-50"
-                >
-                  Delete Account
-                </button>
-              ) : (
-                <div className="rounded-xl border border-red-500/25 overflow-hidden" style={{ backgroundColor: "#1a0d0d" }}>
-                  <div className="px-4 pt-4 pb-3">
-                    <p className="text-text-secondary text-xs text-center leading-relaxed mb-1">
-                      This will permanently delete your account and all associated data.
-                    </p>
-                    <p className="text-red-400/80 text-xs text-center mb-4">This cannot be undone.</p>
-                    {deleteError ? (
-                      <p className="text-xs text-red-400 font-sans text-center mb-3">{deleteError}</p>
-                    ) : null}
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(false)}
-                        disabled={deleteLoading}
-                        className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleDeleteAccount()}
-                        disabled={deleteLoading}
-                        className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {deleteLoading ? "Deleting…" : "Yes, Delete"}
-                      </button>
+              <div className="pt-2 border-t border-border">
+                <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4">
+                  {!confirmDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => { setConfirmDelete(true); setDeleteError(""); }}
+                      disabled={logoutLoading || deleteLoading}
+                      className="w-full py-2.5 px-4 rounded-xl font-sans text-sm border border-red-800/60 text-red-400 hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                    >
+                      Delete Account
+                    </button>
+                  ) : (
+                    <div>
+                      <p className="text-text-secondary text-xs text-center leading-relaxed mb-1">
+                        This will permanently delete your account and all associated data.
+                      </p>
+                      <p className="text-red-400/80 text-xs text-center mb-4">This cannot be undone.</p>
+                      {deleteError ? (
+                        <p className="text-xs text-red-400 font-sans text-center mb-3">{deleteError}</p>
+                      ) : null}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(false)}
+                          disabled={deleteLoading}
+                          className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteAccount()}
+                          disabled={deleteLoading}
+                          className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {deleteLoading ? "Deleting…" : "Yes, Delete"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </section>
 
