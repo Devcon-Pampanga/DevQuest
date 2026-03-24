@@ -39,7 +39,7 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
 
 function NotificationsSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto pb-10">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto pb-10">
       <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] animate-pulse overflow-hidden">
         {[0, 1, 2, 3].map((i) => (
           <div
@@ -94,11 +94,13 @@ export default function NotificationsPage() {
       skeleton={<NotificationsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-lg mx-auto rounded-2xl border border-border bg-surface p-8 text-center">
-          <p className="font-heading text-lg text-text-primary mb-2">No notifications yet</p>
-          <p className="text-sm text-text-secondary font-sans leading-relaxed">
-            When you get quest updates, attendance confirmations, or reminders, they will show up here. This inbox is coming soon.
-          </p>
+        <div className="max-w-3xl lg:max-w-5xl mx-auto pb-10">
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+            <p className="font-heading text-lg text-text-primary mb-2">No notifications yet</p>
+            <p className="text-sm text-text-secondary font-sans leading-relaxed">
+              When you get quest updates, attendance confirmations, or reminders, they will show up here. This inbox is coming soon.
+            </p>
+          </div>
         </div>
       </div>
     </PageShell>

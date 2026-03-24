@@ -233,46 +233,70 @@ function totalSlots(roles: EventDoc["roles"]): number {
 
 function DashboardSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-10">
-      {/* Hero card */}
-      <div className="rounded-2xl border border-[#27272A] p-5 flex gap-4">
-        <SkeletonBlock className="w-24 h-24 rounded-2xl shrink-0" />
-        <div className="flex flex-col gap-3 flex-1">
-          <SkeletonLine className="w-40" />
+    <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+      {/* Identity Card */}
+      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] mt-6 mb-4 overflow-hidden animate-pulse">
+        <div className="p-5 flex items-start gap-4">
+          <SkeletonBlock className="w-[76px] h-[76px] rounded-xl shrink-0" />
+          <div className="flex-1 flex flex-col gap-2.5 pt-0.5">
+            <SkeletonLine className="w-48" />
+            <SkeletonLine className="w-28" />
+            <SkeletonLine className="w-36" />
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <SkeletonBlock className="h-7 w-16 rounded-lg" />
+            <SkeletonBlock className="h-7 w-16 rounded-lg" />
+          </div>
+        </div>
+        <div className="border-t border-[#27272A] px-5 py-3.5 flex flex-col gap-2">
+          <div className="flex justify-between">
+            <SkeletonLine className="w-40" />
+            <SkeletonLine className="w-8" />
+          </div>
+          <SkeletonBlock className="h-1 w-full rounded-full" />
+        </div>
+      </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 animate-pulse">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2">
+            <SkeletonLine className="w-16" />
+            <SkeletonBlock className="h-8 w-12 rounded-lg" />
+            <SkeletonLine className="w-20" />
+          </div>
+        ))}
+      </div>
+      {/* Quest cards */}
+      <div className="mb-4">
+        <div className="flex items-baseline justify-between mb-3">
           <SkeletonLine className="w-28" />
-          <SkeletonLine className="w-full" />
-          <SkeletonBlock className="h-2 rounded-full w-full" />
-        </div>
-      </div>
-      {/* XP band */}
-      <div className="rounded-2xl border border-[#27272A] p-5">
-        <SkeletonLine className="w-20 mb-2" />
-        <SkeletonBlock className="h-8 w-32 mb-3 rounded-lg" />
-        <SkeletonBlock className="h-2 rounded-full w-full" />
-      </div>
-      {/* 2-col stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <SkeletonBlock className="h-20 rounded-2xl" />
-        <SkeletonBlock className="h-20 rounded-2xl" />
-      </div>
-      {/* Active quests */}
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-between">
-          <SkeletonLine className="w-24" />
           <SkeletonLine className="w-12" />
         </div>
-        <SkeletonBlock className="h-16 rounded-2xl" />
-        <SkeletonBlock className="h-16 rounded-2xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-pulse">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <SkeletonLine className="w-32" />
+                <SkeletonBlock className="h-5 w-14 rounded-lg shrink-0" />
+              </div>
+              <SkeletonLine className="w-full" />
+              <SkeletonLine className="w-3/4" />
+              <div className="border-t border-[#27272A] pt-2 mt-1">
+                <SkeletonLine className="w-24" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      {/* Upcoming events */}
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-between">
-          <SkeletonLine className="w-32" />
+      {/* Events */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <SkeletonLine className="w-36" />
           <SkeletonLine className="w-12" />
         </div>
-        <div className="flex gap-3">
-          <SkeletonBlock className="h-24 rounded-2xl w-[240px] shrink-0" />
-          <SkeletonBlock className="h-24 rounded-2xl w-[240px] shrink-0" />
+        <div className="flex gap-3 animate-pulse">
+          <SkeletonBlock className="h-28 w-[240px] rounded-2xl shrink-0" />
+          <SkeletonBlock className="h-28 w-[240px] rounded-2xl shrink-0" />
         </div>
       </div>
     </div>
@@ -307,6 +331,7 @@ export default function DashboardPage() {
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [draftOptions, setDraftOptions] = useState<AvatarOptions>(DEFAULT_AVATAR);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [barsReady, setBarsReady] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -457,6 +482,16 @@ export default function DashboardPage() {
   useEffect(() => {
     void loadChapterVolunteers();
   }, [loadChapterVolunteers]);
+
+  // Delay bar fill animations until after section entrances settle
+  useEffect(() => {
+    if (dashboardLoading) {
+      setBarsReady(false);
+      return;
+    }
+    const t = setTimeout(() => setBarsReady(true), 350);
+    return () => clearTimeout(t);
+  }, [dashboardLoading]);
 
   const primaryTeamId = useMemo(
     () => pickPrimaryTeam(userData?.teams ?? [], completions, allQuests),
@@ -609,294 +644,358 @@ export default function DashboardPage() {
         loading={dashboardLoading}
         skeleton={<DashboardSkeleton />}
       >
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-10">
-            {error ? <p className="text-red-400 text-sm text-center">{error}</p> : null}
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ background: `radial-gradient(ellipse 90% 420px at -5% -5%, ${teamColor}0f 0%, transparent 55%)` }}
+        >
+          <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+            {error ? <p className="text-red-400 text-sm pt-4 mb-2">{error}</p> : null}
 
-            <>
-                {/* Hero */}
-                <div
-                  className="rounded-2xl border border-border overflow-hidden relative"
-                  style={{
-                    background: `linear-gradient(135deg, ${teamColor}22 0%, #1a1a2e 45%, #0f0f18 100%)`,
-                  }}
-                >
-                  <div className="p-5 sm:p-6 flex flex-col sm:flex-row gap-6">
-                    <div className="relative shrink-0 mx-auto sm:mx-0">
-                      <button
-                        type="button"
-                        onClick={openAvatarEditor}
-                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-border block focus:outline-none focus:ring-2 focus:ring-accent-highlight"
-                        style={{ backgroundColor: "#100c1a" }}
-                        aria-label="Edit avatar"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={avatarUrl} alt="" width={112} height={112} className="w-full h-full object-cover" />
-                      </button>
-                      <div
-                        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border border-border pointer-events-none"
-                        style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
-                      >
+            {/* ── Identity Card ─────────────────────────────────────────────────── */}
+            <div
+              className="rounded-2xl border bg-surface mt-6 mb-4 overflow-hidden"
+              style={{
+                borderColor: `${teamColor}40`,
+                animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              }}
+            >
+              <div className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className="relative group shrink-0">
+                    <button
+                      type="button"
+                      onClick={openAvatarEditor}
+                      className="w-[76px] h-[76px] rounded-xl overflow-hidden border-2 block focus:outline-none focus:ring-2 focus:ring-accent-highlight relative"
+                      style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
+                      aria-label="Edit avatar"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={avatarUrl} alt="" width={76} height={76} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <PencilIcon />
                       </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0 flex flex-col gap-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h1 className="font-heading text-xl sm:text-2xl text-text-primary truncate">
-                          {displayName(userData!.username)}
-                        </h1>
-                        {userData!.role === "coordinator" ? (
-                          <span
-                            className="text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full border shrink-0"
-                            style={{ borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }}
-                          >
-                            Coordinator
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-sm text-text-secondary font-sans">
-                        <span className="text-text-primary font-medium">{userData!.chapterId}</span>
-                      </p>
-                      {primaryMeta && currentTier ? (
-                        <p className="text-sm font-sans" style={{ color: teamColor }}>
-                          {primaryMeta.label} — {currentTierLabel}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-text-muted font-sans">Select teams in your profile to track quest progress.</p>
-                      )}
-
-                      {tierProgress && primaryMeta ? (
-                        tierProgress.done && tierProgress.total > 0 ? (
-                          <div>
-                            <p className="text-xs font-sans text-text-secondary mb-2">
-                              All quests complete for {primaryMeta.label}. Outstanding work.
-                            </p>
-                            <div className="h-2 rounded-full bg-black/30 overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: "100%", backgroundColor: teamColor }} />
-                            </div>
-                          </div>
-                        ) : tierProgress.total > 0 ? (
-                          <div>
-                            <p className="text-xs font-sans text-text-secondary mb-2">
-                              {tierProgress.completed} of {tierProgress.total} quests
-                              {tierProgress.nextLabel
-                                ? ` to ${tierProgress.nextLabel}`
-                                : primaryMeta
-                                  ? ` toward ${primaryMeta.leadTitle}`
-                                  : ""}
-                            </p>
-                            <div className="h-2 rounded-full bg-black/30 overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all"
-                                style={{ width: `${tierProgress.pct}%`, backgroundColor: teamColor }}
-                              />
-                            </div>
-                          </div>
-                        ) : null
+                    </button>
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h1 className="font-heading text-3xl sm:text-4xl text-text-primary leading-none">
+                        {displayName(userData!.username)}
+                      </h1>
+                      {userData!.role === "coordinator" ? (
+                        <span
+                          className="text-[10px] font-sans uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0"
+                          style={{ borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }}
+                        >
+                          Coordinator
+                        </span>
                       ) : null}
-
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href="/profile#badges"
-                          className="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
+                    </div>
+                    <p className="text-sm text-text-muted font-sans mb-2.5">{userData!.chapterId}</p>
+                    {primaryMeta && currentTier ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className="text-xs font-sans px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: `${teamColor}18`, color: teamColor }}
                         >
-                          View Badges
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={handleCopyShare}
-                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                            <circle cx="18" cy="5" r="3" />
-                            <circle cx="6" cy="12" r="3" />
-                            <circle cx="18" cy="19" r="3" />
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                          </svg>
-                          {copiedShare ? "Copied" : "Share"}
-                        </button>
+                          {primaryMeta.label}
+                        </span>
+                        <span className="text-text-muted text-xs select-none">·</span>
+                        <span className="text-xs text-text-secondary font-sans">{currentTierLabel}</span>
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-xs text-text-muted font-sans">No teams selected.</p>
+                    )}
                   </div>
-
-                  {/* XP band */}
-                  <div className="px-5 sm:px-6 py-4 border-t border-border/80 bg-black/20">
-                    <div className="flex flex-wrap items-end justify-between gap-3 mb-2">
-                      <div>
-                        <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-1">Level {xpProgress.level}</p>
-                        <p className="font-sans font-bold text-3xl tabular-nums text-text-primary">
-                          {(userData!.xp ?? 0).toLocaleString()}
-                          <span className="text-sm font-sans font-normal text-text-muted ml-1.5">XP</span>
-                        </p>
-                      </div>
-                      <p className="text-xs text-text-secondary font-sans text-right max-w-[14rem]">
-                        {xpProgress.xpToNextLevel > 0 ? (
-                          <>
-                            {xpProgress.xpToNextLevel.toLocaleString()} XP to Level {xpProgress.level + 1}
-                          </>
-                        ) : (
-                          <>Max band progress</>
-                        )}
-                      </p>
-                    </div>
-                    <div className="h-2 rounded-full bg-black/35 overflow-hidden mb-1">
-                      <div
-                        className="h-full rounded-full bg-accent-highlight"
-                        style={{ width: `${xpProgress.pctToNextLevel}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-text-muted font-sans">
-                      {Math.round(xpProgress.pctToNextLevel)}% toward your next level — keep earning XP through events, quests, and reflections.
-                    </p>
-                  </div>
-                </div>
-
-                {pendingReflection ? (
-                  <div className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <span className="text-2xl shrink-0" aria-hidden>
-                        ⏳
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-heading text-amber-100/95">
-                          {pendingReflection.eventName} — Reflection due in {pendingReflection.hoursLeft} hour
-                          {pendingReflection.hoursLeft !== 1 ? "s" : ""}
-                        </p>
-                        <p className="text-xs text-text-muted font-sans mt-1">Submit before the deadline to earn reflection XP.</p>
-                      </div>
-                    </div>
+                  <div className="hidden sm:flex gap-2 shrink-0">
                     <Link
-                      href={`/events/${pendingReflection.eventId}/reflect`}
-                      className="shrink-0 inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#ea580c] text-white text-sm font-heading font-semibold transition-colors"
+                      href="/profile#badges"
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
                     >
-                      Submit Now →
+                      Badges
                     </Link>
-                  </div>
-                ) : null}
-
-                {userData!.role === "coordinator" ? (
-                  <div className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4">
-                    <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Coordinator</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Link
-                        href="/quests?tab=approvals"
-                        className="rounded-xl border border-border p-4 hover:border-accent-primary/40 transition-colors"
-                      >
-                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Pending approvals</p>
-                        <p className="font-heading text-2xl text-accent-highlight tabular-nums">{approvalsCount}</p>
-                      </Link>
-                      <Link
-                        href="/events/new"
-                        className="rounded-xl border border-border p-4 hover:border-accent-primary/40 transition-colors flex flex-col justify-center"
-                      >
-                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Quick action</p>
-                        <p className="font-heading text-lg text-text-primary">Add Event</p>
-                      </Link>
-                      <div className="rounded-xl border border-border p-4">
-                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Active volunteers</p>
-                        <p className="font-heading text-2xl text-text-primary tabular-nums">
-                          {chapterVolunteersActive === null ? "—" : chapterVolunteersActive}
-                        </p>
-                        <p className="text-[10px] text-text-muted font-sans mt-1">Onboarding complete · your chapter</p>
-                      </div>
-                      <div className="rounded-xl border border-border p-4">
-                        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-1">Events this month</p>
-                        <p className="font-heading text-2xl text-text-primary tabular-nums">{eventsThisMonthCount}</p>
-                        <p className="text-[10px] text-text-muted font-sans mt-1">Scheduled in {userData!.chapterId}</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-surface border border-border p-4">
-                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Achievements</p>
-                    <p className="font-heading text-2xl text-accent-highlight tabular-nums">{completedQuestCount}</p>
-                    <p className="text-[10px] text-text-muted font-sans mt-1">Quests completed</p>
-                  </div>
-                  <div className="rounded-2xl bg-surface border border-border p-4">
-                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Events</p>
-                    <p className="font-heading text-2xl text-[#22C55E] tabular-nums">{eventsAttendedCount}</p>
-                    <p className="text-[10px] text-text-muted font-sans mt-1">Events attended</p>
+                    <button
+                      type="button"
+                      onClick={handleCopyShare}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                        <circle cx="18" cy="5" r="3" />
+                        <circle cx="6" cy="12" r="3" />
+                        <circle cx="18" cy="19" r="3" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                      </svg>
+                      {copiedShare ? "Copied" : "Share"}
+                    </button>
                   </div>
                 </div>
-
-                <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Active quests</h2>
-                    <Link href="/quests" className="text-xs font-heading text-accent-highlight hover:underline">
-                      View All
-                    </Link>
-                  </div>
-                  {activeQuestCards.length === 0 ? (
-                    <p className="text-sm text-text-muted font-sans rounded-2xl border border-border bg-surface px-4 py-6 text-center">
-                      No active quests right now. Head to Quests to see what is available.
+                {/* Mobile actions */}
+                <div className="flex sm:hidden gap-2 mt-4">
+                  <Link
+                    href="/profile#badges"
+                    className="flex-1 inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-white/5 text-xs font-heading uppercase tracking-wider transition-colors"
+                  >
+                    Badges
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleCopyShare}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-white/5 text-xs font-heading uppercase tracking-wider transition-colors"
+                  >
+                    {copiedShare ? "Copied" : "Share"}
+                  </button>
+                </div>
+              </div>
+              {/* Tier progress footer */}
+              {tierProgress && primaryMeta && tierProgress.total > 0 ? (
+                <div
+                  className="border-t px-5 py-3.5"
+                  style={{ borderColor: `${teamColor}25`, backgroundColor: `${teamColor}08` }}
+                >
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <p className="text-xs font-sans text-text-muted">
+                      {tierProgress.done ? (
+                        <>All quests complete — <span style={{ color: teamColor }}>{primaryMeta.label}</span></>
+                      ) : (
+                        <>{tierProgress.completed} / {tierProgress.total} quests to <span style={{ color: teamColor }}>{tierProgress.nextLabel || primaryMeta.leadTitle}</span></>
+                      )}
                     </p>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {activeQuestCards.map((q) => (
-                        <Link
-                          key={q.questId}
-                          href="/quests"
-                          className="rounded-2xl border bg-surface p-4 hover:border-accent-primary/50 transition-colors"
-                          style={{ borderColor: `${teamColor}44` }}
+                    <span className="text-xs font-sans tabular-nums shrink-0" style={{ color: tierProgress.done ? teamColor : "#52525B" }}>
+                      {tierProgress.pct}%
+                    </span>
+                  </div>
+                  <div className="w-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)", height: "4px" }}>
+                    <div
+                      style={{
+                        height: "4px",
+                        width: "100%",
+                        borderRadius: "9999px",
+                        transformOrigin: "left center",
+                        transform: `scaleX(${barsReady ? tierProgress.pct / 100 : 0})`,
+                        transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
+                        backgroundColor: teamColor,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* ── Stats Grid ────────────────────────────────────────────────────── */}
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"
+              style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 55ms both" }}
+            >
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Level</p>
+                <p className="font-heading text-5xl tabular-nums text-text-primary leading-none mb-1">{xpProgress.level}</p>
+                <p className="text-[11px] text-text-muted font-sans">
+                  {xpProgress.xpToNextLevel > 0 ? `${xpProgress.xpToNextLevel.toLocaleString()} XP to next` : "Max level"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Total XP</p>
+                <p className="font-heading text-4xl tabular-nums text-text-primary leading-none mb-2">
+                  {(userData!.xp ?? 0).toLocaleString()}
+                </p>
+                <div className="w-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)", height: "3px" }}>
+                  <div
+                    className="h-full rounded-full bg-accent-highlight"
+                    style={{
+                      width: "100%",
+                      transformOrigin: "left center",
+                      transform: `scaleX(${barsReady ? xpProgress.pctToNextLevel / 100 : 0})`,
+                      transition: barsReady ? "transform 900ms cubic-bezier(0.16, 1, 0.3, 1) 100ms" : "none",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Quests Done</p>
+                <p className="font-heading text-4xl tabular-nums text-accent-highlight leading-none mb-1">{completedQuestCount}</p>
+                <p className="text-[11px] text-text-muted font-sans">milestones earned</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Events</p>
+                <p className="font-heading text-4xl tabular-nums leading-none mb-1" style={{ color: teamColor }}>{eventsAttendedCount}</p>
+                <p className="text-[11px] text-text-muted font-sans">attended</p>
+              </div>
+            </div>
+
+            {/* ── Reflection nudge ─────────────────────────────────────────────── */}
+            {pendingReflection ? (
+              <div
+                className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"
+                style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both" }}
+              >
+                <div className="flex items-start gap-3 min-w-0">
+                  <span className="text-xl shrink-0" aria-hidden>⏳</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-heading text-amber-100/95">
+                      {pendingReflection.eventName} — reflection due in {pendingReflection.hoursLeft}h
+                    </p>
+                    <p className="text-xs text-text-muted font-sans mt-0.5">Submit before the deadline to earn +25 XP.</p>
+                  </div>
+                </div>
+                <Link
+                  href={`/events/${pendingReflection.eventId}/reflect`}
+                  className="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-heading transition-colors"
+                >
+                  Submit Now →
+                </Link>
+              </div>
+            ) : null}
+
+            {/* ── Coordinator ──────────────────────────────────────────────────── */}
+            {userData!.role === "coordinator" ? (
+              <div
+                className="mb-4"
+                style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both" }}
+              >
+                <h2 className="font-heading text-[11px] text-text-secondary mb-3 uppercase tracking-widest">Coordinator</h2>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <Link
+                    href="/quests?tab=approvals"
+                    className="rounded-2xl border bg-surface p-4 hover:border-accent-primary/60 transition-colors"
+                    style={{
+                      borderColor: approvalsCount > 0 ? "#A855F755" : "#27272A",
+                      backgroundColor: approvalsCount > 0 ? "#A855F708" : "#1a1a2e",
+                    }}
+                  >
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Pending approvals</p>
+                    <p
+                      className="font-heading text-2xl text-accent-highlight tabular-nums"
+                      style={approvalsCount > 0 ? { animation: "count-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) 700ms 3" } : undefined}
+                    >{approvalsCount}</p>
+                    <p className="text-xs text-text-muted font-sans mt-1.5">Awaiting review</p>
+                  </Link>
+                  <Link
+                    href="/events/new"
+                    className="rounded-2xl p-4 flex flex-col justify-between transition-colors hover:bg-accent-highlight/20"
+                    style={{ backgroundColor: "#A855F714", border: "1px solid #A855F730" }}
+                  >
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Quick action</p>
+                    <p className="font-heading text-lg text-text-primary">Add Event</p>
+                    <p className="text-xs font-sans mt-1.5" style={{ color: "#A855F7" }}>Create new →</p>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-border bg-surface p-4">
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Active volunteers</p>
+                    <p className="font-heading text-2xl text-text-primary tabular-nums">
+                      {chapterVolunteersActive === null ? "—" : chapterVolunteersActive}
+                    </p>
+                    <p className="text-xs text-text-muted font-sans mt-0.5">in your chapter</p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-surface p-4">
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">This month</p>
+                    <p className="font-heading text-2xl text-text-primary tabular-nums">{eventsThisMonthCount}</p>
+                    <p className="text-xs text-text-muted font-sans mt-0.5">events in {userData!.chapterId}</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* ── Active Quests — cards ─────────────────────────────────────────── */}
+            <section
+              className="mb-4"
+              style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both" }}
+            >
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="font-heading text-xl text-text-primary">Active quests</h2>
+                <Link href="/quests" className="text-xs font-heading text-accent-highlight hover:text-text-primary transition-colors" aria-label="View all quests">
+                  View all
+                </Link>
+              </div>
+              {activeQuestCards.length === 0 ? (
+                <div className="rounded-2xl border border-border bg-surface px-5 py-8 text-center">
+                  <p className="text-sm text-text-muted font-sans">No active quests right now. Head to Quests to see what&#39;s available.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {activeQuestCards.map((q, i) => (
+                    <Link
+                      key={q.questId}
+                      href="/quests"
+                      className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 transition-colors flex flex-col gap-2.5"
+                      style={{
+                        animation: `fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) ${135 + i * 60}ms both`,
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-heading text-base text-text-primary leading-snug">{q.name}</p>
+                        <span
+                          className="shrink-0 text-xs font-heading tabular-nums px-2 py-0.5 rounded-lg whitespace-nowrap"
+                          style={{ color: teamColor, backgroundColor: `${teamColor}18` }}
                         >
-                          <p className="font-heading text-sm text-text-primary leading-snug">{q.name}</p>
-                          <p className="text-[11px] text-text-muted font-sans mt-2 line-clamp-2">{q.description}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-[11px] font-sans uppercase tracking-widest text-text-muted">Upcoming events</h2>
-                    <Link href="/events" className="text-xs font-heading text-accent-highlight hover:underline">
-                      View All
+                          +{q.xpReward} XP
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-muted font-sans line-clamp-2 flex-1">{q.description}</p>
+                      <div className="flex items-center gap-2 pt-2.5 border-t border-border mt-auto">
+                        <span className="text-[10px] font-sans uppercase tracking-widest" style={{ color: teamColor }}>
+                          {primaryMeta?.label}
+                        </span>
+                        <span className="text-text-muted text-xs select-none">·</span>
+                        <span className="text-[10px] text-text-muted font-sans">{q.completionMethod.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</span>
+                      </div>
                     </Link>
-                  </div>
-                  {upcomingChapterEvents.length === 0 ? (
-                    <p className="text-sm text-text-muted font-sans rounded-2xl border border-border bg-surface px-4 py-6 text-center">
-                      No upcoming events in your chapter. Check back soon.
-                    </p>
-                  ) : (
-                    <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-minimal -mx-4 px-4 sm:-mx-6 sm:px-6">
-                      {upcomingChapterEvents.map((ev) => {
-                        const total = totalSlots(ev.roles);
-                        const reg = upcomingRegCounts[ev.eventId] ?? 0;
-                        const pct = total > 0 ? Math.min(100, (reg / total) * 100) : 0;
-                        return (
-                          <Link
-                            key={ev.eventId}
-                            href={`/events/${ev.eventId}`}
-                            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 transition-colors snap-start shrink-0 w-[240px]"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <p className="font-heading text-sm text-text-primary leading-snug line-clamp-2">{ev.name}</p>
-                              <span className="text-[10px] font-sans uppercase tracking-wide text-green-400 shrink-0 mt-0.5">Upcoming</span>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* ── Upcoming Events ──────────────────────────────────────────────── */}
+            <section
+              style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both" }}
+            >
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="font-heading text-xl text-text-primary">Upcoming events</h2>
+                <Link href="/events" className="text-xs font-heading text-accent-highlight hover:text-text-primary transition-colors" aria-label="View all events">
+                  View all
+                </Link>
+              </div>
+              {upcomingChapterEvents.length === 0 ? (
+                <div className="rounded-2xl border border-border bg-surface px-5 py-8 text-center">
+                  <p className="text-sm text-text-muted font-sans">No upcoming events in your chapter. Check back soon.</p>
+                </div>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-minimal -mx-4 px-4 sm:-mx-6 sm:px-6">
+                  {upcomingChapterEvents.map((ev, i) => {
+                    const total = totalSlots(ev.roles);
+                    const reg = upcomingRegCounts[ev.eventId] ?? 0;
+                    const pct = total > 0 ? Math.min(100, (reg / total) * 100) : 0;
+                    return (
+                      <Link
+                        key={ev.eventId}
+                        href={`/events/${ev.eventId}`}
+                        className="rounded-2xl border border-border bg-surface p-5 hover:border-accent-primary/50 hover:scale-[1.02] transition snap-start shrink-0 w-[240px] flex flex-col gap-3"
+                        style={{ animation: `fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) ${175 + i * 50}ms both` }}
+                      >
+                        <div>
+                          <p className="text-[11px] font-sans uppercase tracking-widest mb-1.5" style={{ color: teamColor }}>
+                            {formatEventDate(ev.date)}
+                          </p>
+                          <p className="font-heading text-sm text-text-primary leading-snug line-clamp-2">{ev.name}</p>
+                        </div>
+                        {total > 0 ? (
+                          <div>
+                            <div className="flex justify-between text-xs font-sans mb-1.5 text-text-muted">
+                              <span>Slots</span>
+                              <span className="tabular-nums text-text-secondary">{reg}/{total}</span>
                             </div>
-                            <p className="text-xs text-text-secondary font-sans">{formatEventDate(ev.date)}</p>
-                            {total > 0 ? (
-                              <div className="mt-3">
-                                <div className="flex justify-between text-[10px] text-text-muted font-sans mb-1">
-                                  <span>Slots</span>
-                                  <span className="tabular-nums">{reg}/{total}</span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-black/30 overflow-hidden">
-                                  <div className="h-full rounded-full bg-accent-highlight" style={{ width: `${pct}%` }} />
-                                </div>
-                              </div>
-                            ) : null}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-            </>
+                            <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
+                              <div className="h-full rounded-full bg-accent-highlight" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
           </div>
         </div>
       </PageShell>
