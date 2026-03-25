@@ -391,10 +391,10 @@ export default function SettingsPage() {
               </Field>
 
               {saveError ? (
-                <p className="text-xs text-red-400 font-sans">{saveError}</p>
+                <p className="text-xs text-red-400 font-sans animate-fade-in">{saveError}</p>
               ) : null}
               {saveSuccess ? (
-                <p className="text-xs text-green-400 font-sans">Changes saved.</p>
+                <p className="text-xs text-green-400 font-sans animate-fade-in">Changes saved.</p>
               ) : null}
 
               <button
@@ -500,7 +500,7 @@ export default function SettingsPage() {
                       Delete Account
                     </button>
                   ) : (
-                    <div>
+                    <div className="animate-fade-in">
                       <p className="text-text-secondary text-xs text-center leading-relaxed mb-1">
                         This will permanently delete your account and all associated data.
                       </p>
@@ -539,10 +539,10 @@ export default function SettingsPage() {
       {/* ── Avatar editor modal ── */}
       {showAvatarEditor ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !savingAvatar && setShowAvatarEditor(false)} role="presentation" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !savingAvatar && setShowAvatarEditor(false)} role="presentation" style={{ animation: "fade-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both" }} />
           <div
             className="relative border border-border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl"
-            style={{ backgroundColor: "#1a1625" }}
+            style={{ backgroundColor: "#1a1625", animation: "modal-in 350ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
               <h2 className="font-heading text-[1rem] text-white">Customize Avatar</h2>

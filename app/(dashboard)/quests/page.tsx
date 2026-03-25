@@ -194,6 +194,13 @@ function HeroProgressCard({
   ).length;
   const pct = total > 0 ? (completedCount / total) * 100 : 0;
 
+  const [barsReady, setBarsReady] = useState(false);
+  useEffect(() => {
+    setBarsReady(false);
+    const t = setTimeout(() => setBarsReady(true), 350);
+    return () => clearTimeout(t);
+  }, [teamId, currentTier]);
+
   return (
     <div
       className="rounded-2xl overflow-hidden border border-[#27272A] relative"
@@ -261,10 +268,16 @@ function HeroProgressCard({
         </div>
 
         {/* Progress bar */}
-        <div className="h-2 w-full rounded-full bg-zinc-800/60">
+        <div className="h-2 w-full rounded-full bg-zinc-800/60 overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, backgroundColor: color }}
+            className="h-full rounded-full"
+            style={{
+              width: "100%",
+              backgroundColor: color,
+              transformOrigin: "left center",
+              transform: `scaleX(${barsReady ? pct / 100 : 0})`,
+              transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
+            }}
           />
         </div>
       </div>
@@ -424,7 +437,7 @@ function CollapsibleQuestTile({
 
       {/* ── Expanded body ──────────────────────────────────────────────── */}
       {isExpanded && !locked && (
-        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-[#27272A]">
+        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-[#27272A] animate-fade-in">
 
           {/* Status + Method row */}
           <div className="flex items-center gap-2 flex-wrap pt-3">
@@ -1212,7 +1225,7 @@ function QuestsPageContent() {
                 </div>
               ) : approvals.length === 0 ? (
                 <div className="text-center py-16">
-                  <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-4 animate-float">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -1289,25 +1302,26 @@ function QuestsPageContent() {
 
                     {/* Collapsible quest tiles */}
                     <div className="flex flex-col gap-2.5">
-                      {currentTierQuests.map((quest) => {
+                      {currentTierQuests.map((quest, qi) => {
                         const status = getQuestUIStatus(quest, completions, true);
                         return (
-                          <CollapsibleQuestTile
-                            key={quest.questId}
-                            quest={quest}
-                            status={status}
-                            completion={completions[quest.questId]}
-                            teamColor={activeMeta.color}
-                            isExpanded={expandedQuestId === quest.questId}
-                            onToggle={() =>
-                              setExpandedQuestId(
-                                expandedQuestId === quest.questId ? null : quest.questId
-                              )
-                            }
-                            onSelfMark={() => handleSelfMark(quest)}
-                            onSubmitApproval={(n, e) => handleSubmitApproval(quest, n, e)}
-                            submitting={submitting}
-                          />
+                          <div key={quest.questId} className="animate-fade-up" style={{ animationDelay: `${qi * 50}ms` }}>
+                            <CollapsibleQuestTile
+                              quest={quest}
+                              status={status}
+                              completion={completions[quest.questId]}
+                              teamColor={activeMeta.color}
+                              isExpanded={expandedQuestId === quest.questId}
+                              onToggle={() =>
+                                setExpandedQuestId(
+                                  expandedQuestId === quest.questId ? null : quest.questId
+                                )
+                              }
+                              onSelfMark={() => handleSelfMark(quest)}
+                              onSubmitApproval={(n, e) => handleSubmitApproval(quest, n, e)}
+                              submitting={submitting}
+                            />
+                          </div>
                         );
                       })}
                     </div>

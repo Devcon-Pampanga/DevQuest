@@ -807,7 +807,7 @@ export default function EventsPage() {
             {upcomingFiltered.length > 0 && (
               <>
                 {hasBoth && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
                     <span className="font-heading text-xs text-text-secondary uppercase tracking-widest">
                       Upcoming
                     </span>
@@ -834,7 +834,7 @@ export default function EventsPage() {
             {/* Past section */}
             {pastFiltered.length > 0 && (
               <>
-                <div className={`flex items-center gap-3 ${hasBoth ? "mt-4" : ""}`}>
+                <div className={`flex items-center gap-3 animate-fade-up ${hasBoth ? "mt-4" : ""}`} style={{ animationDelay: "60ms" }}>
                   {hasBoth && (
                     <span className="font-heading text-xs text-text-muted uppercase tracking-widest">
                       Past
