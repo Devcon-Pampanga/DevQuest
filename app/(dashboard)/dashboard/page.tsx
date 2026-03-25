@@ -3,10 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  onAuthStateChanged,
-  User as FirebaseUser,
-} from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   doc,
   getDoc,
@@ -352,7 +349,6 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [firebaseUid, setFirebaseUid] = useState("");
 
@@ -372,7 +368,6 @@ export default function DashboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLeaderboardRank, setUserLeaderboardRank] = useState<number | null>(null);
 
-  const [error, setError] = useState("");
   const [copiedShare, setCopiedShare] = useState(false);
 
   const [barsReady, setBarsReady] = useState(false);
@@ -388,7 +383,6 @@ export default function DashboardPage() {
         router.replace("/onboarding");
         return;
       }
-      setFirebaseUser(user);
       setFirebaseUid(user.uid);
       setUserData(snap.data() as UserData);
       setAuthChecked(true);
@@ -664,8 +658,6 @@ export default function DashboardPage() {
           style={{ background: `radial-gradient(ellipse 90% 420px at -5% -5%, ${teamColor}0f 0%, transparent 55%)` }}
         >
           <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6 items-stretch lg:items-start pb-10">
-            {error ? <p className="lg:col-span-3 text-red-400 text-sm">{error}</p> : null}
-
             {/* ── LEFT COLUMN (col-span-2) ── */}
             <div className="contents lg:flex lg:flex-col gap-6 lg:col-span-2">
 
