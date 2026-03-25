@@ -105,27 +105,6 @@ function formatRelativeDate(ts: Timestamp): string {
   return formatEventDate(ts);
 }
 
-const EVENT_GRADIENTS: Record<string, string> = {
-  "Workshop":        "linear-gradient(135deg, #7C3AED, #A855F7)",
-  "Seminar":         "linear-gradient(135deg, #4C1D95, #7C3AED)",
-  "Convention":      "linear-gradient(135deg, #F5C518, #F97316)",
-  "Hackathon":       "linear-gradient(135deg, #06B6D4, #9333EA)",
-  "Networking":      "linear-gradient(135deg, #F97316, #EA580C)",
-  "Training":        "linear-gradient(135deg, #22C55E, #16A34A)",
-  "Community Meetup":"linear-gradient(135deg, #06B6D4, #0891B2)",
-  "Other":           "linear-gradient(135deg, #7C3AED, #A855F7)",
-};
-
-function getEventGradient(eventType?: string, eventId?: string): string {
-  if (eventType && EVENT_GRADIENTS[eventType]) return EVENT_GRADIENTS[eventType];
-  if (eventId) {
-    let hash = 0;
-    for (let i = 0; i < eventId.length; i++) hash = (hash * 31 + eventId.charCodeAt(i)) & 0xffffffff;
-    const values = Object.values(EVENT_GRADIENTS);
-    return values[Math.abs(hash) % values.length];
-  }
-  return EVENT_GRADIENTS["Other"];
-}
 
 function totalSlots(roles: EventRole[]): number {
   return roles.reduce((sum, r) => sum + r.slots, 0);
@@ -167,9 +146,11 @@ function EventCard({
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           </>
         ) : (
-          <div
-            className="w-full h-full"
-            style={{ background: getEventGradient(event.eventType, event.eventId) }}
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/event-banner-placeholder.png"
+            alt=""
+            className="w-full h-full object-cover"
           />
         )}
         {event.isInternal && (
