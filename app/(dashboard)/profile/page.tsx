@@ -655,7 +655,7 @@ function ActivityFeed({
       </div>
       {entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-14 text-text-muted gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center animate-float">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M22 12h-6l-2 3h-4l-2-3H2" />
               <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
@@ -1177,7 +1177,7 @@ export default function ProfilePage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <>
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
                 <HeaderCard
                   userData={userData}
                   avatarUrl={avatarUrl}
@@ -1186,7 +1186,7 @@ export default function ProfilePage() {
                 />
               </div>
               {milestoneTeam ? (
-                <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both" }}>
+                <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
                   <MilestonesSection
                     userData={userData}
                     completions={completions}
@@ -1196,7 +1196,7 @@ export default function ProfilePage() {
                   />
                 </div>
               ) : null}
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                 <PortfolioCard
                   completions={completions}
                   allQuests={allQuests}
@@ -1207,10 +1207,10 @@ export default function ProfilePage() {
                   copied={copied}
                 />
               </div>
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
                 <BadgesGrid badges={badges} />
               </div>
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
                 <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
               </div>
             </>

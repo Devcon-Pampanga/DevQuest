@@ -322,7 +322,7 @@ export default function SettingsPage() {
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 pb-10">
 
           {/* ── Avatar ── */}
-          <div className="flex justify-center">
+          <div className="flex justify-center animate-fade-up" style={{ animationDelay: "0ms" }}>
             <div className="relative">
               <button
                 type="button"
@@ -347,7 +347,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ── Profile info ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "60ms" }}>
             <div className="px-5 py-3 border-b border-border">
               <span className="font-heading text-sm text-text-primary">Profile Info</span>
             </div>
@@ -391,10 +391,10 @@ export default function SettingsPage() {
               </Field>
 
               {saveError ? (
-                <p className="text-xs text-red-400 font-sans">{saveError}</p>
+                <p className="text-xs text-red-400 font-sans animate-fade-in">{saveError}</p>
               ) : null}
               {saveSuccess ? (
-                <p className="text-xs text-green-400 font-sans">Changes saved.</p>
+                <p className="text-xs text-green-400 font-sans animate-fade-in">Changes saved.</p>
               ) : null}
 
               <button
@@ -409,7 +409,7 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Volunteer teams ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "120ms" }}>
             <div className="px-5 py-3 border-b border-border">
               <span className="font-heading text-sm text-text-primary">Volunteer Teams</span>
             </div>
@@ -474,7 +474,7 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Danger zone ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "180ms" }}>
             <div className="px-5 py-3 border-b border-border">
               <span className="font-heading text-sm text-text-primary">Account</span>
             </div>
@@ -500,7 +500,7 @@ export default function SettingsPage() {
                       Delete Account
                     </button>
                   ) : (
-                    <div>
+                    <div className="animate-fade-in">
                       <p className="text-text-secondary text-xs text-center leading-relaxed mb-1">
                         This will permanently delete your account and all associated data.
                       </p>
@@ -539,10 +539,10 @@ export default function SettingsPage() {
       {/* ── Avatar editor modal ── */}
       {showAvatarEditor ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !savingAvatar && setShowAvatarEditor(false)} role="presentation" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !savingAvatar && setShowAvatarEditor(false)} role="presentation" style={{ animation: "fade-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both" }} />
           <div
             className="relative border border-border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl"
-            style={{ backgroundColor: "#1a1625" }}
+            style={{ backgroundColor: "#1a1625", animation: "modal-in 350ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
               <h2 className="font-heading text-[1rem] text-white">Customize Avatar</h2>

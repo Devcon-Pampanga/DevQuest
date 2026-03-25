@@ -194,6 +194,13 @@ function HeroProgressCard({
   ).length;
   const pct = total > 0 ? (completedCount / total) * 100 : 0;
 
+  const [barsReady, setBarsReady] = useState(false);
+  useEffect(() => {
+    setBarsReady(false);
+    const t = setTimeout(() => setBarsReady(true), 350);
+    return () => clearTimeout(t);
+  }, [teamId, currentTier]);
+
   return (
     <div
       className="rounded-2xl overflow-hidden border border-[#27272A] relative"
@@ -261,10 +268,16 @@ function HeroProgressCard({
         </div>
 
         {/* Progress bar */}
-        <div className="h-2 w-full rounded-full bg-zinc-800/60">
+        <div className="h-2 w-full rounded-full bg-zinc-800/60 overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, backgroundColor: color }}
+            className="h-full rounded-full"
+            style={{
+              width: "100%",
+              backgroundColor: color,
+              transformOrigin: "left center",
+              transform: `scaleX(${barsReady ? pct / 100 : 0})`,
+              transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
+            }}
           />
         </div>
       </div>
@@ -424,7 +437,7 @@ function CollapsibleQuestTile({
 
       {/* ── Expanded body ──────────────────────────────────────────────── */}
       {isExpanded && !locked && (
-        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-[#27272A]">
+        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-[#27272A] animate-fade-in">
 
           {/* Status + Method row */}
           <div className="flex items-center gap-2 flex-wrap pt-3">
@@ -1157,7 +1170,7 @@ function QuestsPageContent() {
 
           {/* ── Team pill switcher ─────────────────────────────────────────────── */}
           {tabs.length > 1 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "0ms" }}>
               {tabs.map((tab) => {
                 const color = tab.isApprovals
                   ? "#A855F7"
@@ -1192,7 +1205,7 @@ function QuestsPageContent() {
 
           {/* ── Approvals tab ─────────────────────────────────────────────────── */}
           {!loadingCompletions && activeTab === "approvals" && (
-            <div>
+            <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-heading text-lg text-text-primary">Pending Approvals</h2>
                 <button
@@ -1212,7 +1225,7 @@ function QuestsPageContent() {
                 </div>
               ) : approvals.length === 0 ? (
                 <div className="text-center py-16">
-                  <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-4 animate-float">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -1241,16 +1254,19 @@ function QuestsPageContent() {
             <div className="flex flex-col gap-5">
 
                 {/* Current Tier card — what the volunteer holds right now */}
-                <EarnedTierCard
-                  teamId={activeTab}
-                  earnedTier={earnedTier}
-                  earnedTierLabel={earnedTierLabel}
-                  color={activeMeta.color}
-                  isMaxTier={isMaxTier}
-                />
+                <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
+                  <EarnedTierCard
+                    teamId={activeTab}
+                    earnedTier={earnedTier}
+                    earnedTierLabel={earnedTierLabel}
+                    color={activeMeta.color}
+                    isMaxTier={isMaxTier}
+                  />
+                </div>
 
                 {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
                 {!isMaxTier && (
+                  <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                   <HeroProgressCard
                     teamId={activeTab}
                     currentTier={currentTier}
@@ -1260,12 +1276,13 @@ function QuestsPageContent() {
                     quests={currentTierQuests}
                     completions={completions}
                   />
+                  </div>
                 )}
 
                 {/* Milestones card */}
                 <div
-                  className="rounded-2xl border border-border overflow-hidden"
-                  style={{ backgroundColor: "#1e1a2e" }}
+                  className="rounded-2xl border border-border overflow-hidden animate-fade-up"
+                  style={{ backgroundColor: "#1e1a2e", animationDelay: "180ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
                   <div className="p-5">
@@ -1285,25 +1302,26 @@ function QuestsPageContent() {
 
                     {/* Collapsible quest tiles */}
                     <div className="flex flex-col gap-2.5">
-                      {currentTierQuests.map((quest) => {
+                      {currentTierQuests.map((quest, qi) => {
                         const status = getQuestUIStatus(quest, completions, true);
                         return (
-                          <CollapsibleQuestTile
-                            key={quest.questId}
-                            quest={quest}
-                            status={status}
-                            completion={completions[quest.questId]}
-                            teamColor={activeMeta.color}
-                            isExpanded={expandedQuestId === quest.questId}
-                            onToggle={() =>
-                              setExpandedQuestId(
-                                expandedQuestId === quest.questId ? null : quest.questId
-                              )
-                            }
-                            onSelfMark={() => handleSelfMark(quest)}
-                            onSubmitApproval={(n, e) => handleSubmitApproval(quest, n, e)}
-                            submitting={submitting}
-                          />
+                          <div key={quest.questId} className="animate-fade-up" style={{ animationDelay: `${qi * 50}ms` }}>
+                            <CollapsibleQuestTile
+                              quest={quest}
+                              status={status}
+                              completion={completions[quest.questId]}
+                              teamColor={activeMeta.color}
+                              isExpanded={expandedQuestId === quest.questId}
+                              onToggle={() =>
+                                setExpandedQuestId(
+                                  expandedQuestId === quest.questId ? null : quest.questId
+                                )
+                              }
+                              onSelfMark={() => handleSelfMark(quest)}
+                              onSubmitApproval={(n, e) => handleSubmitApproval(quest, n, e)}
+                              submitting={submitting}
+                            />
+                          </div>
                         );
                       })}
                     </div>
@@ -1311,8 +1329,8 @@ function QuestsPageContent() {
                 </div>
 
               <div
-                className="rounded-2xl border border-border overflow-hidden"
-                style={{ backgroundColor: "#1e1a2e" }}
+                className="rounded-2xl border border-border overflow-hidden animate-fade-up"
+                style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
               >
                 <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
                 <div className="p-5">

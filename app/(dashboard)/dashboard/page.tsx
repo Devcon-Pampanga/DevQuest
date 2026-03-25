@@ -653,10 +653,10 @@ export default function DashboardPage() {
 
             {/* ── Identity Card ─────────────────────────────────────────────────── */}
             <div
-              className="rounded-2xl border bg-surface mt-6 mb-4 overflow-hidden"
+              className="rounded-2xl border bg-surface mt-6 mb-4 overflow-hidden animate-fade-up"
               style={{
                 borderColor: `${teamColor}40`,
-                animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                animationDelay: "0ms",
               }}
             >
               <div className="p-5">
@@ -782,8 +782,8 @@ export default function DashboardPage() {
 
             {/* ── Stats Grid ────────────────────────────────────────────────────── */}
             <div
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"
-              style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 55ms both" }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 animate-fade-up"
+              style={{ animationDelay: "60ms" }}
             >
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Level</p>
@@ -825,8 +825,8 @@ export default function DashboardPage() {
             {/* ── Reflection nudge ─────────────────────────────────────────────── */}
             {pendingReflection ? (
               <div
-                className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"
-                style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both" }}
+                className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 animate-fade-up"
+                style={{ animationDelay: "120ms" }}
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <span className="text-xl shrink-0" aria-hidden>⏳</span>
@@ -852,8 +852,8 @@ export default function DashboardPage() {
             {/* ── Coordinator ──────────────────────────────────────────────────── */}
             {userData!.role === "coordinator" ? (
               <div
-                className="mb-4"
-                style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both" }}
+                className="mb-4 animate-fade-up"
+                style={{ animationDelay: "120ms" }}
               >
                 <h2 className="font-heading text-sm text-text-primary mb-3">Coordinator</h2>
                 <div className="grid grid-cols-2 gap-3 mb-3">
@@ -901,8 +901,8 @@ export default function DashboardPage() {
 
             {/* ── Active Quests — cards ─────────────────────────────────────────── */}
             <section
-              className="mb-4"
-              style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both" }}
+              className="mb-4 animate-fade-up"
+              style={{ animationDelay: "120ms" }}
             >
               <div className="flex items-baseline justify-between mb-3">
                 <h2 className="font-heading text-xl text-text-primary">Active quests</h2>
@@ -932,10 +932,8 @@ export default function DashboardPage() {
                     <Link
                       key={q.questId}
                       href="/quests"
-                      className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 hover:scale-[1.01] transition-[transform,border-color] flex flex-col gap-2.5"
-                      style={{
-                        animation: `fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) ${135 + i * 60}ms both`,
-                      }}
+                      className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 hover:scale-[1.01] transition-[transform,border-color] flex flex-col gap-2.5 animate-fade-up"
+                      style={{ animationDelay: `${180 + i * 50}ms` }}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <p className="font-heading text-base text-text-primary leading-snug">{q.name}</p>
@@ -962,7 +960,8 @@ export default function DashboardPage() {
 
             {/* ── Upcoming Events ──────────────────────────────────────────────── */}
             <section
-              style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both" }}
+              className="animate-fade-up"
+              style={{ animationDelay: "180ms" }}
             >
               <div className="flex items-baseline justify-between mb-3">
                 <h2 className="font-heading text-xl text-text-primary">Upcoming events</h2>
@@ -999,8 +998,8 @@ export default function DashboardPage() {
                       <Link
                         key={ev.eventId}
                         href={`/events/${ev.eventId}`}
-                        className="rounded-2xl border border-border bg-surface p-5 hover:border-accent-primary/50 hover:scale-[1.02] transition snap-start shrink-0 w-[240px] flex flex-col gap-3"
-                        style={{ animation: `fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) ${175 + i * 50}ms both` }}
+                        className="rounded-2xl border border-border bg-surface p-5 hover:border-accent-primary/50 hover:scale-[1.02] transition snap-start shrink-0 w-[240px] flex flex-col gap-3 animate-fade-up"
+                        style={{ animationDelay: `${240 + i * 50}ms` }}
                       >
                         <div>
                           <p className="text-[11px] font-sans uppercase tracking-widest mb-1.5" style={{ color: teamColor }}>

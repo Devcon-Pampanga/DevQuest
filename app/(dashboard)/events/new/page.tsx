@@ -102,6 +102,19 @@ function IconX() {
   );
 }
 
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className="transition-transform duration-200 text-text-muted"
+      style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 // ─── Shared style constants (matching onboarding page) ────────────────────────
 
 // Used inside cards — bg-surface matches the onboarding input background
@@ -115,16 +128,18 @@ const LABEL_CLS =
 function SectionCard({
   stripe = "linear-gradient(90deg, #7C3AED, #A855F7)",
   className = "",
+  animDelay = 0,
   children,
 }: {
   stripe?: string;
   className?: string;
+  animDelay?: number;
   children: React.ReactNode;
 }) {
   return (
     <div
-      className={`rounded-2xl border border-border overflow-hidden ${className}`}
-      style={{ backgroundColor: "#1e1a2e" }}
+      className={`rounded-2xl border border-border overflow-hidden animate-fade-up ${className}`}
+      style={{ backgroundColor: "#1e1a2e", animationDelay: `${animDelay}ms` }}
     >
       {/* Colored top stripe */}
       <div className="h-[3px] w-full" style={{ background: stripe }} />
@@ -257,6 +272,7 @@ export default function NewEventPage() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
 
   // Luma import
+  const [lumaExpanded, setLumaExpanded] = useState(false);
   const [lumaUrl, setLumaUrl] = useState("");
   const [lumaLoading, setLumaLoading] = useState(false);
   const [lumaError, setLumaError] = useState("");
@@ -277,7 +293,7 @@ export default function NewEventPage() {
   const [bannerPreview, setBannerPreview] = useState("");
 
   // Roles — coordinator only edits slot counts
-  const [roles, setRoles] = useState<RoleEntry[]>(DEFAULT_ROLES);
+  const [roles, setRoles] = useState<RoleEntry[]>([]);
 
   // Scale + preset system
   const [eventScale, setEventScale] = useState("");
@@ -403,12 +419,22 @@ export default function NewEventPage() {
   }
 
   // ── Banner file selection ────────────────────────────────────────────────────
+  function handleBannerFile(file: File) {
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  }
+
   function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setBannerFile(file);
-    const url = URL.createObjectURL(file);
-    setBannerPreview(url);
+    handleBannerFile(file);
+  }
+
+  function handleBannerDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !["image/png", "image/jpeg", "image/webp"].includes(file.type)) return;
+    handleBannerFile(file);
   }
 
   function removeBanner() {
@@ -511,6 +537,13 @@ export default function NewEventPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-heading transition-colors"
+          >
+            {submitting ? "Creating…" : "Create Event"}
+          </button>
           <Link href="/dashboard">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -535,65 +568,137 @@ export default function NewEventPage() {
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <div className="flex flex-col gap-5">
 
-          {/* ── A: Import from Luma ─────────────────────────────────────────── */}
-          <SectionCard stripe="#7C3AED">
+          {/* ── A: Event Banner ─────────────────────────────────────────────── */}
+          <SectionCard stripe="#06B6D4" animDelay={0}>
             <div className="flex items-center gap-2 mb-1">
-              <h2 className="font-heading text-base text-text-primary">Import from Luma</h2>
+              <h2 className="font-heading text-base text-text-primary">Event Banner</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-primary/20 text-accent-highlight font-sans font-medium uppercase tracking-wide">
                 Optional
               </span>
             </div>
             <p className="text-xs text-text-secondary mb-4">
-              Paste a lu.ma event URL to auto-fill the form below.
+              Upload a cover image for this event. Shown on the event card and details page.
             </p>
 
-            <div className="flex gap-2">
-              <input
-                type="url"
-                placeholder="https://lu.ma/… or https://luma.com/…"
-                value={lumaUrl}
-                onChange={(e) => {
-                  setLumaUrl(e.target.value);
-                  setLumaError("");
-                  setLumaSuccess(false);
-                }}
-                disabled={lumaLoading}
-                className={`${INPUT_CLS} flex-1`}
-              />
-              <button
-                onClick={handleLumaFetch}
-                disabled={lumaLoading || !lumaUrl.trim()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-sm font-heading transition-colors shrink-0"
+            {bannerPreview ? (
+              <div className="relative rounded-xl overflow-hidden border border-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bannerPreview}
+                  alt="Banner preview"
+                  className="w-full h-44 object-cover"
+                />
+                <button
+                  onClick={removeBanner}
+                  className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors"
+                >
+                  <IconX />
+                </button>
+                <div className="px-3 py-2 border-t border-border bg-[#1e1a2e]">
+                  <p className="text-xs text-text-muted truncate">{bannerFile?.name}</p>
+                </div>
+              </div>
+            ) : (
+              <label
+                className="flex flex-col items-center justify-center gap-3 h-36 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-accent-primary/50 transition-colors"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleBannerDrop}
               >
-                {lumaLoading ? (
-                  <span className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <span
-                        key={i}
-                        className="w-1.5 h-1.5 rounded-full bg-white"
-                        style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </span>
-                ) : (
-                  "Fetch Details"
-                )}
-              </button>
-            </div>
-
-            {lumaError && <p className="mt-2 text-xs text-red-400">{lumaError}</p>}
-            {lumaSuccess && (
-              <p className="mt-2 text-xs text-green-400 flex items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
                 </svg>
-                Details imported successfully.
-              </p>
+                <span className="text-sm text-text-secondary">Click or drag to upload</span>
+                <span className="text-xs text-text-muted">PNG, JPG, WEBP · Max 5 MB</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleBannerChange}
+                  className="hidden"
+                />
+              </label>
             )}
           </SectionCard>
 
-          {/* ── B: Event Details ────────────────────────────────────────────── */}
-          <SectionCard>
+          {/* ── B: Import from Luma (collapsible) ───────────────────────────── */}
+          <SectionCard stripe="#7C3AED" animDelay={60}>
+            <button
+              onClick={() => setLumaExpanded((v) => !v)}
+              className="w-full flex items-center justify-between gap-2"
+            >
+              <div className="flex items-center gap-2">
+                <h2 className="font-heading text-base text-text-primary">Import from Luma</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-primary/20 text-accent-highlight font-sans font-medium uppercase tracking-wide">
+                  Optional
+                </span>
+                {lumaSuccess && !lumaExpanded && (
+                  <span className="flex items-center gap-1 text-[10px] text-green-400 font-sans animate-fade-in">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Imported
+                  </span>
+                )}
+              </div>
+              <IconChevron open={lumaExpanded} />
+            </button>
+
+            {lumaExpanded && (
+              <div className="mt-4">
+                <p className="text-xs text-text-secondary mb-4">
+                  Paste a lu.ma event URL to auto-fill the form below.
+                </p>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://lu.ma/… or https://luma.com/…"
+                    value={lumaUrl}
+                    onChange={(e) => {
+                      setLumaUrl(e.target.value);
+                      setLumaError("");
+                      setLumaSuccess(false);
+                    }}
+                    disabled={lumaLoading}
+                    className={`${INPUT_CLS} flex-1`}
+                  />
+                  <button
+                    onClick={handleLumaFetch}
+                    disabled={lumaLoading || !lumaUrl.trim()}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-sm font-heading transition-colors shrink-0"
+                  >
+                    {lumaLoading ? (
+                      <span className="flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            className="w-1.5 h-1.5 rounded-full bg-white"
+                            style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }}
+                          />
+                        ))}
+                      </span>
+                    ) : (
+                      "Fetch Details"
+                    )}
+                  </button>
+                </div>
+
+                {lumaError && <p className="mt-2 text-xs text-red-400">{lumaError}</p>}
+                {lumaSuccess && (
+                  <p className="mt-2 text-xs text-green-400 flex items-center gap-1.5 animate-fade-in">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Details imported successfully.
+                  </p>
+                )}
+              </div>
+            )}
+          </SectionCard>
+
+          {/* ── C: Event Details ────────────────────────────────────────────── */}
+          <SectionCard animDelay={120}>
             <h2 className="font-heading text-base text-text-primary mb-5">Event Details</h2>
 
             {/* Name */}
@@ -621,42 +726,48 @@ export default function NewEventPage() {
               />
             </div>
 
-            {/* Event Type + Internal toggle (same row) */}
-            <div className="flex items-end gap-3 mb-4">
-              {/* Event Type */}
-              <div className="flex-1 min-w-0">
-                <label className={LABEL_CLS}>Event Type *</label>
-                <select
-                  value={eventType}
-                  onChange={(e) => handleEventTypeChange(e.target.value)}
-                  className={`${INPUT_CLS} pr-10 ${fieldErrors.eventType ? "border-red-500/60 focus:ring-red-400/40" : ""}`}
-                  style={{ colorScheme: "dark" }}
-                >
-                  <option value="" disabled>Select a type…</option>
-                  {EVENT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-                {fieldErrors.eventType && <p className="mt-1 text-xs text-red-400">{fieldErrors.eventType}</p>}
-              </div>
-
-              {/* Internal toggle */}
-              <button
-                onClick={() => setIsInternal((v) => !v)}
-                className="shrink-0 flex flex-col items-center gap-1.5 pb-[11px]"
+            {/* Event Type */}
+            <div className="mb-4">
+              <label className={LABEL_CLS}>Event Type *</label>
+              <select
+                value={eventType}
+                onChange={(e) => handleEventTypeChange(e.target.value)}
+                className={`${INPUT_CLS} pr-10 ${fieldErrors.eventType ? "border-red-500/60 focus:ring-red-400/40" : ""}`}
+                style={{ colorScheme: "dark" }}
               >
-                <span className={LABEL_CLS} style={{ marginBottom: 0 }}>Internal</span>
-                <div
-                  className="relative w-10 h-[22px] rounded-full transition-colors duration-200"
-                  style={{ backgroundColor: isInternal ? "#A855F7" : "#27272A" }}
-                >
-                  <div
-                    className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
-                    style={{ transform: isInternal ? "translateX(22px)" : "translateX(3px)" }}
-                  />
-                </div>
-              </button>
+                <option value="" disabled>Select a type…</option>
+                {EVENT_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              {fieldErrors.eventType && <p className="mt-1 text-xs text-red-400">{fieldErrors.eventType}</p>}
             </div>
+
+            {/* Internal event toggle — own row */}
+            <button
+              onClick={() => setIsInternal((v) => !v)}
+              className={`w-full flex items-center justify-between gap-4 px-4 py-3 rounded-xl border transition-colors mb-4 text-left ${
+                isInternal
+                  ? "border-accent-primary/60 bg-accent-primary/10"
+                  : "border-border hover:bg-white/5"
+              }`}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-heading text-text-primary">Internal event</span>
+                <span className="text-xs text-text-secondary">
+                  No volunteer roles — attendees register with a single QR scan
+                </span>
+              </div>
+              <div
+                className="relative shrink-0 w-10 h-[22px] rounded-full transition-colors duration-200"
+                style={{ backgroundColor: isInternal ? "#A855F7" : "#27272A" }}
+              >
+                <div
+                  className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                  style={{ transform: isInternal ? "translateX(22px)" : "translateX(3px)" }}
+                />
+              </div>
+            </button>
 
             {/* Date + times */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
@@ -708,7 +819,17 @@ export default function NewEventPage() {
 
             {/* Luma link */}
             <div>
-              <label className={LABEL_CLS}>Luma Link</label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={LABEL_CLS} style={{ marginBottom: 0 }}>Luma Event URL</label>
+                {lumaSuccess && (
+                  <span className="flex items-center gap-1 text-[10px] text-green-400 font-sans animate-fade-in">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Auto-filled from import
+                  </span>
+                )}
+              </div>
               <input
                 type="url"
                 placeholder="https://lu.ma/your-event"
@@ -719,58 +840,9 @@ export default function NewEventPage() {
             </div>
           </SectionCard>
 
-          {/* ── C: Event Banner ─────────────────────────────────────────────── */}
-          <SectionCard stripe="#06B6D4">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="font-heading text-base text-text-primary">Event Banner</h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-primary/20 text-accent-highlight font-sans font-medium uppercase tracking-wide">
-                Optional
-              </span>
-            </div>
-            <p className="text-xs text-text-secondary mb-4">
-              Upload a cover image for this event. Shown on the event card and details page.
-            </p>
-
-            {bannerPreview ? (
-              <div className="relative rounded-xl overflow-hidden border border-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={bannerPreview}
-                  alt="Banner preview"
-                  className="w-full h-44 object-cover"
-                />
-                <button
-                  onClick={removeBanner}
-                  className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors"
-                >
-                  <IconX />
-                </button>
-                <div className="px-3 py-2 border-t border-border bg-[#1e1a2e]">
-                  <p className="text-xs text-text-muted truncate">{bannerFile?.name}</p>
-                </div>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center gap-3 h-36 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-accent-primary/50 transition-colors">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-                <span className="text-sm text-text-secondary">Click to upload an image</span>
-                <span className="text-xs text-text-muted">PNG, JPG, WEBP · Max 5 MB</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleBannerChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </SectionCard>
-
           {/* ── D: Volunteer Roles / Attendee Config ────────────────────────── */}
           {isInternal ? (
-          <SectionCard stripe="#A855F7" className="flex-1">
+          <SectionCard stripe="#A855F7" className="flex-1" animDelay={180}>
             <div className="flex items-center gap-2 mb-1">
               <h2 className="font-heading text-base text-text-primary">Attendee Configuration</h2>
             </div>
@@ -781,14 +853,23 @@ export default function NewEventPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={LABEL_CLS}>Attendee Seats *</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={attendeeSlots}
-                  onChange={(e) => setAttendeeSlots(Math.max(1, Number(e.target.value)))}
-                  className={`${INPUT_CLS} ${fieldErrors.roles ? "border-red-500/60" : ""}`}
-                  style={{ colorScheme: "dark" }}
-                />
+                <div className={`flex items-center ${INPUT_CLS} ${fieldErrors.roles ? "border-red-500/60" : ""}`}>
+                  <button
+                    onClick={() => setAttendeeSlots((v) => Math.max(1, v - 1))}
+                    className="px-2 text-text-muted hover:text-text-primary transition-colors text-base leading-none select-none"
+                  >
+                    −
+                  </button>
+                  <span className="flex-1 text-center text-sm text-text-primary tabular-nums select-none">
+                    {attendeeSlots}
+                  </span>
+                  <button
+                    onClick={() => setAttendeeSlots((v) => v + 1)}
+                    className="px-2 text-text-muted hover:text-text-primary transition-colors text-base leading-none select-none"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div>
                 <label className={LABEL_CLS}>XP per Attendance</label>
@@ -816,7 +897,7 @@ export default function NewEventPage() {
             </p>
           </SectionCard>
           ) : (
-          <SectionCard stripe="#A855F7" className="flex-1">
+          <SectionCard stripe="#A855F7" className="flex-1" animDelay={180}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-base text-text-primary">Volunteer Roles</h2>
               <span className="text-[11px] font-sans text-text-muted uppercase tracking-widest">
@@ -846,7 +927,7 @@ export default function NewEventPage() {
             {/* Preset pending warning */}
             {presetPending && (
               <div
-                className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 mb-4"
+                className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 mb-4 animate-fade-up"
                 style={{ backgroundColor: "#2a1f3d", borderColor: "#A855F760" }}
               >
                 <span className="text-xs text-text-secondary">
@@ -869,121 +950,189 @@ export default function NewEventPage() {
               </div>
             )}
 
-            {/* Column headers */}
-            <div className="grid grid-cols-[1fr_auto_auto_32px] gap-3 mb-2 px-1">
-              <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Role</span>
-              <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">XP</span>
-              <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted text-center">Slots</span>
-              <span />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              {roles.map((role) => (
+            {roles.length === 0 ? (
+              /* ── Guided empty state ─────────────────────────────────────────── */
+              <div
+                className="flex flex-col items-center gap-3 py-7 px-4 rounded-xl border-2 border-dashed text-center"
+                style={{ borderColor: "#27272A" }}
+              >
                 <div
-                  key={role.id}
-                  className="grid grid-cols-[1fr_auto_auto_32px] gap-3 items-center rounded-xl border border-border px-3 py-2.5"
-                  style={{ backgroundColor: "#252038" }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "#A855F718" }}
                 >
-                  {/* Role name — read-only */}
-                  <span className="text-sm text-text-primary font-sans truncate">
-                    {role.roleName}
-                  </span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
 
-                  {/* XP — read-only badge */}
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-md border shrink-0"
-                    style={{
-                      color: "#A855F7",
-                      borderColor: "#A855F760",
-                      backgroundColor: "#A855F718",
-                    }}
-                  >
-                    +{role.xpReward} XP
-                  </span>
-
-                  {/* Slots — minimal stepper */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => adjustSlots(role.id, -1)}
-                      className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-base leading-none select-none"
-                    >
-                      −
-                    </button>
-                    <span className="w-7 text-center text-sm text-text-primary tabular-nums select-none">
-                      {role.slots}
-                    </span>
-                    <button
-                      onClick={() => adjustSlots(role.id, +1)}
-                      className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-base leading-none select-none"
-                    >
-                      +
-                    </button>
+                {!eventType || !eventScale ? (
+                  <>
+                    <div>
+                      <p className="text-sm font-heading text-text-primary mb-1">
+                        Roles will be suggested here
+                      </p>
+                      <p className="text-xs text-text-secondary">
+                        Select an event type and scale above to auto-fill recommended volunteer counts.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-sans transition-colors ${
+                          eventType
+                            ? "border-green-500/40 text-green-400 bg-green-500/10"
+                            : "border-border text-text-muted"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${eventType ? "bg-green-400" : "bg-text-muted"}`} />
+                        Event Type
+                      </span>
+                      <span
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-sans transition-colors ${
+                          eventScale
+                            ? "border-green-500/40 text-green-400 bg-green-500/10"
+                            : "border-border text-text-muted"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${eventScale ? "bg-green-400" : "bg-text-muted"}`} />
+                        Event Scale
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <p className="text-sm font-heading text-text-primary mb-1">No roles yet</p>
+                    <p className="text-xs text-text-secondary mb-3">
+                      Add at least one volunteer role for this event.
+                    </p>
+                    {showAddRole ? (
+                      <select
+                        autoFocus
+                        defaultValue=""
+                        onChange={(e) => { if (e.target.value) addRole(e.target.value); }}
+                        onBlur={() => setShowAddRole(false)}
+                        className={`${INPUT_CLS} pr-10`}
+                        style={{ colorScheme: "dark" }}
+                      >
+                        <option value="" disabled>Select a role to add…</option>
+                        {DEFAULT_ROLES.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.roleName} (+{r.xpReward} XP)
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        onClick={() => setShowAddRole(true)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10 text-sm font-heading transition-colors mx-auto"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add Role
+                      </button>
+                    )}
                   </div>
+                )}
 
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeRole(role.id)}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <IconX />
-                  </button>
+                {fieldErrors.roles && (
+                  <p className="text-xs text-red-400">{fieldErrors.roles}</p>
+                )}
+              </div>
+            ) : (
+              /* ── Role table ─────────────────────────────────────────────────── */
+              <>
+                <div className="grid grid-cols-[1fr_auto_auto_32px] gap-3 mb-2 px-1">
+                  <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Role</span>
+                  <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">XP</span>
+                  <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted text-center">Slots</span>
+                  <span />
                 </div>
-              ))}
-            </div>
 
-            {fieldErrors.roles && (
-              <p className="mt-2 text-xs text-red-400">{fieldErrors.roles}</p>
+                <div className="flex flex-col gap-2">
+                  {roles.map((role, i) => (
+                    <div
+                      key={role.id}
+                      className="grid grid-cols-[1fr_auto_auto_32px] gap-3 items-center rounded-xl border border-border px-3 py-2.5 animate-fade-up"
+                      style={{ backgroundColor: "#252038", animationDelay: `${i * 50}ms` }}
+                    >
+                      <span className="text-sm text-text-primary font-sans truncate">{role.roleName}</span>
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded-md border shrink-0"
+                        style={{ color: "#A855F7", borderColor: "#A855F760", backgroundColor: "#A855F718" }}
+                      >
+                        +{role.xpReward} XP
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => adjustSlots(role.id, -1)} className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-base leading-none select-none">−</button>
+                        <span className="w-7 text-center text-sm text-text-primary tabular-nums select-none">{role.slots}</span>
+                        <button onClick={() => adjustSlots(role.id, +1)} className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-base leading-none select-none">+</button>
+                      </div>
+                      <button onClick={() => removeRole(role.id)} className="flex items-center justify-center w-7 h-7 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                        <IconX />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {fieldErrors.roles && (
+                  <p className="mt-2 text-xs text-red-400">{fieldErrors.roles}</p>
+                )}
+
+                {/* Add Role */}
+                {(() => {
+                  const available = DEFAULT_ROLES.filter(
+                    (r) => !roles.some((existing) => existing.id === r.id)
+                  );
+                  const allAdded = available.length === 0;
+                  return (
+                    <div className="mt-3">
+                      {showAddRole && !allAdded ? (
+                        <select
+                          autoFocus
+                          defaultValue=""
+                          onChange={(e) => { if (e.target.value) addRole(e.target.value); }}
+                          onBlur={() => setShowAddRole(false)}
+                          className={`${INPUT_CLS} pr-10`}
+                          style={{ colorScheme: "dark" }}
+                        >
+                          <option value="" disabled>Select a role to add…</option>
+                          {available.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.roleName} (+{r.xpReward} XP)
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <button
+                          onClick={() => setShowAddRole(true)}
+                          disabled={allAdded}
+                          title={allAdded ? "All roles added" : undefined}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-heading transition-colors ${
+                            allAdded
+                              ? "opacity-40 cursor-not-allowed border-border text-text-muted"
+                              : "border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10"
+                          }`}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                          Add Role
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <p className="mt-3 text-[11px] font-sans text-text-muted">
+                  Adjust slot counts as needed. XP values are fixed by the DevQuest system.
+                </p>
+              </>
             )}
-
-            {/* Add Role */}
-            {(() => {
-              const available = DEFAULT_ROLES.filter(
-                (r) => !roles.some((existing) => existing.id === r.id)
-              );
-              const allAdded = available.length === 0;
-              return (
-                <div className="mt-3">
-                  {showAddRole && !allAdded ? (
-                    <select
-                      autoFocus
-                      defaultValue=""
-                      onChange={(e) => { if (e.target.value) addRole(e.target.value); }}
-                      onBlur={() => setShowAddRole(false)}
-                      className={`${INPUT_CLS} pr-10`}
-                      style={{ colorScheme: "dark" }}
-                    >
-                      <option value="" disabled>Select a role to add…</option>
-                      {available.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.roleName} (+{r.xpReward} XP)
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <button
-                      onClick={() => setShowAddRole(true)}
-                      disabled={allAdded}
-                      title={allAdded ? "All roles added" : undefined}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-heading transition-colors ${
-                        allAdded
-                          ? "opacity-40 cursor-not-allowed border-border text-text-muted"
-                          : "border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10"
-                      }`}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      Add Role
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
-
-            <p className="mt-3 text-[11px] font-sans text-text-muted">
-              Adjust slot counts as needed. XP values are fixed by the DevQuest system.
-            </p>
           </SectionCard>
           )}
 
@@ -991,7 +1140,7 @@ export default function NewEventPage() {
 
           {/* ── Submit ────────────────────────────────────────────────────────── */}
           {submitError && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 animate-fade-up">
               {submitError}
             </div>
           )}
@@ -999,27 +1148,16 @@ export default function NewEventPage() {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full py-3.5 bg-accent-highlight hover:bg-accent-primary disabled:opacity-60 disabled:cursor-not-allowed rounded-lg text-white font-heading font-medium text-base transition-colors"
+            className="w-full py-3.5 bg-accent-highlight hover:bg-accent-primary disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-white font-heading font-medium text-base transition-colors flex items-center justify-center gap-2"
           >
-            {submitting ? "Creating Event..." : "Create Event"}
+            {submitting ? (
+              <span className="flex gap-1">
+                {WAVE_COLORS.map((color, i) => (
+                  <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                ))}
+              </span>
+            ) : "Create Event"}
           </button>
-
-          {/* Team color wave dots */}
-          <div className="flex justify-center gap-2 mt-2">
-            {WAVE_COLORS.map((color, i) => (
-              <div
-                key={color}
-                className="w-2 h-2 rounded-full"
-                style={{
-                  backgroundColor: color,
-                  ...(submitting && {
-                    animation: "wave-dot 0.6s ease-in-out infinite",
-                    animationDelay: `${i * 0.1}s`,
-                  }),
-                }}
-              />
-            ))}
-          </div>
 
           <div className="h-4" />
         </div>
