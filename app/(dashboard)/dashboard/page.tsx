@@ -3,15 +3,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  onAuthStateChanged,
-  User as FirebaseUser,
-} from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   doc,
   getDoc,
   getDocs,
-  updateDoc,
   collection,
   query,
   where,
@@ -22,7 +18,7 @@ import { auth, db } from "@/lib/firebase";
 import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import { TIER_ORDER, TIER_LABELS, TEAM_META } from "@/lib/seed/quests";
 import { Quest, QuestCompletion } from "@/types/quest";
-import { getXpLevelProgress } from "@/lib/xpLevel";
+import { getXpLevelProgress, XP_LEVEL_STEP } from "@/lib/xpLevel";
 
 // ─── Avatar (editor) ─────────────────────────────────────────────────────────
 
@@ -40,51 +36,6 @@ const DEFAULT_AVATAR: AvatarOptions = {
   mouth: "smile01",
 };
 
-const BG_COLORS: { hex: string; label: string }[] = [
-  { hex: "transparent", label: "None" },
-  { hex: "ffb300", label: "Amber" },
-  { hex: "fdd835", label: "Yellow" },
-  { hex: "43a047", label: "Green" },
-  { hex: "00acc1", label: "Teal" },
-  { hex: "039be5", label: "Blue" },
-  { hex: "1e88e5", label: "Indigo" },
-  { hex: "5e35b1", label: "Purple" },
-  { hex: "8e24aa", label: "Violet" },
-  { hex: "d81b60", label: "Pink" },
-  { hex: "e53935", label: "Red" },
-  { hex: "f4511e", label: "Orange" },
-  { hex: "00897b", label: "Mint" },
-];
-
-const EYES_OPTIONS: { id: string; label: string }[] = [
-  { id: "bulging", label: "Bulging" },
-  { id: "dizzy", label: "Dizzy" },
-  { id: "eva", label: "Eva" },
-  { id: "frame1", label: "Frame 1" },
-  { id: "frame2", label: "Frame 2" },
-  { id: "glow", label: "Glow" },
-  { id: "happy", label: "Happy" },
-  { id: "hearts", label: "Hearts" },
-  { id: "robocop", label: "Robocop" },
-  { id: "round", label: "Round" },
-  { id: "roundFrame01", label: "Round Frame 1" },
-  { id: "roundFrame02", label: "Round Frame 2" },
-  { id: "sensor", label: "Sensor" },
-  { id: "shade01", label: "Shade" },
-];
-
-const MOUTH_OPTIONS: { id: string; label: string }[] = [
-  { id: "bite", label: "Bite" },
-  { id: "diagram", label: "Diagram" },
-  { id: "grill01", label: "Grill 1" },
-  { id: "grill02", label: "Grill 2" },
-  { id: "grill03", label: "Grill 3" },
-  { id: "smile01", label: "Smile 1" },
-  { id: "smile02", label: "Smile 2" },
-  { id: "square01", label: "Square 1" },
-  { id: "square02", label: "Square 2" },
-];
-
 function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
   const params: Record<string, string> = {
     seed,
@@ -95,25 +46,6 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
   };
   return `https://api.dicebear.com/9.x/bottts-neutral/svg?${new URLSearchParams(params).toString()}`;
 }
-
-function PencilIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -135,6 +67,7 @@ interface EventDoc {
   location: string;
   chapterId: string;
   roles: { roleName: string; slots: number; xpReward: number }[];
+  bannerUrl?: string;
 }
 
 interface RegistrationDoc {
@@ -149,6 +82,13 @@ interface PendingReflection {
   eventId: string;
   eventName: string;
   hoursLeft: number;
+}
+
+interface LeaderboardEntry {
+  uid: string;
+  username: string;
+  xp: number;
+  avatarOptions?: AvatarOptions;
 }
 
 // ─── Quest / tier helpers (aligned with quests page) ───────────────────────────
@@ -211,12 +151,6 @@ function hoursUntil(ts: Timestamp): number {
   return Math.max(0, Math.floor((ts.toDate().getTime() - Date.now()) / 3600000));
 }
 
-function tierDisplayLabel(teamId: string, tier: Quest["tier"]): string {
-  const meta = TEAM_META[teamId];
-  if (tier === "lead" && meta?.leadTitle) return meta.leadTitle;
-  return TIER_LABELS[tier] ?? tier;
-}
-
 function formatEventDate(ts: Timestamp): string {
   return ts.toDate().toLocaleDateString("en-US", {
     month: "short",
@@ -229,74 +163,181 @@ function totalSlots(roles: EventDoc["roles"]): number {
   return roles.reduce((sum, r) => sum + r.slots, 0);
 }
 
+/** Same layout as chapter page Recent Events carousel (`EventCarouselItem`). */
+function UpcomingEventCarouselCard({
+  event,
+  regCount,
+  index,
+}: {
+  event: EventDoc;
+  regCount: number;
+  index: number;
+}) {
+  const total = totalSlots(event.roles);
+  const pct = total > 0 ? Math.min(100, (regCount / total) * 100) : 0;
+
+  return (
+    <Link
+      href={`/events/${event.eventId}`}
+      className="rounded-xl bg-elevated border border-border overflow-hidden flex flex-col hover:border-accent-primary/50 transition-[border-color,box-shadow] hover:shadow-[0_4px_16px_rgba(124,58,237,0.15)] cursor-pointer group shrink-0 animate-fade-up"
+      style={{ width: 210, animationDelay: `${240 + index * 50}ms` }}
+    >
+      <div className="relative h-28 overflow-hidden">
+        {event.bannerUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.bannerUrl}
+              alt=""
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          </>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/event-banner-placeholder.png" alt="" className="w-full h-full object-cover" />
+        )}
+        <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wide bg-accent-primary/80 text-white">
+          Upcoming
+        </span>
+      </div>
+
+      <div className="p-3 flex flex-col gap-1.5 flex-1 min-h-0">
+        <div className="font-heading text-sm text-text-primary leading-snug line-clamp-2">{event.name}</div>
+        <div className="flex items-center gap-1 text-[11px] text-text-muted">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          {formatEventDate(event.date)}
+        </div>
+
+        <div className="mt-auto pt-1.5">
+          <div className="h-1 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full rounded-full bg-accent-highlight transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="text-[10px] text-text-muted mt-1 tabular-nums">
+            {regCount} / {total} volunteers
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
   return (
-    <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 sm:px-6 pb-16">
-      {/* Identity Card */}
-      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] mt-6 mb-4 overflow-hidden animate-pulse">
-        <div className="p-5 flex items-start gap-4">
-          <SkeletonBlock className="w-[76px] h-[76px] rounded-xl shrink-0" />
-          <div className="flex-1 flex flex-col gap-2.5 pt-0.5">
-            <SkeletonLine className="w-48" />
-            <SkeletonLine className="w-28" />
-            <SkeletonLine className="w-36" />
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <SkeletonBlock className="h-7 w-16 rounded-lg" />
-            <SkeletonBlock className="h-7 w-16 rounded-lg" />
-          </div>
-        </div>
-        <div className="border-t border-[#27272A] px-5 py-3.5 flex flex-col gap-2">
-          <div className="flex justify-between">
-            <SkeletonLine className="w-40" />
-            <SkeletonLine className="w-8" />
-          </div>
-          <SkeletonBlock className="h-1 w-full rounded-full" />
-        </div>
-      </div>
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 animate-pulse">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2">
-            <SkeletonLine className="w-16" />
-            <SkeletonBlock className="h-8 w-12 rounded-lg" />
-            <SkeletonLine className="w-20" />
-          </div>
-        ))}
-      </div>
-      {/* Quest cards */}
-      <div className="mb-4">
-        <div className="flex items-baseline justify-between mb-3">
-          <SkeletonLine className="w-28" />
-          <SkeletonLine className="w-12" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-pulse">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2.5">
-              <div className="flex items-start justify-between gap-3">
-                <SkeletonLine className="w-32" />
-                <SkeletonBlock className="h-5 w-14 rounded-lg shrink-0" />
+    <div className="p-6">
+      <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6 items-start pb-10">
+        {/* Left column */}
+        <div className="lg:col-span-2 flex flex-col gap-6 w-full">
+          {/* Identity Card */}
+          <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] overflow-hidden animate-pulse">
+            <div className="p-5 relative flex flex-col gap-4">
+              <div className="hidden sm:flex absolute top-5 right-5 gap-2 z-10">
+                <SkeletonBlock className="h-9 w-16 rounded-xl" />
+                <SkeletonBlock className="h-9 w-16 rounded-xl" />
               </div>
-              <SkeletonLine className="w-full" />
-              <SkeletonLine className="w-3/4" />
-              <div className="border-t border-[#27272A] pt-2 mt-1">
-                <SkeletonLine className="w-24" />
+              <div className="h-fit w-full flex flex-row items-center gap-4 min-w-0 sm:pr-[11rem]">
+                <SkeletonBlock className="size-[4.5rem] sm:size-20 rounded-xl shrink-0" />
+                <div className="min-w-0 flex flex-col justify-center gap-1 flex-1">
+                  <SkeletonLine className="w-full max-w-[14rem]" />
+                  <SkeletonLine className="w-28" />
+                  <SkeletonLine className="w-36" />
+                </div>
+              </div>
+              <div className="border-t border-[#27272A] pt-4 flex flex-col gap-2">
+                <div className="flex items-end justify-between gap-4">
+                  <div className="space-y-1">
+                    <SkeletonLine className="w-12" />
+                    <SkeletonLine className="w-8" />
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <SkeletonLine className="w-16 ml-auto" />
+                    <SkeletonLine className="w-24 ml-auto" />
+                  </div>
+                </div>
+                <SkeletonBlock className="h-1.5 w-full rounded-full" />
               </div>
             </div>
+          </div>
+          {/* Quest cards */}
+          <div>
+            <div className="flex items-baseline justify-between mb-3">
+              <SkeletonLine className="w-28" />
+              <SkeletonLine className="w-12" />
+            </div>
+            <div className="grid grid-cols-1 gap-3 animate-pulse">
+              {[0, 1].map((i) => (
+                <div key={i} className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <SkeletonLine className="w-32" />
+                    <SkeletonBlock className="h-5 w-14 rounded-lg shrink-0" />
+                  </div>
+                  <SkeletonLine className="w-full" />
+                  <SkeletonLine className="w-3/4" />
+                  <div className="border-t border-[#27272A] pt-2 mt-1">
+                    <SkeletonLine className="w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Events */}
+          <div>
+            <div className="flex items-baseline justify-between mb-3">
+              <SkeletonLine className="w-36" />
+              <SkeletonLine className="w-12" />
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 animate-pulse scrollbar-minimal">
+              <div className="shrink-0 rounded-xl border border-[#27272A] overflow-hidden w-[210px]">
+                <SkeletonBlock className="h-28 w-full rounded-none" />
+                <div className="p-3 flex flex-col gap-2">
+                  <SkeletonLine className="w-full" />
+                  <SkeletonLine className="w-2/3" />
+                  <SkeletonBlock className="h-1 w-full rounded-full mt-2" />
+                  <SkeletonLine className="w-24" />
+                </div>
+              </div>
+              <div className="shrink-0 rounded-xl border border-[#27272A] overflow-hidden w-[210px]">
+                <SkeletonBlock className="h-28 w-full rounded-none" />
+                <div className="p-3 flex flex-col gap-2">
+                  <SkeletonLine className="w-full" />
+                  <SkeletonLine className="w-2/3" />
+                  <SkeletonBlock className="h-1 w-full rounded-full mt-2" />
+                  <SkeletonLine className="w-24" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Right sidebar */}
+        <div className="flex flex-col gap-3 w-full animate-pulse">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2.5">
+              <SkeletonLine className="w-24" />
+              <SkeletonBlock className="h-1.5 w-full rounded-full" />
+              <SkeletonLine className="w-16" />
+            </div>
           ))}
-        </div>
-      </div>
-      {/* Events */}
-      <div>
-        <div className="flex items-baseline justify-between mb-3">
-          <SkeletonLine className="w-36" />
-          <SkeletonLine className="w-12" />
-        </div>
-        <div className="flex gap-3 animate-pulse">
-          <SkeletonBlock className="h-28 w-[240px] rounded-2xl shrink-0" />
-          <SkeletonBlock className="h-28 w-[240px] rounded-2xl shrink-0" />
+          <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 flex flex-col gap-2">
+            <SkeletonLine className="w-28" />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-1">
+                <SkeletonBlock className="w-5 h-5 rounded-md shrink-0" />
+                <SkeletonBlock className="w-7 h-7 rounded-lg shrink-0" />
+                <SkeletonLine className="flex-1" />
+                <SkeletonLine className="w-10 shrink-0" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -308,7 +349,6 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [firebaseUid, setFirebaseUid] = useState("");
 
@@ -325,12 +365,11 @@ export default function DashboardPage() {
 
   const [upcomingRegCounts, setUpcomingRegCounts] = useState<Record<string, number>>({});
 
-  const [error, setError] = useState("");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [userLeaderboardRank, setUserLeaderboardRank] = useState<number | null>(null);
+
   const [copiedShare, setCopiedShare] = useState(false);
 
-  const [showAvatarEditor, setShowAvatarEditor] = useState(false);
-  const [draftOptions, setDraftOptions] = useState<AvatarOptions>(DEFAULT_AVATAR);
-  const [savingAvatar, setSavingAvatar] = useState(false);
   const [barsReady, setBarsReady] = useState(false);
 
   useEffect(() => {
@@ -344,7 +383,6 @@ export default function DashboardPage() {
         router.replace("/onboarding");
         return;
       }
-      setFirebaseUser(user);
       setFirebaseUid(user.uid);
       setUserData(snap.data() as UserData);
       setAuthChecked(true);
@@ -430,6 +468,26 @@ export default function DashboardPage() {
           })
         );
         setUpcomingRegCounts(Object.fromEntries(countEntries));
+
+        // Leaderboard: top volunteers in chapter by XP
+        const leaderSnap = await getDocs(
+          query(
+            collection(db, "users"),
+            where("chapterId", "==", chapterId),
+            where("onboardingComplete", "==", true)
+          )
+        );
+        const sorted = leaderSnap.docs
+          .map((d) => ({
+            uid: d.id,
+            username: d.data().username as string,
+            xp: (d.data().xp as number) ?? 0,
+            avatarOptions: d.data().avatarOptions as AvatarOptions | undefined,
+          }))
+          .sort((a, b) => b.xp - a.xp);
+        setLeaderboard(sorted.slice(0, 5));
+        const selfRank = sorted.findIndex((v) => v.uid === firebaseUid);
+        setUserLeaderboardRank(selfRank >= 0 ? selfRank + 1 : null);
       } finally {
         setDashboardLoading(false);
       }
@@ -505,33 +563,6 @@ export default function DashboardPage() {
     return getCurrentTier(primaryTeamId, completions, allQuests);
   }, [primaryTeamId, completions, allQuests]);
 
-  const tierProgress = useMemo(() => {
-    if (!primaryTeamId || currentTier === null) return null;
-    const tierQuests = allQuests.filter((q) => q.teamId === primaryTeamId && q.tier === currentTier);
-    if (tierQuests.length === 0) return { done: true as const, pct: 100, completed: 0, total: 0, nextLabel: "" };
-    const completed = tierQuests.filter((q) => completions[q.questId]?.status === "completed").length;
-    const total = tierQuests.length;
-    const allLeadDone =
-      currentTier === "lead" &&
-      tierQuests.every((q) => completions[q.questId]?.status === "completed");
-    if (allLeadDone) {
-      return { done: true as const, pct: 100, completed, total, nextLabel: "" };
-    }
-    const nextIdx = TIER_ORDER.indexOf(currentTier) + 1;
-    const nextTier = nextIdx < TIER_ORDER.length ? TIER_ORDER[nextIdx] : null;
-    const nextLabel = nextTier && primaryTeamId ? tierDisplayLabel(primaryTeamId, nextTier) : "";
-    return {
-      done: false as const,
-      pct: Math.round((completed / total) * 100),
-      completed,
-      total,
-      nextLabel,
-    };
-  }, [primaryTeamId, currentTier, allQuests, completions]);
-
-  const currentTierLabel =
-    primaryTeamId && currentTier ? tierDisplayLabel(primaryTeamId, currentTier) : "";
-
   const activeQuestCards = useMemo(() => {
     if (!primaryTeamId || currentTier === null) return [];
     const tierUnlocked = isTierUnlocked(primaryTeamId, currentTier, completions, allQuests);
@@ -565,14 +596,33 @@ export default function DashboardPage() {
 
   const xpProgress = useMemo(() => getXpLevelProgress(userData?.xp ?? 0), [userData?.xp]);
 
+  const teamProgressMap = useMemo(() => {
+    if (!userData || allQuests.length === 0) return {} as Record<string, {
+      currentTier: Quest["tier"];
+      completed: number;
+      total: number;
+      pct: number;
+      nextLabel: string | null;
+      isMaxTier: boolean;
+    }>;
+    return Object.fromEntries(
+      userData.teams.map((teamId) => {
+        const tier = getCurrentTier(teamId, completions, allQuests);
+        const tierQuests = allQuests.filter((q) => q.teamId === teamId && q.tier === tier);
+        const completed = tierQuests.filter((q) => completions[q.questId]?.status === "completed").length;
+        const total = tierQuests.length;
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 100;
+        const tierIdx = TIER_ORDER.indexOf(tier);
+        const nextTierKey = tierIdx < TIER_ORDER.length - 1 ? TIER_ORDER[tierIdx + 1] : null;
+        const isMaxTier = tier === "lead" && completed === total && total > 0;
+        const nextLabel = nextTierKey && !isMaxTier ? TIER_LABELS[nextTierKey] : null;
+        return [teamId, { currentTier: tier, completed, total, pct, nextLabel, isMaxTier }];
+      })
+    );
+  }, [userData, allQuests, completions]);
+
   function displayName(raw: string) {
     return raw.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-  }
-
-  function openAvatarEditor() {
-    if (!userData) return;
-    setDraftOptions(userData.avatarOptions ?? DEFAULT_AVATAR);
-    setShowAvatarEditor(true);
   }
 
   function handleCopyShare() {
@@ -581,47 +631,6 @@ export default function DashboardPage() {
     void navigator.clipboard.writeText(url);
     setCopiedShare(true);
     window.setTimeout(() => setCopiedShare(false), 2000);
-  }
-
-  async function handleSaveAvatar() {
-    if (!firebaseUser) return;
-    setSavingAvatar(true);
-    try {
-      await updateDoc(doc(db, "users", firebaseUser.uid), {
-        avatarOptions: draftOptions,
-      });
-      setUserData((prev) => (prev ? { ...prev, avatarOptions: draftOptions } : prev));
-      setShowAvatarEditor(false);
-    } catch {
-      setError("Failed to save avatar. Please try again.");
-    } finally {
-      setSavingAvatar(false);
-    }
-  }
-
-  function OptionChip({
-    label,
-    selected,
-    onClick,
-  }: {
-    label: string;
-    selected: boolean;
-    onClick: () => void;
-  }) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="px-3 py-1.5 rounded-lg text-xs font-sans border transition-all"
-        style={
-          selected
-            ? { borderColor: "#A855F7", backgroundColor: "#A855F714", color: "#A855F7", borderWidth: "2px" }
-            : { borderColor: "#27272A", backgroundColor: "transparent", color: "#A1A1AA", borderWidth: "1px" }
-        }
-      >
-        {label}
-      </button>
-    );
   }
 
   if (!authChecked || !userData) {
@@ -645,78 +654,44 @@ export default function DashboardPage() {
         skeleton={<DashboardSkeleton />}
       >
         <div
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto p-6"
           style={{ background: `radial-gradient(ellipse 90% 420px at -5% -5%, ${teamColor}0f 0%, transparent 55%)` }}
         >
-          <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 sm:px-6 pb-16">
-            {error ? <p className="text-red-400 text-sm pt-4 mb-2">{error}</p> : null}
+          <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6 items-stretch lg:items-start pb-10">
+            {/* ── LEFT COLUMN (col-span-2) ── */}
+            <div className="contents lg:flex lg:flex-col gap-6 lg:col-span-2">
 
-            {/* ── Identity Card ─────────────────────────────────────────────────── */}
-            <div
-              className="rounded-2xl border bg-surface mt-6 mb-4 overflow-hidden animate-fade-up"
-              style={{
-                borderColor: `${teamColor}40`,
-                animationDelay: "0ms",
-              }}
-            >
-              <div className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="relative group shrink-0">
-                    <button
-                      type="button"
-                      onClick={openAvatarEditor}
-                      className="w-[76px] h-[76px] rounded-xl overflow-hidden border-2 block focus:outline-none focus:ring-2 focus:ring-accent-highlight relative"
-                      style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
-                      aria-label="Edit avatar"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={avatarUrl} alt="" width={76} height={76} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <PencilIcon />
-                      </div>
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h1 className="font-heading text-3xl sm:text-4xl text-text-primary leading-none">
-                        {displayName(userData!.username)}
-                      </h1>
-                      {userData!.role === "coordinator" ? (
-                        <span
-                          className="text-[10px] font-sans uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0"
-                          style={{ borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }}
-                        >
-                          Coordinator
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="text-sm text-text-muted font-sans mb-2.5">{userData!.chapterId}</p>
-                    {primaryMeta && currentTier ? (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="text-xs font-sans px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: `${teamColor}18`, color: teamColor }}
-                        >
-                          {primaryMeta.label}
-                        </span>
-                        <span className="text-text-muted text-xs select-none">·</span>
-                        <span className="text-xs text-text-secondary font-sans">{currentTierLabel}</span>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-text-muted font-sans">No teams selected.</p>
-                    )}
-                  </div>
-                  <div className="hidden sm:flex gap-2 shrink-0">
+              {/* Identity Card — order-1 mobile */}
+              <div
+                className="order-1 lg:order-none relative rounded-2xl overflow-hidden animate-fade-up"
+                style={{
+                  background: "linear-gradient(135deg, #5B21B6 0%, #7C3AED 45%, #A855F7 80%, #C084FC 100%)",
+                  animationDelay: "0ms",
+                }}
+              >
+                {/* Dot pattern — same as ChapterHero */}
+                <div
+                  className="absolute inset-0 opacity-[0.07] pointer-events-none"
+                  style={{
+                    backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
+                    backgroundSize: "22px 22px",
+                  }}
+                />
+                {/* Glow orb */}
+                <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+
+                <div className="p-5 relative z-10 flex flex-col gap-4">
+                  <div className="hidden sm:flex absolute top-5 right-5 z-20 gap-2">
                     <Link
                       href="/profile#badges"
-                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
+                      className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
                     >
                       Badges
                     </Link>
                     <button
                       type="button"
                       onClick={handleCopyShare}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50 text-xs font-heading uppercase tracking-wider transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
                     >
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -727,142 +702,255 @@ export default function DashboardPage() {
                       </span>
                     </button>
                   </div>
-                </div>
-                {/* Mobile actions */}
-                <div className="flex sm:hidden gap-2 mt-4">
-                  <Link
-                    href="/profile#badges"
-                    className="flex-1 inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-white/5 text-xs font-heading uppercase tracking-wider transition-colors"
-                  >
-                    Badges
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleCopyShare}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-white/5 text-xs font-heading uppercase tracking-wider transition-colors"
-                  >
-                    {copiedShare ? "Copied" : "Share"}
-                  </button>
+                  {/* Fixed avatar size; text column vertically centered to match the row. */}
+                  <div className="h-fit w-full flex flex-row items-center gap-4 min-w-0 sm:pr-[11rem]">
+                    <div
+                      className="relative shrink-0 size-[4.5rem] sm:size-20 rounded-xl overflow-hidden border-2"
+                      style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={avatarUrl}
+                        alt="Profile avatar"
+                        width={80}
+                        height={80}
+                        className="block h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 flex flex-col justify-center gap-1 flex-1 leading-none">
+                      <h1 className="font-heading text-xl sm:text-2xl text-white leading-tight truncate min-h-0">
+                        {displayName(userData!.username)}
+                      </h1>
+                      <span className="inline-flex w-fit text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-white shrink-0 leading-normal mt-0.5">
+                        {userData!.role === "coordinator" ? "Coordinator" : "Volunteer"}
+                      </span>
+                      <p className="text-sm text-white/70 font-sans truncate leading-snug mt-0.5">
+                        {userData!.chapterId}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-full pt-4 border-t border-white/15">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] text-white/60 font-sans uppercase tracking-widest">Level</p>
+                        <p className="font-heading text-2xl tabular-nums leading-none text-white mt-0.5">
+                          {xpProgress.level}
+                        </p>
+                      </div>
+                      <div className="text-right min-w-0">
+                        <p className="text-[10px] text-white/60 font-sans uppercase tracking-widest">Progress</p>
+                        <p className="font-heading text-lg sm:text-2xl tabular-nums leading-none text-white mt-0.5 whitespace-nowrap">
+                          {xpProgress.xpIntoLevel.toLocaleString()} / {XP_LEVEL_STEP.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${xpProgress.pctToNextLevel}%`,
+                          backgroundColor: teamColor,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {/* Mobile actions */}
+                  <div className="flex sm:hidden gap-2">
+                    <Link
+                      href="/profile#badges"
+                      className="flex-1 inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
+                    >
+                      Badges
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleCopyShare}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
+                    >
+                      {copiedShare ? "Copied" : "Share"}
+                    </button>
+                  </div>
                 </div>
               </div>
-              {/* Tier progress footer */}
-              {tierProgress && primaryMeta && tierProgress.total > 0 ? (
+
+              {/* Reflection Nudge — order-2 mobile */}
+              {pendingReflection ? (
                 <div
-                  className="border-t px-5 py-3.5"
-                  style={{ borderColor: `${teamColor}25`, backgroundColor: `${teamColor}08` }}
+                  className="order-2 lg:order-none rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-up"
+                  style={{ animationDelay: "60ms" }}
                 >
-                  <div className="flex items-center justify-between gap-4 mb-2">
-                    <p className="text-xs font-sans text-text-muted">
-                      {tierProgress.done ? (
-                        <>All quests complete — <span style={{ color: teamColor }}>{primaryMeta.label}</span></>
-                      ) : (
-                        <>{tierProgress.completed} / {tierProgress.total} quests to <span style={{ color: teamColor }}>{tierProgress.nextLabel || primaryMeta.leadTitle}</span></>
-                      )}
-                    </p>
-                    <span className="text-xs font-sans tabular-nums shrink-0" style={{ color: tierProgress.done ? teamColor : "#52525B" }}>
-                      {tierProgress.pct}%
-                    </span>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="text-xl shrink-0" aria-hidden>⏳</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-heading text-amber-100/95">
+                        {pendingReflection.eventName} — reflection due in {pendingReflection.hoursLeft}h
+                      </p>
+                      <p className="text-xs text-text-muted font-sans mt-0.5">Submit before the deadline to earn +25 XP.</p>
+                    </div>
                   </div>
-                  <div className="w-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)", height: "4px" }}>
-                    <div
-                      style={{
-                        height: "4px",
-                        width: "100%",
-                        borderRadius: "9999px",
-                        transformOrigin: "left center",
-                        transform: `scaleX(${barsReady ? tierProgress.pct / 100 : 0})`,
-                        transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
-                        backgroundColor: teamColor,
-                      }}
-                    />
-                  </div>
+                  <Link
+                    href={`/events/${pendingReflection.eventId}/reflect`}
+                    className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-heading transition-colors"
+                  >
+                    Submit Now
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </Link>
                 </div>
               ) : null}
-            </div>
 
-            {/* ── Stats Grid ────────────────────────────────────────────────────── */}
-            <div
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 animate-fade-up"
-              style={{ animationDelay: "60ms" }}
-            >
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Level</p>
-                <p className="font-heading text-5xl tabular-nums text-text-primary leading-none mb-1">{xpProgress.level}</p>
-                <p className="text-[11px] text-text-muted font-sans">
-                  {xpProgress.xpToNextLevel > 0 ? `${xpProgress.xpToNextLevel.toLocaleString()} XP to next` : "Max level"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Total XP</p>
-                <p className="font-heading text-4xl tabular-nums text-text-primary leading-none mb-2">
-                  {(userData!.xp ?? 0).toLocaleString()}
-                </p>
-                <div className="w-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)", height: "3px" }}>
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      backgroundColor: teamColor,
-                      width: "100%",
-                      transformOrigin: "left center",
-                      transform: `scaleX(${barsReady ? xpProgress.pctToNextLevel / 100 : 0})`,
-                      transition: barsReady ? "transform 900ms cubic-bezier(0.16, 1, 0.3, 1) 100ms" : "none",
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Quests Done</p>
-                <p className="font-heading text-4xl tabular-nums leading-none mb-1" style={{ color: teamColor }}>{completedQuestCount}</p>
-                <p className="text-[11px] text-text-muted font-sans">milestones earned</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Events</p>
-                <p className="font-heading text-4xl tabular-nums leading-none mb-1" style={{ color: teamColor }}>{eventsAttendedCount}</p>
-                <p className="text-[11px] text-text-muted font-sans">attended</p>
-              </div>
-            </div>
-
-            {/* ── Reflection nudge ─────────────────────────────────────────────── */}
-            {pendingReflection ? (
-              <div
-                className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 animate-fade-up"
-                style={{ animationDelay: "120ms" }}
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <span className="text-xl shrink-0" aria-hidden>⏳</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-heading text-amber-100/95">
-                      {pendingReflection.eventName} — reflection due in {pendingReflection.hoursLeft}h
-                    </p>
-                    <p className="text-xs text-text-muted font-sans mt-0.5">Submit before the deadline to earn +25 XP.</p>
+              {/* Stat Cards — order-3 mobile */}
+              <div className="order-3 lg:order-none grid grid-cols-2 gap-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
+                <div className="rounded-2xl bg-surface border border-border p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${teamColor}18` }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={teamColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <polyline points="9 11 12 14 22 4" />
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Quests Complete</p>
+                    <p className="font-heading text-2xl tabular-nums leading-none mt-0.5" style={{ color: teamColor }}>{completedQuestCount}</p>
                   </div>
                 </div>
-                <Link
-                  href={`/events/${pendingReflection.eventId}/reflect`}
-                  className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-heading transition-colors"
-                >
-                  Submit Now
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </Link>
+                <div className="rounded-2xl bg-surface border border-border p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${teamColor}18` }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={teamColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Events Attended</p>
+                    <p className="font-heading text-2xl tabular-nums leading-none mt-0.5" style={{ color: teamColor }}>{eventsAttendedCount}</p>
+                  </div>
+                </div>
               </div>
-            ) : null}
 
-            {/* ── Coordinator ──────────────────────────────────────────────────── */}
-            {userData!.role === "coordinator" ? (
-              <div
-                className="mb-4 animate-fade-up"
+              {/* Active Quests — order-6 mobile */}
+              <section
+                className="order-6 lg:order-none animate-fade-up"
                 style={{ animationDelay: "120ms" }}
               >
-                <h2 className="font-heading text-sm text-text-primary mb-3">Coordinator</h2>
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="flex items-baseline justify-between mb-3">
+                  <h2 className="font-heading text-xl text-text-primary">Active quests</h2>
+                  <Link href="/quests" className="text-xs font-heading text-accent-highlight hover:text-text-primary transition-colors" aria-label="View all quests">
+                    View all
+                  </Link>
+                </div>
+                {activeQuestCards.length === 0 ? (
+                  <div className="rounded-2xl border border-border bg-surface px-5 py-8 flex flex-col items-center gap-3 text-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted" aria-hidden style={{ animation: "float 3s ease-in-out infinite" }}>
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    <div>
+                      <p className="font-heading text-sm text-text-primary mb-1">No active quests yet</p>
+                      <p className="text-xs text-text-muted font-sans max-w-[22ch] mx-auto">Complete your team&#39;s associate-tier quests to advance your career path.</p>
+                    </div>
+                    <Link
+                      href="/quests"
+                      className="inline-flex items-center justify-center border border-border rounded-xl px-4 py-2 text-xs font-heading text-text-secondary hover:text-text-primary hover:border-accent-primary/50 transition-colors"
+                    >
+                      Browse Quests
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {activeQuestCards.map((q, i) => (
+                      <Link
+                        key={q.questId}
+                        href="/quests"
+                        className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 hover:scale-[1.01] transition-[transform,border-color] flex flex-col gap-2.5 animate-fade-up"
+                        style={{ animationDelay: `${180 + i * 50}ms` }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="font-heading text-base text-text-primary leading-snug">{q.name}</p>
+                          <span
+                            className="shrink-0 text-xs font-heading tabular-nums px-2 py-0.5 rounded-lg whitespace-nowrap"
+                            style={{ color: teamColor, backgroundColor: `${teamColor}18` }}
+                          >
+                            +{q.xpReward} XP
+                          </span>
+                        </div>
+                        <p className="text-xs text-text-muted font-sans line-clamp-2 flex-1">{q.description}</p>
+                        <div className="flex items-center gap-2 pt-2.5 border-t border-border mt-auto">
+                          <span className="text-[10px] font-sans uppercase tracking-widest" style={{ color: teamColor }}>
+                            {primaryMeta?.label}
+                          </span>
+                          <span className="text-text-muted text-xs select-none">·</span>
+                          <span className="text-[10px] text-text-muted font-sans">{q.completionMethod.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Upcoming Events — order-7 mobile */}
+              <section
+                className="order-7 lg:order-none animate-fade-up"
+                style={{ animationDelay: "180ms" }}
+              >
+                <div className="flex items-baseline justify-between mb-3">
+                  <h2 className="font-heading text-xl text-text-primary">Upcoming events</h2>
+                  <Link href="/events" className="text-xs font-heading text-accent-highlight hover:text-text-primary transition-colors" aria-label="View all events">
+                    View all
+                  </Link>
+                </div>
+                {upcomingChapterEvents.length === 0 ? (
+                  <div className="rounded-2xl border border-border bg-surface px-5 py-8 flex flex-col items-center gap-3 text-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted" aria-hidden style={{ animation: "float 3s ease-in-out 300ms infinite" }}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <div>
+                      <p className="font-heading text-sm text-text-primary mb-1">No upcoming events</p>
+                      <p className="text-xs text-text-muted font-sans max-w-[26ch] mx-auto">Your chapter coordinator will post events here when they&#39;re scheduled.</p>
+                    </div>
+                    <Link
+                      href="/events"
+                      className="inline-flex items-center justify-center border border-border rounded-xl px-4 py-2 text-xs font-heading text-text-secondary hover:text-text-primary hover:border-accent-primary/50 transition-colors"
+                    >
+                      View All Events
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-minimal -mx-1 px-1">
+                    {upcomingChapterEvents.map((ev, i) => (
+                      <UpcomingEventCarouselCard
+                        key={ev.eventId}
+                        event={ev}
+                        regCount={upcomingRegCounts[ev.eventId] ?? 0}
+                        index={i}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+            </div>{/* end left column */}
+
+            {/* ── RIGHT SIDEBAR (col-span-1) ── */}
+            <div className="contents lg:flex lg:flex-col gap-4 lg:col-start-3 lg:col-span-1">
+
+              {/* Coordinator Section — order-3 mobile */}
+              {userData!.role === "coordinator" ? (
+                <div
+                  className="order-4 lg:order-none rounded-2xl bg-surface border border-border p-5 flex flex-col gap-3 animate-fade-up"
+                  style={{ animationDelay: "0ms" }}
+                >
+                  <h2 className="font-heading text-sm text-text-primary uppercase tracking-widest">Coordinator</h2>
                   <Link
                     href="/quests?tab=approvals"
-                    className="rounded-2xl border bg-surface p-4 hover:border-accent-primary/60 transition-colors"
+                    className="rounded-2xl border p-4 hover:border-accent-primary/60 transition-colors"
                     style={{
                       borderColor: approvalsCount > 0 ? "#A855F755" : "#27272A",
-                      backgroundColor: approvalsCount > 0 ? "#A855F708" : "#1a1a2e",
+                      backgroundColor: approvalsCount > 0 ? "#A855F708" : "#16213e",
                     }}
                   >
                     <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Pending approvals</p>
@@ -881,276 +969,158 @@ export default function DashboardPage() {
                     <p className="font-heading text-lg text-text-primary">Add Event</p>
                     <p className="text-xs font-sans mt-1.5" style={{ color: "#A855F7" }}>Create new →</p>
                   </Link>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-border bg-surface p-4">
-                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">Active volunteers</p>
-                    <p className="font-heading text-2xl text-text-primary tabular-nums">
-                      {chapterVolunteersActive === null ? "—" : chapterVolunteersActive}
-                    </p>
-                    <p className="text-xs text-text-muted font-sans mt-0.5">in your chapter</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-border bg-elevated p-3">
+                      <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-1.5">Active</p>
+                      <p className="font-heading text-xl text-text-primary tabular-nums">
+                        {chapterVolunteersActive === null ? "—" : chapterVolunteersActive}
+                      </p>
+                      <p className="text-[10px] text-text-muted font-sans mt-0.5">volunteers</p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-elevated p-3">
+                      <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-1.5">This month</p>
+                      <p className="font-heading text-xl text-text-primary tabular-nums">{eventsThisMonthCount}</p>
+                      <p className="text-[10px] text-text-muted font-sans mt-0.5">events</p>
+                    </div>
                   </div>
-                  <div className="rounded-2xl border border-border bg-surface p-4">
-                    <p className="text-[10px] font-sans uppercase tracking-widest text-text-muted mb-2">This month</p>
-                    <p className="font-heading text-2xl text-text-primary tabular-nums">{eventsThisMonthCount}</p>
-                    <p className="text-xs text-text-muted font-sans mt-0.5">events in {userData!.chapterId}</p>
-                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {/* ── Active Quests — cards ─────────────────────────────────────────── */}
-            <section
-              className="mb-4 animate-fade-up"
-              style={{ animationDelay: "120ms" }}
-            >
-              <div className="flex items-baseline justify-between mb-3">
-                <h2 className="font-heading text-xl text-text-primary">Active quests</h2>
-                <Link href="/quests" className="text-xs font-heading text-accent-highlight hover:text-text-primary transition-colors" aria-label="View all quests">
-                  View all
-                </Link>
-              </div>
-              {activeQuestCards.length === 0 ? (
-                <div className="rounded-2xl border border-border bg-surface px-5 py-8 flex flex-col items-center gap-3 text-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted" aria-hidden style={{ animation: "float 3s ease-in-out infinite" }}>
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                  <div>
-                    <p className="font-heading text-sm text-text-primary mb-1">No active quests yet</p>
-                    <p className="text-xs text-text-muted font-sans max-w-[22ch] mx-auto">Complete your team&#39;s associate-tier quests to advance your career path.</p>
-                  </div>
-                  <Link
-                    href="/quests"
-                    className="inline-flex items-center justify-center border border-border rounded-xl px-4 py-2 text-xs font-heading text-text-secondary hover:text-text-primary hover:border-accent-primary/50 transition-colors"
-                  >
-                    Browse Quests
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {activeQuestCards.map((q, i) => (
-                    <Link
-                      key={q.questId}
-                      href="/quests"
-                      className="rounded-2xl border border-border bg-surface p-4 hover:border-accent-primary/50 hover:scale-[1.01] transition-[transform,border-color] flex flex-col gap-2.5 animate-fade-up"
-                      style={{ animationDelay: `${180 + i * 50}ms` }}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="font-heading text-base text-text-primary leading-snug">{q.name}</p>
-                        <span
-                          className="shrink-0 text-xs font-heading tabular-nums px-2 py-0.5 rounded-lg whitespace-nowrap"
-                          style={{ color: teamColor, backgroundColor: `${teamColor}18` }}
-                        >
-                          +{q.xpReward} XP
-                        </span>
-                      </div>
-                      <p className="text-xs text-text-muted font-sans line-clamp-2 flex-1">{q.description}</p>
-                      <div className="flex items-center gap-2 pt-2.5 border-t border-border mt-auto">
-                        <span className="text-[10px] font-sans uppercase tracking-widest" style={{ color: teamColor }}>
-                          {primaryMeta?.label}
-                        </span>
-                        <span className="text-text-muted text-xs select-none">·</span>
-                        <span className="text-[10px] text-text-muted font-sans">{q.completionMethod.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* ── Upcoming Events ──────────────────────────────────────────────── */}
-            <section
-              className="animate-fade-up"
-              style={{ animationDelay: "180ms" }}
-            >
-              <div className="flex items-baseline justify-between mb-3">
-                <h2 className="font-heading text-xl text-text-primary">Upcoming events</h2>
-                <Link href="/events" className="text-xs font-heading text-accent-highlight hover:text-text-primary transition-colors" aria-label="View all events">
-                  View all
-                </Link>
-              </div>
-              {upcomingChapterEvents.length === 0 ? (
-                <div className="rounded-2xl border border-border bg-surface px-5 py-8 flex flex-col items-center gap-3 text-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted" aria-hidden style={{ animation: "float 3s ease-in-out 300ms infinite" }}>
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <div>
-                    <p className="font-heading text-sm text-text-primary mb-1">No upcoming events</p>
-                    <p className="text-xs text-text-muted font-sans max-w-[26ch] mx-auto">Your chapter coordinator will post events here when they&#39;re scheduled.</p>
-                  </div>
-                  <Link
-                    href="/events"
-                    className="inline-flex items-center justify-center border border-border rounded-xl px-4 py-2 text-xs font-heading text-text-secondary hover:text-text-primary hover:border-accent-primary/50 transition-colors"
-                  >
-                    View All Events
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-minimal -mx-4 px-4 sm:-mx-6 sm:px-6">
-                  {upcomingChapterEvents.map((ev, i) => {
-                    const total = totalSlots(ev.roles);
-                    const reg = upcomingRegCounts[ev.eventId] ?? 0;
-                    const pct = total > 0 ? Math.min(100, (reg / total) * 100) : 0;
+              {/* Team Progress Cards — order-4 mobile */}
+              {userData!.teams.length > 0 ? (
+                <div className="order-5 lg:order-none flex flex-col gap-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
+                  {userData!.teams.map((teamId) => {
+                    const meta = TEAM_META[teamId];
+                    const prog = teamProgressMap[teamId];
+                    if (!meta || !prog) return null;
                     return (
-                      <Link
-                        key={ev.eventId}
-                        href={`/events/${ev.eventId}`}
-                        className="rounded-2xl border border-border bg-surface p-5 hover:border-accent-primary/50 hover:scale-[1.02] transition snap-start shrink-0 w-[240px] flex flex-col gap-3 animate-fade-up"
-                        style={{ animationDelay: `${240 + i * 50}ms` }}
-                      >
-                        <div>
-                          <p className="text-[11px] font-sans uppercase tracking-widest mb-1.5" style={{ color: teamColor }}>
-                            {formatEventDate(ev.date)}
-                          </p>
-                          <p className="font-heading text-sm text-text-primary leading-snug line-clamp-2">{ev.name}</p>
-                        </div>
-                        {total > 0 ? (
-                          <div>
-                            <div className="flex justify-between text-xs font-sans mb-1.5 text-text-muted">
-                              <span>Slots</span>
-                              <span className="tabular-nums text-text-secondary">{reg}/{total}</span>
-                            </div>
-                            <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
-                              <div className="h-full rounded-full bg-accent-highlight" style={{ width: `${pct}%` }} />
-                            </div>
+                      <div key={teamId} className="rounded-2xl bg-surface border border-border p-4 flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
+                            <span className="font-heading text-sm text-text-primary">{meta.label}</span>
                           </div>
+                          <span
+                            className="text-[10px] font-heading px-2 py-0.5 rounded-full border uppercase tracking-wide shrink-0"
+                            style={{ color: meta.color, borderColor: `${meta.color}40`, backgroundColor: `${meta.color}10` }}
+                          >
+                            {TIER_LABELS[prog.currentTier]}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-xs mb-1.5">
+                            <span className="text-text-muted font-sans">Quest Progress</span>
+                            <span className="font-heading tabular-nums" style={{ color: meta.color }}>
+                              {prog.completed}/{prog.total}
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{ width: `${barsReady ? prog.pct : 0}%`, backgroundColor: meta.color }}
+                            />
+                          </div>
+                        </div>
+                        {!prog.isMaxTier && prog.nextLabel ? (
+                          <p className="text-[11px] text-text-muted font-sans">
+                            Next: <span style={{ color: meta.color }}>{prog.nextLabel}</span>
+                          </p>
                         ) : null}
-                      </Link>
+                        {prog.isMaxTier ? (
+                          <p className="text-[11px] font-sans font-medium" style={{ color: meta.color }}>Max tier reached</p>
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
-              )}
-            </section>
+              ) : null}
+
+              {/* Season Leaderboard — order-8 mobile */}
+              <div className="order-8 lg:order-none rounded-2xl bg-surface border border-border p-5 flex flex-col gap-3 animate-fade-up" style={{ animationDelay: "180ms" }}>
+                <div className="flex items-center justify-between">
+                  <span className="font-heading text-sm text-text-primary uppercase tracking-widest">Leaderboard</span>
+                  <Link href="/chapter" className="text-xs text-accent-highlight hover:text-accent-primary transition-colors">
+                    View all →
+                  </Link>
+                </div>
+                {leaderboard.length === 0 ? (
+                  <p className="text-xs text-text-muted text-center py-4 font-sans">No data yet</p>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {leaderboard.map((entry, i) => {
+                      const isCurrentUser = entry.uid === firebaseUid;
+                      const entryColor = isCurrentUser ? teamColor : "#A1A1AA";
+                      return (
+                        <div
+                          key={entry.uid}
+                          className="flex items-center gap-3 px-2 py-2 rounded-xl transition-colors"
+                          style={isCurrentUser ? { backgroundColor: `${teamColor}10`, border: `1px solid ${teamColor}25` } : {}}
+                        >
+                          <span
+                            className="font-heading text-sm tabular-nums shrink-0 w-5 text-center"
+                            style={{ color: i === 0 ? "#F5C518" : i === 1 ? "#A1A1AA" : i === 2 ? "#CD7F32" : "#52525B" }}
+                          >
+                            {i + 1}
+                          </span>
+                          <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 border border-border" style={{ backgroundColor: "#100c1a" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={buildAvatarUrl(entry.username, entry.avatarOptions ?? DEFAULT_AVATAR)}
+                              alt=""
+                              width={28}
+                              height={28}
+                              className="w-full h-full"
+                            />
+                          </div>
+                          <span className="flex-1 text-xs font-sans text-text-primary truncate">
+                            {entry.username}
+                            {isCurrentUser && (
+                              <span className="ml-1.5 text-[9px] font-sans uppercase tracking-wide" style={{ color: teamColor }}> you</span>
+                            )}
+                          </span>
+                          <span className="text-xs font-heading tabular-nums shrink-0" style={{ color: entryColor }}>
+                            {(entry.xp ?? 0).toLocaleString()}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {userLeaderboardRank !== null && userLeaderboardRank > 5 && (
+                      <>
+                        <div className="flex items-center gap-2 px-2 py-1">
+                          <div className="flex-1 h-px bg-border" />
+                          <span className="text-[10px] text-text-muted font-sans">your rank</span>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                        <div
+                          className="flex items-center gap-3 px-2 py-2 rounded-xl"
+                          style={{ backgroundColor: `${teamColor}10`, border: `1px solid ${teamColor}25` }}
+                        >
+                          <span className="font-heading text-sm tabular-nums shrink-0 w-5 text-center text-text-muted">
+                            {userLeaderboardRank}
+                          </span>
+                          <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 border border-border" style={{ backgroundColor: "#100c1a" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={avatarUrl} alt="" width={28} height={28} className="w-full h-full" />
+                          </div>
+                          <span className="flex-1 text-xs font-sans text-text-primary truncate">
+                            {userData!.username}
+                            <span className="ml-1.5 text-[9px] font-sans uppercase tracking-wide" style={{ color: teamColor }}> you</span>
+                          </span>
+                          <span className="text-xs font-heading tabular-nums shrink-0" style={{ color: teamColor }}>
+                            {(userData!.xp ?? 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+            </div>{/* end right sidebar */}
 
           </div>
         </div>
       </PageShell>
-
-
-      {showAvatarEditor && userData ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !savingAvatar && setShowAvatarEditor(false)} role="presentation" style={{ animation: "fade-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both" }} />
-          <div
-            className="relative border border-border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl"
-            style={{ backgroundColor: "#1a1625", animation: "modal-in 350ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
-          >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
-              <h2 className="font-heading text-[1rem] text-white">Customize Avatar</h2>
-              <button
-                type="button"
-                onClick={() => !savingAvatar && setShowAvatarEditor(false)}
-                className="text-gray-300 hover:text-white transition-colors"
-                aria-label="Close"
-              >
-                <CloseIcon />
-              </button>
-            </div>
-            <div className="overflow-y-auto scrollbar-minimal px-5 py-5 space-y-6">
-              <div className="flex justify-center">
-                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-border" style={{ backgroundColor: "#100c1a" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={buildAvatarUrl(userData.username, draftOptions)} alt="" width={96} height={96} className="w-full h-full" />
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Background Color</p>
-                <div className="flex flex-wrap gap-2.5">
-                  {BG_COLORS.map(({ hex, label }) => {
-                    const isSelected = draftOptions.backgroundColor === hex;
-                    return (
-                      <button
-                        key={hex}
-                        type="button"
-                        title={label}
-                        onClick={() => setDraftOptions((p) => ({ ...p, backgroundColor: hex }))}
-                        className="w-7 h-7 rounded-full transition-all focus:outline-none"
-                        style={
-                          hex === "transparent"
-                            ? {
-                                background: "repeating-conic-gradient(#3f3f46 0% 25%, #2a2a3e 0% 50%) 0 0 / 8px 8px",
-                                outline: isSelected ? "2px solid #A855F7" : "2px solid transparent",
-                                outlineOffset: "2px",
-                              }
-                            : {
-                                backgroundColor: `#${hex}`,
-                                outline: isSelected ? "2px solid #A855F7" : "2px solid transparent",
-                                outlineOffset: "2px",
-                              }
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Background Style</p>
-                <div className="flex gap-2">
-                  {(
-                    [
-                      { id: "solid" as const, label: "Solid" },
-                      { id: "gradientLinear" as const, label: "Gradient" },
-                    ] as const
-                  ).map(({ id, label }) => (
-                    <OptionChip
-                      key={id}
-                      label={label}
-                      selected={draftOptions.backgroundType === id}
-                      onClick={() => setDraftOptions((p) => ({ ...p, backgroundType: id }))}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Eyes</p>
-                <div className="flex flex-wrap gap-2">
-                  {EYES_OPTIONS.map(({ id, label }) => (
-                    <OptionChip
-                      key={id}
-                      label={label}
-                      selected={draftOptions.eyes === id}
-                      onClick={() => setDraftOptions((p) => ({ ...p, eyes: id }))}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-3">Mouth</p>
-                <div className="flex flex-wrap gap-2">
-                  {MOUTH_OPTIONS.map(({ id, label }) => (
-                    <OptionChip
-                      key={id}
-                      label={label}
-                      selected={draftOptions.mouth === id}
-                      onClick={() => setDraftOptions((p) => ({ ...p, mouth: id }))}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2 px-5 py-4 border-t border-border flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowAvatarEditor(false)}
-                disabled={savingAvatar}
-                className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAvatar}
-                disabled={savingAvatar}
-                className="flex-1 bg-accent-highlight hover:bg-accent-primary text-white font-heading text-xs tracking-widest uppercase py-2.5 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {savingAvatar ? "Saving…" : "Save"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }
