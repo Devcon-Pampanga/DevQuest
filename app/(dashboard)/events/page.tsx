@@ -131,10 +131,6 @@ function totalSlots(roles: EventRole[]): number {
   return roles.reduce((sum, r) => sum + r.slots, 0);
 }
 
-function isUpcoming(ts: Timestamp): boolean {
-  return ts.toDate() > new Date();
-}
-
 // ─── Event Card ───────────────────────────────────────────────────────────────
 
 function EventCard({
