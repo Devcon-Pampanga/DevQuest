@@ -1178,7 +1178,7 @@ export default function ChapterPage() {
       actions={authChecked ? chapterDropdownAction : undefined}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 items-start pb-10">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6 items-stretch lg:items-start pb-10">
 
           {/* Chapter Hero — spans both columns */}
           <div className="lg:col-span-3">
@@ -1191,7 +1191,7 @@ export default function ChapterPage() {
 
           {/* Stats — spans both columns, internal 3-col grid */}
           <div className="lg:col-span-3">
-            <div className="grid grid-cols-3 gap-6 lg:hidden">
+            <div className="grid grid-cols-3 gap-3 lg:hidden">
               <StatsCard
                 label="Events Hosted"
                 value={events.length}
@@ -1331,17 +1331,19 @@ export default function ChapterPage() {
           </div>
 
           {/* ── Left column (coordinator, events, volunteers) ── */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
+          <div className="contents lg:flex lg:flex-col gap-6 lg:col-span-2">
 
               {/* Coordinator */}
               {coordinators.length > 0 && (
-                <CoordinatorsSection coordinators={coordinators} />
+                <div className="order-3 lg:order-none">
+                  <CoordinatorsSection coordinators={coordinators} />
+                </div>
               )}
 
               {/* Recent Events */}
               {events.length > 0 && (
                 <div
-                  className="flex flex-col gap-3 animate-fade-up"
+                  className="flex flex-col gap-3 animate-fade-up order-5 lg:order-none"
                   style={{ animationDelay: "160ms" }}
                 >
                   <div className="flex items-center justify-between">
@@ -1376,7 +1378,7 @@ export default function ChapterPage() {
 
               {/* Volunteers */}
               <div
-                className="flex flex-col gap-4 animate-fade-up"
+                className="flex flex-col gap-4 animate-fade-up order-7 lg:order-none"
                 style={{ animationDelay: "200ms" }}
               >
                 <div className="flex items-center justify-between">
@@ -1517,11 +1519,11 @@ export default function ChapterPage() {
             </div>{/* end left column */}
 
             {/* ── Right column ── */}
-            <div className="flex flex-col gap-6 lg:col-start-3 lg:col-span-1">
+            <div className="contents lg:flex lg:flex-col gap-6 lg:col-start-3 lg:col-span-1">
 
               {/* Leaderboard */}
               <div
-                className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4 animate-fade-up"
+                className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4 animate-fade-up order-4 lg:order-none"
                 style={{ animationDelay: "180ms" }}
               >
             <div className="flex items-center justify-between">
@@ -1631,7 +1633,7 @@ export default function ChapterPage() {
 
               {/* Team Breakdown */}
               <div
-                className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4 animate-fade-up"
+                className="rounded-2xl bg-surface border border-border p-5 flex flex-col gap-4 animate-fade-up order-6 lg:order-none"
                 style={{ animationDelay: "220ms" }}
               >
                 <span className="font-heading text-sm text-text-primary uppercase tracking-widest">
