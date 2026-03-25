@@ -1177,7 +1177,7 @@ export default function ProfilePage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
           <>
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
                 <HeaderCard
                   userData={userData}
                   avatarUrl={avatarUrl}
@@ -1186,7 +1186,7 @@ export default function ProfilePage() {
                 />
               </div>
               {milestoneTeam ? (
-                <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both" }}>
+                <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
                   <MilestonesSection
                     userData={userData}
                     completions={completions}
@@ -1196,7 +1196,7 @@ export default function ProfilePage() {
                   />
                 </div>
               ) : null}
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                 <PortfolioCard
                   completions={completions}
                   allQuests={allQuests}
@@ -1207,10 +1207,10 @@ export default function ProfilePage() {
                   copied={copied}
                 />
               </div>
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
                 <BadgesGrid badges={badges} />
               </div>
-              <div style={{ animation: "fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
                 <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
               </div>
             </>

@@ -1157,7 +1157,7 @@ function QuestsPageContent() {
 
           {/* ── Team pill switcher ─────────────────────────────────────────────── */}
           {tabs.length > 1 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "0ms" }}>
               {tabs.map((tab) => {
                 const color = tab.isApprovals
                   ? "#A855F7"
@@ -1192,7 +1192,7 @@ function QuestsPageContent() {
 
           {/* ── Approvals tab ─────────────────────────────────────────────────── */}
           {!loadingCompletions && activeTab === "approvals" && (
-            <div>
+            <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-heading text-lg text-text-primary">Pending Approvals</h2>
                 <button
@@ -1241,16 +1241,19 @@ function QuestsPageContent() {
             <div className="flex flex-col gap-5">
 
                 {/* Current Tier card — what the volunteer holds right now */}
-                <EarnedTierCard
-                  teamId={activeTab}
-                  earnedTier={earnedTier}
-                  earnedTierLabel={earnedTierLabel}
-                  color={activeMeta.color}
-                  isMaxTier={isMaxTier}
-                />
+                <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
+                  <EarnedTierCard
+                    teamId={activeTab}
+                    earnedTier={earnedTier}
+                    earnedTierLabel={earnedTierLabel}
+                    color={activeMeta.color}
+                    isMaxTier={isMaxTier}
+                  />
+                </div>
 
                 {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
                 {!isMaxTier && (
+                  <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                   <HeroProgressCard
                     teamId={activeTab}
                     currentTier={currentTier}
@@ -1260,12 +1263,13 @@ function QuestsPageContent() {
                     quests={currentTierQuests}
                     completions={completions}
                   />
+                  </div>
                 )}
 
                 {/* Milestones card */}
                 <div
-                  className="rounded-2xl border border-border overflow-hidden"
-                  style={{ backgroundColor: "#1e1a2e" }}
+                  className="rounded-2xl border border-border overflow-hidden animate-fade-up"
+                  style={{ backgroundColor: "#1e1a2e", animationDelay: "180ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
                   <div className="p-5">
@@ -1311,8 +1315,8 @@ function QuestsPageContent() {
                 </div>
 
               <div
-                className="rounded-2xl border border-border overflow-hidden"
-                style={{ backgroundColor: "#1e1a2e" }}
+                className="rounded-2xl border border-border overflow-hidden animate-fade-up"
+                style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
               >
                 <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
                 <div className="p-5">

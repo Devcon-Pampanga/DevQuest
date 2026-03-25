@@ -322,7 +322,7 @@ export default function SettingsPage() {
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 pb-10">
 
           {/* ── Avatar ── */}
-          <div className="flex justify-center">
+          <div className="flex justify-center animate-fade-up" style={{ animationDelay: "0ms" }}>
             <div className="relative">
               <button
                 type="button"
@@ -347,7 +347,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ── Profile info ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "60ms" }}>
             <div className="px-5 py-3 border-b border-border">
               <span className="font-heading text-sm text-text-primary">Profile Info</span>
             </div>
@@ -409,7 +409,7 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Volunteer teams ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "120ms" }}>
             <div className="px-5 py-3 border-b border-border">
               <span className="font-heading text-sm text-text-primary">Volunteer Teams</span>
             </div>
@@ -474,7 +474,7 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Danger zone ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "180ms" }}>
             <div className="px-5 py-3 border-b border-border">
               <span className="font-heading text-sm text-text-primary">Account</span>
             </div>

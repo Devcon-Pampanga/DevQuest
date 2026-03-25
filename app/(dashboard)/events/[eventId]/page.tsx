@@ -111,7 +111,7 @@ function formatTime(ts: Timestamp): string {
   return ts.toDate().toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hour12: true,
   });
 }
 
@@ -234,10 +234,10 @@ function tsToTimeInput(ts: Timestamp): string {
 // ─── Edit Event Modal ─────────────────────────────────────────────────────────
 
 const EDIT_INPUT =
-  "w-full bg-[#0a0a0f] border border-[#27272A] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#52525B] focus:outline-none focus:ring-2 focus:ring-[#A855F7] transition-shadow";
+  "w-full bg-base border border-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-highlight transition-shadow";
 
 const EDIT_LABEL =
-  "block text-[11px] font-sans uppercase tracking-widest text-[#A1A1AA] mb-2";
+  "block text-[11px] font-sans uppercase tracking-widest text-text-secondary mb-2";
 
 interface EditFields {
   name: string;
@@ -286,8 +286,7 @@ function EditEventModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative z-10 w-full max-w-lg rounded-2xl border border-[#27272A] overflow-hidden shadow-2xl"
-        style={{ backgroundColor: "#1e1a2e" }}
+        className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-elevated overflow-hidden shadow-2xl animate-modal-in"
       >
         {/* Stripe */}
         <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg, #7C3AED, #A855F7)" }} />
@@ -295,7 +294,7 @@ function EditEventModal({
         <div className="p-6 max-h-[80vh] overflow-y-auto scrollbar-minimal">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-heading text-xl text-white">Edit Event</h3>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-[#52525B] hover:text-white hover:bg-white/5 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
               <IconX />
             </button>
           </div>
@@ -338,7 +337,7 @@ function EditEventModal({
 
             <div>
               <label className={EDIT_LABEL}>Banner Image</label>
-              <div className="rounded-xl overflow-hidden border border-[#27272A] bg-[#0a0a0f]">
+              <div className="rounded-xl overflow-hidden border border-border bg-base">
                 {(bannerPreview || event.bannerUrl) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -347,7 +346,7 @@ function EditEventModal({
                     className="w-full h-28 object-cover opacity-80"
                   />
                 )}
-                <label className="flex items-center justify-center gap-2 py-3 cursor-pointer hover:bg-white/5 transition-colors text-sm text-[#A1A1AA] hover:text-white">
+                <label className="flex items-center justify-center gap-2 py-3 cursor-pointer hover:bg-white/5 transition-colors text-sm text-text-secondary hover:text-text-primary">
                   <IconUpload />
                   {bannerFile ? bannerFile.name : "Replace banner…"}
                   <input type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
@@ -359,7 +358,7 @@ function EditEventModal({
           <div className="flex gap-3 mt-6">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-[#27272A] text-[#A1A1AA] hover:text-white hover:border-[#A1A1AA] text-sm font-heading transition-colors"
+              className="flex-1 py-3 rounded-xl border border-border text-text-secondary hover:text-text-primary hover:border-text-secondary text-sm font-heading transition-colors"
             >
               Cancel
             </button>
@@ -407,7 +406,7 @@ function RoleModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md bg-elevated border border-border rounded-2xl p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-md bg-elevated border border-border rounded-2xl p-6 shadow-2xl animate-modal-in">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-heading text-xl text-text-primary">Choose Your Role</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
@@ -522,7 +521,7 @@ function QrScannerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm bg-elevated border border-border rounded-2xl p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-sm bg-elevated border border-border rounded-2xl p-6 shadow-2xl animate-modal-in">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-heading text-lg text-text-primary">Scan Volunteer QR</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
@@ -557,7 +556,7 @@ function EventDetailSkeleton() {
   return (
     <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
       {/* Header block */}
-      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-5 animate-pulse flex flex-col gap-3">
+      <div className="rounded-2xl border border-border bg-surface p-5 animate-pulse flex flex-col gap-3">
         <SkeletonLine className="w-56" />
         <SkeletonLine className="w-40" />
         <SkeletonLine className="w-32" />
@@ -569,14 +568,14 @@ function EventDetailSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex items-center justify-between"
+          className="rounded-xl border border-border bg-surface p-4 animate-pulse flex items-center justify-between"
         >
           <SkeletonLine className="w-28" />
           <SkeletonBlock className="h-8 w-20 rounded-lg" />
         </div>
       ))}
       {/* Description block */}
-      <div className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-5 animate-pulse flex flex-col gap-2">
+      <div className="rounded-2xl border border-border bg-surface p-5 animate-pulse flex flex-col gap-2">
         <SkeletonLine className="w-full" />
         <SkeletonLine className="w-full" />
         <SkeletonLine className="w-3/4" />
@@ -1096,23 +1095,23 @@ export default function EventDetailPage() {
           />
         )}
       </div>
-      <div className="p-6 flex flex-col gap-4">
-        {/* Status + chapter */}
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="p-6 flex flex-col gap-3">
+        {/* Metadata chips — label row, reads as metadata not a section */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+            className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
               upcoming
-                ? "bg-green-500/15 text-green-400"
+                ? "bg-accent-primary/20 text-accent-highlight"
                 : "bg-zinc-700/40 text-zinc-400"
             }`}
           >
             {upcoming ? "UPCOMING" : "PAST"}
           </span>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-accent-primary/20 text-accent-highlight font-medium">
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 text-text-muted font-medium">
             {event.chapterId}
           </span>
           {event.isInternal && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-700/50 text-zinc-300 font-medium">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 text-text-muted font-medium">
               Internal
             </span>
           )}
@@ -1121,7 +1120,7 @@ export default function EventDetailPage() {
               href={event.lumaUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs px-2.5 py-1 rounded-full border border-border text-text-muted hover:text-text-secondary transition-colors"
+              className="text-xs px-2.5 py-0.5 rounded-full border border-border text-text-secondary hover:text-text-primary hover:border-text-muted transition-colors"
             >
               View on Luma ↗
             </a>
@@ -1133,39 +1132,43 @@ export default function EventDetailPage() {
           {event.name}
         </h1>
 
-        {/* Date & time */}
-        <div className="flex items-center gap-2 text-text-secondary text-sm">
-          <IconCalendar />
-          <span>{formatDate(event.date)} · {timeLabel}</span>
-        </div>
-
-        {/* Location */}
-        <div className="flex items-center gap-2 text-text-secondary text-sm">
-          <IconPin />
-          <span>{event.location}</span>
-        </div>
-
-        {/* Description */}
-        {event.description && (
-          <p className="text-text-secondary text-sm leading-relaxed border-t border-border pt-4">
-            {event.description}
-          </p>
-        )}
-
-        {/* Capacity bar */}
-        <div className="border-t border-border pt-4">
-          <div className="flex items-center justify-between text-sm mb-1.5">
-            <span className="text-text-secondary">Total Capacity</span>
-            <span className="text-accent-highlight font-semibold">{totalFilled} / {totalSlots}</span>
+        {/* Capacity bar — directly under name, decision-critical for volunteers */}
+        <div>
+          <div className="flex items-center justify-between text-xs text-text-muted mb-1.5">
+            <span>{totalFilled} / {totalSlots} spots filled</span>
+            {totalSlots > 0 && totalFilled >= totalSlots && (
+              <span className="text-red-400 font-medium">Full</span>
+            )}
           </div>
-          <div className="h-1.5 rounded-full bg-border">
+          <div className="h-2 rounded-full bg-border">
             <div
-              className="h-full rounded-full bg-accent-primary transition-all"
+              className="h-full rounded-full bg-accent-highlight transition-all"
               style={{ width: totalSlots > 0 ? `${Math.min(100, (totalFilled / totalSlots) * 100)}%` : "0%" }}
             />
           </div>
         </div>
+
+        {/* Logistics — tightly grouped, single cluster */}
+        <div className="flex flex-col gap-1.5 mt-1 text-text-secondary text-sm">
+          <div className="flex items-center gap-2">
+            <IconCalendar />
+            <span>{formatDate(event.date)} · {timeLabel}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <IconPin />
+            <span>{event.location}</span>
+          </div>
+        </div>
       </div>
+
+      {/* Description — separated below the decision block */}
+      {event.description && (
+        <div className="px-6 pb-6 border-t border-border pt-4">
+          <p className="text-text-secondary text-sm leading-relaxed">
+            {event.description}
+          </p>
+        </div>
+      )}
     </div>
   );
 
@@ -1175,14 +1178,15 @@ export default function EventDetailPage() {
         {event.isInternal ? "Attendee Seats" : "Volunteer Roles"}
       </h2>
       <div className={event.isInternal ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-3"}>
-        {event.roles.map((role) => {
+        {event.roles.map((role, index) => {
           const filled = slotCounts[role.roleName] ?? 0;
           const pct = role.slots > 0 ? Math.min(100, (filled / role.slots) * 100) : 0;
           const full = filled >= role.slots;
           return (
             <div
               key={role.roleName}
-              className="bg-surface border border-border rounded-xl p-4 flex flex-col gap-2"
+              className="bg-surface border border-border rounded-xl p-4 flex flex-col gap-2 animate-fade-up"
+              style={{ animationDelay: `${60 + index * 50}ms` }}
             >
               <div className="flex items-center justify-between">
                 <span className="font-heading text-sm text-text-primary">{role.roleName}</span>
@@ -1265,26 +1269,32 @@ export default function EventDetailPage() {
 
         <div className="flex-1 p-6">
           {coordTab === "details" && (
-            <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
-              <HeaderCard />
-              <RolesSection />
+            <div key="details" className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
+              <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
+                <HeaderCard />
+              </div>
+              <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
+                <RolesSection />
+              </div>
             </div>
           )}
 
           {coordTab === "volunteers" && (
-            <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
+            <div key="volunteers" className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
               {/* Stats row */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Registered", value: allRegs.length, color: "#A855F7" },
-                  { label: "Confirmed", value: confirmed, color: "#06B6D4" },
-                  { label: "Reflections", value: reflections, color: "#22C55E" },
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="bg-surface border border-border rounded-xl p-4 text-center">
-                    <p className="font-heading text-2xl font-bold" style={{ color }}>{value}</p>
-                    <p className="text-xs text-text-muted mt-1">{label}</p>
-                  </div>
-                ))}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="rounded-2xl bg-surface border border-border p-4 flex flex-col gap-1 animate-fade-up" style={{ animationDelay: "0ms" }}>
+                  <span className="text-3xl font-heading font-bold text-accent-highlight tabular-nums">{allRegs.length}</span>
+                  <span className="text-xs text-text-muted">Registered</span>
+                </div>
+                <div className="rounded-2xl bg-surface border border-border p-4 flex flex-col gap-1 animate-fade-up" style={{ animationDelay: "60ms" }}>
+                  <span className="text-3xl font-heading font-bold text-team-community tabular-nums">{confirmed}</span>
+                  <span className="text-xs text-text-muted">Confirmed</span>
+                </div>
+                <div className="rounded-2xl bg-surface border border-border p-4 flex flex-col gap-1 animate-fade-up" style={{ animationDelay: "120ms" }}>
+                  <span className="text-3xl font-heading font-bold text-team-sustainability tabular-nums">{reflections}</span>
+                  <span className="text-xs text-text-muted">Reflections</span>
+                </div>
               </div>
 
               {/* Role filter chips — hidden for single-role (internal) events */}
@@ -1353,7 +1363,8 @@ export default function EventDetailPage() {
                   {filteredRegs.map((reg, idx) => (
                     <div
                       key={reg.userId}
-                      className={`flex items-center gap-4 px-5 py-4 ${idx < filteredRegs.length - 1 ? "border-b border-border" : ""}`}
+                      className={`flex items-center gap-4 px-5 py-4 animate-fade-up ${idx < filteredRegs.length - 1 ? "border-b border-border" : ""}`}
+                      style={{ animationDelay: `${Math.min(idx, 8) * 50}ms` }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -1371,22 +1382,28 @@ export default function EventDetailPage() {
                           <span className="text-xs text-text-muted">{reg.role}</span>
                           <span className="text-xs text-accent-highlight font-semibold">+{reg.roleXP} XP</span>
                           {reg.reflectionSubmitted && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400">Reflected</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-team-community/15 text-team-community">Reflected</span>
                           )}
                         </div>
                       </div>
                       <div className="shrink-0">
                         {reg.attended ? (
-                          <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-green-500/15 text-green-400 font-medium">
+                          <span className="flex items-center gap-1.5 text-sm px-3.5 py-1.5 rounded-xl bg-team-sustainability/15 text-team-sustainability font-heading font-medium animate-modal-in">
                             <IconCheck /> Confirmed
                           </span>
                         ) : (
                           <button
                             onClick={() => confirmAttendance(reg)}
                             disabled={confirmingId === reg.userId}
-                            className="text-xs px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 rounded-lg text-white font-heading transition-colors"
+                            className="text-sm px-4 py-2 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 rounded-xl text-white font-heading font-medium transition-colors flex items-center gap-1.5"
                           >
-                            {confirmingId === reg.userId ? "..." : "Confirm"}
+                            {confirmingId === reg.userId ? (
+                              <span className="flex gap-1">
+                                {WAVE_COLORS.map((color, i) => (
+                                  <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                                ))}
+                              </span>
+                            ) : "Confirm"}
                           </button>
                         )}
                       </div>
@@ -1430,9 +1447,9 @@ export default function EventDetailPage() {
         {/* Scan feedback toast */}
         {scanFeedback && (
           <div
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 rounded-xl text-sm flex items-center gap-2 shadow-lg whitespace-nowrap ${
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 rounded-xl text-sm flex items-center gap-2 shadow-lg whitespace-nowrap animate-modal-in ${
               scanFeedback.ok
-                ? "bg-green-500/20 border border-green-500/40 text-green-400"
+                ? "bg-team-sustainability/20 border border-team-sustainability/40 text-team-sustainability"
                 : "bg-red-500/20 border border-red-500/40 text-red-400"
             }`}
           >
@@ -1445,7 +1462,7 @@ export default function EventDetailPage() {
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !deleting && setShowDeleteConfirm(false)} />
-            <div className="relative z-10 w-full max-w-sm border border-border rounded-2xl overflow-hidden shadow-2xl" style={{ backgroundColor: "#1e1a2e" }}>
+            <div className="relative z-10 w-full max-w-sm border border-border bg-elevated rounded-2xl overflow-hidden shadow-2xl animate-modal-in">
               <div className="h-[3px] w-full bg-red-600" />
               <div className="p-6">
               <h3 className="font-heading text-xl text-text-primary mb-2">Delete Event?</h3>
@@ -1506,11 +1523,13 @@ export default function EventDetailPage() {
 
       <div className="flex-1 p-6">
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
-          <HeaderCard />
+          <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
+            <HeaderCard />
+          </div>
 
           {/* Registration banner */}
           {joined && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-green-500/10 border border-green-500/25 rounded-xl">
+            <div className="flex items-center gap-3 px-4 py-3 bg-green-500/10 border border-green-500/25 rounded-xl animate-fade-up" style={{ animationDelay: "60ms" }}>
               <span className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
                 <IconCheck />
               </span>
@@ -1522,7 +1541,7 @@ export default function EventDetailPage() {
 
           {/* Reflection banners */}
           {reflectionOpen && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-orange-500/10 border border-orange-500/25 rounded-xl">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-orange-500/10 border border-orange-500/25 rounded-xl animate-fade-up" style={{ animationDelay: "120ms" }}>
               <p className="text-sm text-orange-400">
                 Submit your reflection — due in <strong>{hoursLeft}h</strong>
               </p>
@@ -1535,22 +1554,24 @@ export default function EventDetailPage() {
             </div>
           )}
           {attended && reflectionSubmitted && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-green-500/10 border border-green-500/25 rounded-xl">
+            <div className="flex items-center gap-2 px-4 py-3 bg-green-500/10 border border-green-500/25 rounded-xl animate-fade-up" style={{ animationDelay: "120ms" }}>
               <IconCheck />
               <p className="text-sm text-green-400">Reflection submitted ✓</p>
             </div>
           )}
           {!upcoming && !attended && (
-            <div className="px-4 py-3 bg-surface border border-border rounded-xl text-sm text-text-muted">
+            <div className="px-4 py-3 bg-surface border border-border rounded-xl text-sm text-text-muted animate-fade-up" style={{ animationDelay: "120ms" }}>
               This event has passed.
             </div>
           )}
 
-          <RolesSection />
+          <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
+            <RolesSection />
+          </div>
 
           {/* QR code */}
           {joined && myReg?.qrData && (
-            <div className="bg-surface border border-border rounded-2xl p-6 flex flex-col items-center gap-4">
+            <div className="bg-surface border border-border rounded-2xl p-6 flex flex-col items-center gap-4 animate-fade-up" style={{ animationDelay: "180ms" }}>
               <div>
                 <h3 className="font-heading text-base text-text-primary text-center mb-1">Your QR Code</h3>
                 <p className="text-xs text-text-muted text-center">Show this to your coordinator on the day of the event</p>
@@ -1565,15 +1586,13 @@ export default function EventDetailPage() {
                   className="rounded-lg"
                 />
               </div>
-              <p className="text-xs text-text-muted font-mono text-center break-all px-2">
-                {myReg.qrData}
-              </p>
+              <p className="text-xs text-text-muted text-center">Show this to your coordinator on the day of the event.</p>
             </div>
           )}
 
           {/* Who's Joining */}
           {joined && publicRegs.length > 0 && (
-            <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: "240ms" }}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <h3 className="font-heading text-base text-text-primary">
                   {event.isInternal ? "Fellow Attendees" : "Who's Joining"}
