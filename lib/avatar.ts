@@ -62,6 +62,16 @@ export const MOUTH_OPTIONS: { id: string; label: string }[] = [
   { id: "square02", label: "Square 2" },
 ];
 
+export function randomAvatar(): AvatarOptions {
+  const colorPool = BG_COLORS.filter((c) => c.hex !== "transparent");
+  return {
+    backgroundColor: colorPool[Math.floor(Math.random() * colorPool.length)].hex,
+    backgroundType: Math.random() < 0.5 ? "solid" : "gradientLinear",
+    eyes: EYES_OPTIONS[Math.floor(Math.random() * EYES_OPTIONS.length)].id,
+    mouth: MOUTH_OPTIONS[Math.floor(Math.random() * MOUTH_OPTIONS.length)].id,
+  };
+}
+
 export function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
   const p: Record<string, string> = {
     seed,
