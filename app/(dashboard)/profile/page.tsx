@@ -257,14 +257,6 @@ function HeaderXPIcon() {
   );
 }
 
-function HeaderPencilIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-    </svg>
-  );
-}
 
 function profileDisplayName(raw: string): string {
   return raw.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -331,16 +323,8 @@ function HeaderCard({
             className="relative shrink-0 size-[4.5rem] sm:size-20 rounded-xl overflow-hidden border-2"
             style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
           >
-            <Link href="/dashboard" aria-label="Change avatar on Home">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarUrl} alt="" width={80} height={80} className="block h-full w-full object-cover" />
-            </Link>
-            <div
-              className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center border border-white/20 pointer-events-none"
-              style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
-            >
-              <HeaderPencilIcon />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatarUrl} alt="" width={80} height={80} className="block h-full w-full object-cover" />
           </div>
           <div className="min-w-0 flex flex-col justify-center gap-1 flex-1 leading-none">
             <h2 className="font-heading text-xl sm:text-2xl text-white leading-tight truncate">
