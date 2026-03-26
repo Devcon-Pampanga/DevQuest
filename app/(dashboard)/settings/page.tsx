@@ -13,7 +13,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import PageShell, { SkeletonBlock, SkeletonLine } from "@/components/layout/PageShell";
+import PageShell, { SkeletonBlock } from "@/components/layout/PageShell";
 import { TEAM_META } from "@/lib/seed/quests";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
