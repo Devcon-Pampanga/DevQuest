@@ -115,11 +115,14 @@ function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
 function SettingsSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6">
-        <SkeletonBlock className="h-32" />
-        <SkeletonBlock className="h-48" />
-        <SkeletonBlock className="h-40" />
-        <SkeletonLine className="w-1/2 mx-auto" />
+      <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:items-start pb-10">
+        <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-2">
+          <SkeletonBlock className="h-64" />
+          <SkeletonBlock className="h-32" />
+        </div>
+        <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-1">
+          <SkeletonBlock className="h-52" />
+        </div>
       </div>
     </div>
   );
@@ -319,219 +322,241 @@ export default function SettingsPage() {
       skeleton={<SettingsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 pb-10">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:items-start pb-10">
 
-          {/* ── Avatar ── */}
-          <div className="flex justify-center animate-fade-up" style={{ animationDelay: "0ms" }}>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={openAvatarEditor}
-                className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-border block focus:outline-none focus:ring-2 focus:ring-accent-highlight"
-                style={{ backgroundColor: "#100c1a" }}
-                aria-label="Edit avatar"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={avatarUrl} alt="" width={96} height={96} className="w-full h-full object-contain" />
-              </button>
-              <div
-                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border border-border pointer-events-none"
-                style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
+          {/* Left column: Profile Info + Account */}
+          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-2">
+
+            {/* ── Profile info (with avatar) ── */}
+            <section className="order-1 lg:order-none rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "0ms" }}>
+              <div className="px-5 py-3 border-b border-border">
+                <span className="font-heading text-sm text-text-primary">Profile Info</span>
               </div>
-            </div>
-          </div>
-
-          {/* ── Profile info ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "60ms" }}>
-            <div className="px-5 py-3 border-b border-border">
-              <span className="font-heading text-sm text-text-primary">Profile Info</span>
-            </div>
-            <div className="px-5 py-5 flex flex-col gap-4">
-              <Field label="Username">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
-                  placeholder="your username"
-                  autoComplete="off"
-                />
-              </Field>
-              <Field label="Mobile number">
-                <input
-                  type="tel"
-                  value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
-                  className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
-                  placeholder="+63 9XX XXX XXXX"
-                />
-              </Field>
-              <Field label="LinkedIn URL">
-                <input
-                  type="url"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
-                  placeholder="https://linkedin.com/in/..."
-                />
-              </Field>
-              <Field label="GitHub URL">
-                <input
-                  type="url"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
-                  placeholder="https://github.com/..."
-                />
-              </Field>
-
-              {saveError ? (
-                <p className="text-xs text-red-400 font-sans animate-fade-in">{saveError}</p>
-              ) : null}
-              {saveSuccess ? (
-                <p className="text-xs text-green-400 font-sans animate-fade-in">Changes saved.</p>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => void handleSaveProfile()}
-                disabled={saving}
-                className="w-full py-2.5 px-4 rounded-xl font-heading text-sm tracking-wide bg-accent-highlight hover:bg-accent-primary text-white transition-colors disabled:opacity-50"
-              >
-                {saving ? "Saving…" : "Save Changes"}
-              </button>
-            </div>
-          </section>
-
-          {/* ── Volunteer teams ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "120ms" }}>
-            <div className="px-5 py-3 border-b border-border">
-              <span className="font-heading text-sm text-text-primary">Volunteer Teams</span>
-            </div>
-            <div className="px-5 py-5 flex flex-col gap-3">
-              <p className="text-xs text-text-muted font-sans">
-                You must be on at least one team. Leaving a team preserves your quest progress if you rejoin later.
-              </p>
-              {ALL_TEAM_IDS.map((teamId) => {
-                const meta = TEAM_META[teamId];
-                const isMember = currentTeams.includes(teamId);
-                const isOnly = isMember && currentTeams.length === 1;
-                const isLoading = teamLoading === teamId;
-                return (
-                  <div
-                    key={teamId}
-                    className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3"
-                    style={isMember ? { borderColor: `${meta.color}44`, backgroundColor: `${meta.color}0a` } : undefined}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: meta.color }}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-sans text-text-primary truncate">{meta.label}</p>
-                        {isMember ? (
-                          <p className="text-[10px] font-sans text-text-muted mt-0.5">Member</p>
-                        ) : null}
-                      </div>
-                    </div>
-                    {isMember ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleLeaveTeam(teamId)}
-                        disabled={isOnly || isLoading}
-                        className="shrink-0 px-3 py-1.5 rounded-lg border border-border text-xs font-sans text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={isOnly ? "You must remain on at least one team" : undefined}
-                      >
-                        {isLoading ? "Leaving…" : "Leave"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => void handleJoinTeam(teamId)}
-                        disabled={isLoading}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-sans transition-colors disabled:opacity-50"
-                        style={{
-                          borderWidth: 1,
-                          borderStyle: "solid",
-                          borderColor: `${meta.color}55`,
-                          backgroundColor: `${meta.color}14`,
-                          color: meta.color,
-                        }}
-                      >
-                        {isLoading ? "Joining…" : "Join"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* ── Danger zone ── */}
-          <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "180ms" }}>
-            <div className="px-5 py-3 border-b border-border">
-              <span className="font-heading text-sm text-text-primary">Account</span>
-            </div>
-            <div className="px-5 py-5 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                disabled={logoutLoading || deleteLoading}
-                className="w-full py-2.5 px-4 rounded-xl font-heading text-sm tracking-wide bg-accent-highlight hover:bg-accent-primary text-white transition-colors disabled:opacity-50"
-              >
-                {logoutLoading ? "Signing out…" : "Log Out"}
-              </button>
-
-              <div className="pt-2 border-t border-border">
-                <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4">
-                  {!confirmDelete ? (
+              <div className="px-5 py-5 flex flex-col gap-4">
+                {/* Avatar row */}
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
                     <button
                       type="button"
-                      onClick={() => { setConfirmDelete(true); setDeleteError(""); }}
-                      disabled={logoutLoading || deleteLoading}
-                      className="w-full py-2.5 px-4 rounded-xl font-sans text-sm border border-red-800/60 text-red-400 hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                      onClick={openAvatarEditor}
+                      className="w-16 h-16 rounded-xl overflow-hidden border border-border block focus:outline-none focus:ring-2 focus:ring-accent-highlight"
+                      style={{ backgroundColor: "#100c1a" }}
+                      aria-label="Edit avatar"
                     >
-                      Delete Account
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={avatarUrl} alt="" width={64} height={64} className="w-full h-full object-contain" />
                     </button>
-                  ) : (
-                    <div className="animate-fade-in">
-                      <p className="text-text-secondary text-xs text-center leading-relaxed mb-1">
-                        This will permanently delete your account and all associated data.
-                      </p>
-                      <p className="text-red-400/80 text-xs text-center mb-4">This cannot be undone.</p>
-                      {deleteError ? (
-                        <p className="text-xs text-red-400 font-sans text-center mb-3">{deleteError}</p>
-                      ) : null}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDelete(false)}
-                          disabled={deleteLoading}
-                          className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDeleteAccount()}
-                          disabled={deleteLoading}
-                          className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {deleteLoading ? "Deleting…" : "Yes, Delete"}
-                        </button>
-                      </div>
+                    <div
+                      className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border border-border pointer-events-none"
+                      style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
+                    >
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      </svg>
                     </div>
-                  )}
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <p className="text-sm font-sans text-text-primary">Your avatar</p>
+                    <button
+                      type="button"
+                      onClick={openAvatarEditor}
+                      className="text-xs font-sans text-accent-highlight hover:text-accent-primary transition-colors text-left"
+                    >
+                      Change Avatar →
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-border" />
+
+                <Field label="Username">
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
+                    placeholder="your username"
+                    autoComplete="off"
+                  />
+                </Field>
+                <Field label="Mobile number">
+                  <input
+                    type="tel"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
+                    placeholder="+63 9XX XXX XXXX"
+                  />
+                </Field>
+                <Field label="LinkedIn URL">
+                  <input
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                </Field>
+                <Field label="GitHub URL">
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="w-full bg-[#0f0f18] border border-border rounded-lg px-3 py-2.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight transition-colors"
+                    placeholder="https://github.com/..."
+                  />
+                </Field>
+
+                {saveError ? (
+                  <p className="text-xs text-red-400 font-sans animate-fade-in">{saveError}</p>
+                ) : null}
+                {saveSuccess ? (
+                  <p className="text-xs text-green-400 font-sans animate-fade-in">Changes saved.</p>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => void handleSaveProfile()}
+                  disabled={saving}
+                  className="w-full py-2.5 px-4 rounded-xl font-heading text-sm tracking-wide bg-accent-highlight hover:bg-accent-primary text-white transition-colors disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </section>
+
+            {/* ── Account ── */}
+            <section className="order-3 lg:order-none rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "120ms" }}>
+              <div className="px-5 py-3 border-b border-border">
+                <span className="font-heading text-sm text-text-primary">Account</span>
+              </div>
+              <div className="px-5 py-5 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  disabled={logoutLoading || deleteLoading}
+                  className="w-full py-2.5 px-4 rounded-xl font-heading text-sm tracking-wide border border-border text-text-muted hover:text-text-primary transition-colors disabled:opacity-50"
+                >
+                  {logoutLoading ? "Signing out…" : "Log Out"}
+                </button>
+
+                <div className="pt-2 border-t border-border">
+                  <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4">
+                    {!confirmDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => { setConfirmDelete(true); setDeleteError(""); }}
+                        disabled={logoutLoading || deleteLoading}
+                        className="w-full py-2.5 px-4 rounded-xl font-sans text-sm border border-red-800/60 text-red-400 hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                      >
+                        Delete Account
+                      </button>
+                    ) : (
+                      <div className="animate-fade-in">
+                        <p className="text-text-secondary text-xs text-center leading-relaxed mb-1">
+                          This will permanently delete your account and all associated data.
+                        </p>
+                        <p className="text-red-400/80 text-xs text-center mb-4">This cannot be undone.</p>
+                        {deleteError ? (
+                          <p className="text-xs text-red-400 font-sans text-center mb-3">{deleteError}</p>
+                        ) : null}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(false)}
+                            disabled={deleteLoading}
+                            className="flex-1 border border-border text-text-muted hover:text-text-primary font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteAccount()}
+                            disabled={deleteLoading}
+                            className="flex-1 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-sans text-sm py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {deleteLoading ? "Deleting…" : "Yes, Delete"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+
+          </div>
+
+          {/* Right column: Volunteer Teams */}
+          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-1">
+
+            {/* ── Volunteer teams ── */}
+            <section className="order-2 lg:order-none rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "60ms" }}>
+              <div className="px-5 py-3 border-b border-border">
+                <span className="font-heading text-sm text-text-primary">Volunteer Teams</span>
+              </div>
+              <div className="px-5 py-5 flex flex-col gap-3">
+                <p className="text-xs text-text-muted font-sans">
+                  You must be on at least one team. Leaving a team preserves your quest progress if you rejoin later.
+                </p>
+                {ALL_TEAM_IDS.map((teamId) => {
+                  const meta = TEAM_META[teamId];
+                  const isMember = currentTeams.includes(teamId);
+                  const isOnly = isMember && currentTeams.length === 1;
+                  const isLoading = teamLoading === teamId;
+                  return (
+                    <div
+                      key={teamId}
+                      className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3"
+                      style={isMember ? { borderColor: `${meta.color}44`, backgroundColor: `${meta.color}0a` } : undefined}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: meta.color }}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-sans text-text-primary truncate">{meta.label}</p>
+                          {isMember ? (
+                            <p className="text-[10px] font-sans text-text-muted mt-0.5">Member</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      {isMember ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleLeaveTeam(teamId)}
+                          disabled={isOnly || isLoading}
+                          className="shrink-0 px-3 py-1.5 rounded-lg border border-border text-xs font-sans text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={isOnly ? "You must remain on at least one team" : undefined}
+                        >
+                          {isLoading ? "Leaving…" : "Leave"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void handleJoinTeam(teamId)}
+                          disabled={isLoading}
+                          className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-sans transition-colors disabled:opacity-50"
+                          style={{
+                            borderWidth: 1,
+                            borderStyle: "solid",
+                            borderColor: `${meta.color}55`,
+                            backgroundColor: `${meta.color}14`,
+                            color: meta.color,
+                          }}
+                        >
+                          {isLoading ? "Joining…" : "Join"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+          </div>
 
         </div>
       </div>
