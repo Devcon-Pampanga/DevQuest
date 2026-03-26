@@ -14,6 +14,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { randomAvatar } from "@/lib/avatar";
 
 export function getFriendlyAuthError(code: string): string {
   switch (code) {
@@ -66,6 +67,7 @@ export async function signUp(email: string, password: string): Promise<void> {
     email: email.toLowerCase().trim(),
     role,
     username: "",
+    usernameLower: "",
     contactNumber: "",
     chapterId: "",
     teams: [],
@@ -101,15 +103,17 @@ export async function completeOnboarding(
 
   // Uniqueness check must happen outside the batch — getDocs can't run inside one
   const usernameSnap = await getDocs(
-    query(collection(db, "users"), where("username", "==", lowerUsername))
+    query(collection(db, "users"), where("usernameLower", "==", lowerUsername))
   );
   if (!usernameSnap.empty) throw new Error("USERNAME_TAKEN");
 
+  const avatarOptions = randomAvatar();
   const batch = writeBatch(db);
 
   // a. Update user doc — use update (not set) to preserve role/email/createdAt from signUp
   batch.update(doc(db, "users", uid), {
-    username: lowerUsername,
+    username: username.trim(),
+    usernameLower: lowerUsername,
     contactNumber: contactNumber.trim(),
     linkedinUrl: linkedinUrl.trim(),
     githubUrl: githubUrl.trim(),
@@ -117,6 +121,7 @@ export async function completeOnboarding(
     teams,
     onboardingComplete: true,
     xp: 10,
+    avatarOptions,
   });
 
   // b. XP log entry (+10 for profile setup)

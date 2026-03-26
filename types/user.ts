@@ -5,6 +5,7 @@ export interface User {
   email: string;
   role: "volunteer" | "coordinator";
   username: string;
+  usernameLower: string;
   contactNumber: string;
   linkedinUrl?: string;
   githubUrl?: string;
@@ -22,6 +23,7 @@ export interface InitialUserDocument {
   email: string;
   role: "volunteer" | "coordinator";
   username: string;
+  usernameLower: string;
   contactNumber: string;
   chapterId: string;
   teams: string[];

@@ -20,6 +20,7 @@ import { auth, db } from "@/lib/firebase";
 import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
 import { TIER_ORDER, TIER_LABELS, TEAM_META } from "@/lib/seed/quests";
 import { Quest, QuestCompletion } from "@/types/quest";
+import { getXpLevelProgress, XP_LEVEL_STEP } from "@/lib/xpLevel";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -248,204 +249,211 @@ function HeaderGitHubIcon() {
   );
 }
 
-function HeaderXPIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
 
-function HeaderPencilIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-    </svg>
-  );
-}
 
 function profileDisplayName(raw: string): string {
   return raw.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
-// ─── Header Card (dashboard-style identity + account card) ─────────────────
+// ─── Header Card ─────────────────────────────────────────────────────────────
 
 function HeaderCard({
   userData,
   avatarUrl,
   onGenerateResume,
   isGeneratingResume,
+  onCopyShare,
+  copied,
 }: {
   userData: UserData;
   avatarUrl: string;
   onGenerateResume: () => void | Promise<void>;
   isGeneratingResume: boolean;
+  onCopyShare: () => void;
+  copied: boolean;
 }) {
   const teams = userData.teams ?? [];
   const email = userData.email?.trim();
   const hasSocialLinks = Boolean(userData.linkedinUrl || userData.githubUrl);
+  const primaryTeamId = teams[0] ?? null;
+  const teamColor = primaryTeamId && TEAM_META[primaryTeamId] ? TEAM_META[primaryTeamId].color : "#A855F7";
+  const xpProgress = getXpLevelProgress(userData.xp ?? 0);
 
   return (
-    <div className="min-w-0">
-      <div className="flex items-center gap-4 mb-7">
-        <div className="relative shrink-0">
-          <Link
-            href="/dashboard"
-            className="w-[72px] h-[72px] rounded-2xl overflow-hidden border border-border block focus:outline-none focus:ring-2 focus:ring-accent-highlight"
-            style={{ backgroundColor: "#100c1a" }}
-            aria-label="Change avatar on Home"
+    <div
+      className="relative rounded-2xl overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #5B21B6 0%, #7C3AED 45%, #A855F7 80%, #C084FC 100%)" }}
+    >
+      {/* Dot pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.07] pointer-events-none"
+        style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "22px 22px" }}
+      />
+      {/* Glow orb */}
+      <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+
+      <div className="p-5 relative z-10 flex flex-col gap-4">
+        {/* Desktop: share button top-right */}
+        <div className="hidden sm:flex absolute top-5 right-5 z-20 gap-2">
+          <button
+            type="button"
+            onClick={onCopyShare}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span key={copied ? "copied" : "share"}>
+              {copied ? "Copied" : "Share"}
+            </span>
+          </button>
+        </div>
+
+        {/* Avatar + identity */}
+        <div className="flex items-center gap-4 min-w-0 sm:pr-[8rem]">
+          <div
+            className="relative shrink-0 size-[4.5rem] sm:size-20 rounded-xl overflow-hidden border-2"
+            style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatarUrl} alt="" width={72} height={72} className="w-full h-full object-contain" />
-          </Link>
-          <div
-            className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center border border-border pointer-events-none"
-            style={{ backgroundColor: "#1a1625", color: "#A1A1AA" }}
-          >
-            <HeaderPencilIcon />
+            <img src={avatarUrl} alt="" width={80} height={80} className="block h-full w-full object-cover" />
+          </div>
+          <div className="min-w-0 flex flex-col justify-center gap-1 flex-1 leading-none">
+            <h2 className="font-heading text-xl sm:text-2xl text-white leading-tight truncate">
+              {profileDisplayName(userData.username)}
+            </h2>
+            <span className="inline-flex w-fit text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-white leading-normal mt-0.5">
+              {userData.role === "coordinator" ? "Coordinator" : "Volunteer"}
+            </span>
+            <p className="text-sm text-white/70 font-sans truncate leading-snug mt-0.5">
+              {userData.chapterId}
+            </p>
+            {email ? (
+              <a
+                href={`mailto:${encodeURIComponent(email)}`}
+                className="text-xs text-white/50 font-sans truncate hover:text-white/80 transition-colors mt-0.5"
+              >
+                {email}
+              </a>
+            ) : null}
           </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-sans uppercase tracking-widest text-accent-highlight mb-1">Profile</p>
-          <h2 className="font-heading text-2xl text-text-primary leading-tight mb-0.5 truncate">
-            {profileDisplayName(userData.username)}
-          </h2>
-          {email ? (
-            <a
-              href={`mailto:${encodeURIComponent(email)}`}
-              className="text-text-secondary text-xs font-sans truncate block hover:text-accent-highlight transition-colors"
-            >
-              {email}
-            </a>
-          ) : null}
-        </div>
-      </div>
 
-      <div className="border border-border rounded-2xl overflow-hidden" style={{ backgroundColor: "#100c1a" }}>
-        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-          <span className="font-heading text-sm text-text-primary">Account</span>
-          <span
-            className="text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full border"
-            style={
-              userData.role === "coordinator"
-                ? { borderColor: "#A855F755", backgroundColor: "#A855F714", color: "#A855F7" }
-                : { borderColor: "#27272A", backgroundColor: "#ffffff08", color: "#71717A" }
-            }
-          >
-            {userData.role}
-          </span>
-        </div>
-
-        <div className="px-5 py-5 space-y-5">
-          <div className="flex items-start justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-1">Total XP</p>
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="font-heading text-2xl tabular-nums" style={{ color: "#A855F7" }}>
-                  {(userData.xp ?? 0).toLocaleString()}
-                </span>
-                <span className="text-xs text-text-muted font-sans">xp</span>
-              </div>
+        {/* XP + level strip */}
+        <div className="pt-4 border-t border-white/15">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[10px] text-white/60 font-sans uppercase tracking-widest">Level</p>
+              <p className="font-heading text-2xl tabular-nums leading-none text-white mt-0.5">
+                {xpProgress.level}
+              </p>
             </div>
+            <div className="text-right min-w-0">
+              <p className="text-[10px] text-white/60 font-sans uppercase tracking-widest">Total XP</p>
+              <p className="font-heading text-xl tabular-nums leading-none text-white mt-0.5 whitespace-nowrap">
+                {(userData.xp ?? 0).toLocaleString()}{" "}
+                <span className="text-sm text-white/60 font-sans">xp</span>
+              </p>
+            </div>
+          </div>
+          <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "#A855F714", color: "#A855F7" }}
-            >
-              <HeaderXPIcon />
-            </div>
+              className="h-full rounded-full"
+              style={{ width: `${xpProgress.pctToNextLevel}%`, backgroundColor: teamColor }}
+            />
           </div>
+          <p className="text-[10px] text-white/40 font-sans tabular-nums mt-1 text-right">
+            {xpProgress.xpIntoLevel.toLocaleString()} / {XP_LEVEL_STEP.toLocaleString()} to next level
+          </p>
+        </div>
 
-          <div className="border-t border-border" />
-
-          <div>
-            <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-1">Chapter</p>
-            <p className="text-text-primary text-sm font-sans break-words">{userData.chapterId}</p>
+        {/* Teams */}
+        {teams.length > 0 ? (
+          <div className="pt-3 border-t border-white/15 flex flex-wrap gap-2">
+            {teams.filter((tid) => TEAM_META[tid]).map((tid) => {
+              const meta = TEAM_META[tid];
+              return (
+                <span
+                  key={tid}
+                  className="px-3 py-1.5 rounded-lg text-xs font-sans border"
+                  style={{ borderColor: `${meta.color}66`, backgroundColor: `${meta.color}22`, color: meta.color }}
+                >
+                  {meta.label}
+                </span>
+              );
+            })}
           </div>
+        ) : null}
 
-          {teams.length > 0 ? (
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-2">Teams</p>
-              <div className="flex flex-wrap gap-2">
-                {teams.filter((tid) => TEAM_META[tid]).map((tid) => {
-                  const meta = TEAM_META[tid];
-                  return (
-                    <span
-                      key={tid}
-                      className="px-3 py-1.5 rounded-lg text-xs font-sans border max-w-full break-words"
-                      style={{
-                        borderColor: `${meta.color}66`,
-                        backgroundColor: `${meta.color}14`,
-                        color: meta.color,
-                      }}
-                    >
-                      {meta.label}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {hasSocialLinks ? (
-            <div>
-              <p className="text-[11px] font-sans uppercase tracking-widest text-text-muted mb-2">Links</p>
-              <div className="flex flex-col gap-2">
-                {userData.linkedinUrl ? (
-                  <a
-                    href={userData.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm font-sans text-text-secondary hover:text-text-primary transition-colors group min-w-0"
-                  >
-                    <HeaderLinkedInIcon />
-                    <span className="truncate group-hover:text-accent-highlight transition-colors">
-                      {userData.linkedinUrl.replace(/^https?:\/\//, "")}
-                    </span>
-                  </a>
-                ) : null}
-                {userData.githubUrl ? (
-                  <a
-                    href={userData.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm font-sans text-text-secondary hover:text-text-primary transition-colors group min-w-0"
-                  >
-                    <HeaderGitHubIcon />
-                    <span className="truncate group-hover:text-accent-highlight transition-colors">
-                      {userData.githubUrl.replace(/^https?:\/\//, "")}
-                    </span>
-                  </a>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="border-t border-border pt-5 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => void onGenerateResume()}
-              disabled={isGeneratingResume}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-heading font-semibold bg-accent-highlight text-white hover:bg-accent-primary transition-colors disabled:opacity-70 disabled:cursor-wait"
-            >
-              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {isGeneratingResume ? "Generating…" : "Generate resume"}
-            </button>
-            <Link
-              href="/settings"
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-heading text-sm border border-border text-text-muted hover:text-text-primary hover:border-accent-primary/40 transition-colors"
-            >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-              Account Settings
-            </Link>
+        {/* Social links */}
+        {hasSocialLinks ? (
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {userData.linkedinUrl ? (
+              <a
+                href={userData.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-sans text-white/55 hover:text-white transition-colors min-w-0"
+              >
+                <HeaderLinkedInIcon />
+                <span className="truncate">{userData.linkedinUrl.replace(/^https?:\/\//, "")}</span>
+              </a>
+            ) : null}
+            {userData.githubUrl ? (
+              <a
+                href={userData.githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-sans text-white/55 hover:text-white transition-colors min-w-0"
+              >
+                <HeaderGitHubIcon />
+                <span className="truncate">{userData.githubUrl.replace(/^https?:\/\//, "")}</span>
+              </a>
+            ) : null}
           </div>
+        ) : null}
+
+        {/* Mobile: share button */}
+        <div className="flex sm:hidden">
+          <button
+            type="button"
+            onClick={onCopyShare}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span key={copied ? "copied" : "share"}>{copied ? "Copied" : "Share Profile"}</span>
+          </button>
+        </div>
+
+        {/* Action buttons */}
+        <div className="pt-3 border-t border-white/15 flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            onClick={() => void onGenerateResume()}
+            disabled={isGeneratingResume}
+            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-heading text-sm bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors disabled:opacity-60 disabled:cursor-wait backdrop-blur-sm"
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {isGeneratingResume ? "Generating…" : "Generate Resume"}
+          </button>
+          <Link
+            href="/settings"
+            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-heading text-sm bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 transition-colors backdrop-blur-sm"
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Settings
+          </Link>
         </div>
       </div>
     </div>
@@ -1175,45 +1183,51 @@ export default function ProfilePage() {
       skeleton={<ProfileSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
-          <>
-              <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
-                <HeaderCard
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:items-start pb-10">
+          {/* Left column (col-span-2): HeaderCard, Badges, Activity */}
+          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-2">
+            <div className="order-1 lg:order-none animate-fade-up" style={{ animationDelay: "0ms" }}>
+              <HeaderCard
+                userData={userData}
+                avatarUrl={avatarUrl}
+                onGenerateResume={handleGenerateResume}
+                isGeneratingResume={isGeneratingResume}
+                onCopyShare={handleCopyShare}
+                copied={copied}
+              />
+            </div>
+            <div className="order-4 lg:order-none animate-fade-up" style={{ animationDelay: "180ms" }}>
+              <BadgesGrid badges={badges} />
+            </div>
+            <div className="order-5 lg:order-none animate-fade-up" style={{ animationDelay: "240ms" }}>
+              <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
+            </div>
+          </div>
+          {/* Right column (col-span-1): Volunteer milestones, Team milestones */}
+          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-1">
+            <div className="order-2 lg:order-none animate-fade-up" style={{ animationDelay: "60ms" }}>
+              <PortfolioCard
+                completions={completions}
+                allQuests={allQuests}
+                eventCount={eventCount}
+                reflectionCount={reflectionCount}
+                badgesEarned={badgesEarned}
+                onCopyShare={handleCopyShare}
+                copied={copied}
+              />
+            </div>
+            {milestoneTeam ? (
+              <div className="order-3 lg:order-none animate-fade-up" style={{ animationDelay: "120ms" }}>
+                <MilestonesSection
                   userData={userData}
-                  avatarUrl={avatarUrl}
-                  onGenerateResume={handleGenerateResume}
-                  isGeneratingResume={isGeneratingResume}
-                />
-              </div>
-              {milestoneTeam ? (
-                <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
-                  <MilestonesSection
-                    userData={userData}
-                    completions={completions}
-                    allQuests={allQuests}
-                    activeTeam={milestoneTeam}
-                    onTeamChange={setActiveTeam}
-                  />
-                </div>
-              ) : null}
-              <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
-                <PortfolioCard
                   completions={completions}
                   allQuests={allQuests}
-                  eventCount={eventCount}
-                  reflectionCount={reflectionCount}
-                  badgesEarned={badgesEarned}
-                  onCopyShare={handleCopyShare}
-                  copied={copied}
+                  activeTeam={milestoneTeam}
+                  onTeamChange={setActiveTeam}
                 />
               </div>
-              <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
-                <BadgesGrid badges={badges} />
-              </div>
-              <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
-                <ActivityFeed entries={activityEntries} hasMore={activityHasMore} />
-              </div>
-            </>
+            ) : null}
+          </div>
         </div>
       </div>
     </PageShell>

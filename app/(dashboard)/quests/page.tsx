@@ -822,40 +822,47 @@ function ApprovalItem({
 
 function QuestsSkeleton() {
   return (
-    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
-      {/* Team tabs */}
-      <div className="flex gap-2">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 pb-10 items-start">
+      {/* Team tabs — full width */}
+      <div className="lg:col-span-3 flex gap-2">
         <SkeletonBlock className="h-9 w-28 rounded-full" />
         <SkeletonBlock className="h-9 w-28 rounded-full" />
         <SkeletonBlock className="h-9 w-28 rounded-full" />
       </div>
-      {/* Tier section 1 */}
-      <div className="flex flex-col gap-3">
-        <SkeletonLine className="w-20" />
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex flex-col gap-2"
-          >
-            <SkeletonLine className="w-40" />
-            <SkeletonLine className="w-full" />
-            <SkeletonBlock className="h-1.5 rounded-full w-full" />
-          </div>
-        ))}
+      {/* Left col */}
+      <div className="flex flex-col gap-3 lg:col-span-2">
+        {/* Tier section 1 */}
+        <div className="flex flex-col gap-3">
+          <SkeletonLine className="w-20" />
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex flex-col gap-2"
+            >
+              <SkeletonLine className="w-40" />
+              <SkeletonLine className="w-full" />
+              <SkeletonBlock className="h-1.5 rounded-full w-full" />
+            </div>
+          ))}
+        </div>
+        {/* Tier section 2 — locked look */}
+        <div className="flex flex-col gap-3 opacity-50">
+          <SkeletonLine className="w-20" />
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex flex-col gap-2"
+            >
+              <SkeletonLine className="w-40" />
+              <SkeletonLine className="w-full" />
+              <SkeletonBlock className="h-1.5 rounded-full w-full" />
+            </div>
+          ))}
+        </div>
       </div>
-      {/* Tier section 2 — locked look */}
-      <div className="flex flex-col gap-3 opacity-50">
-        <SkeletonLine className="w-20" />
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-[#27272A] bg-[#1a1a2e] p-4 animate-pulse flex flex-col gap-2"
-          >
-            <SkeletonLine className="w-40" />
-            <SkeletonLine className="w-full" />
-            <SkeletonBlock className="h-1.5 rounded-full w-full" />
-          </div>
-        ))}
+      {/* Right col */}
+      <div className="lg:col-span-1">
+        <SkeletonBlock className="h-52 rounded-2xl" />
       </div>
     </div>
   );
@@ -1166,11 +1173,11 @@ function QuestsPageContent() {
       skeleton={<QuestsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 items-start">
 
           {/* ── Team pill switcher ─────────────────────────────────────────────── */}
           {tabs.length > 1 && (
-            <div className="flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "0ms" }}>
+            <div className="lg:col-span-3 flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "0ms" }}>
               {tabs.map((tab) => {
                 const color = tab.isApprovals
                   ? "#A855F7"
@@ -1205,7 +1212,7 @@ function QuestsPageContent() {
 
           {/* ── Approvals tab ─────────────────────────────────────────────────── */}
           {!loadingCompletions && activeTab === "approvals" && (
-            <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
+            <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-heading text-lg text-text-primary">Pending Approvals</h2>
                 <button
@@ -1251,7 +1258,9 @@ function QuestsPageContent() {
 
           {/* ── Volunteer quest view ──────────────────────────────────────────── */}
           {!loadingCompletions && activeTab !== "approvals" && activeMeta && (
-            <div className="flex flex-col gap-5">
+            <>
+              {/* Left column */}
+              <div className="flex flex-col gap-5 lg:col-span-2">
 
                 {/* Current Tier card — what the volunteer holds right now */}
                 <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
@@ -1267,15 +1276,15 @@ function QuestsPageContent() {
                 {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
                 {!isMaxTier && (
                   <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
-                  <HeroProgressCard
-                    teamId={activeTab}
-                    currentTier={currentTier}
-                    tierLabel={currentTierLabel}
-                    nextTierLabel={nextTierLabel}
-                    color={activeMeta.color}
-                    quests={currentTierQuests}
-                    completions={completions}
-                  />
+                    <HeroProgressCard
+                      teamId={activeTab}
+                      currentTier={currentTier}
+                      tierLabel={currentTierLabel}
+                      nextTierLabel={nextTierLabel}
+                      color={activeMeta.color}
+                      quests={currentTierQuests}
+                      completions={completions}
+                    />
                   </div>
                 )}
 
@@ -1328,26 +1337,29 @@ function QuestsPageContent() {
                   </div>
                 </div>
 
-              <div
-                className="rounded-2xl border border-border overflow-hidden animate-fade-up"
-                style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
-              >
-                <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
-                <div className="p-5">
-                  <PathJourneySidebar
-                    teamId={activeTab}
-                    teamColor={activeMeta.color}
-                    leadTitle={activeMeta.leadTitle}
-                    completions={completions}
-                    allQuests={quests}
-                  />
-                </div>
               </div>
 
-            </div>
+              {/* Right column — Journey sidebar */}
+              <div className="lg:col-span-1 lg:sticky lg:top-0">
+                <div
+                  className="rounded-2xl border border-border overflow-hidden animate-fade-up"
+                  style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
+                >
+                  <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
+                  <div className="p-5">
+                    <PathJourneySidebar
+                      teamId={activeTab}
+                      teamColor={activeMeta.color}
+                      leadTitle={activeMeta.leadTitle}
+                      completions={completions}
+                      allQuests={quests}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
 
-          <div className="h-4" />
         </div>
       </div>
     </PageShell>
