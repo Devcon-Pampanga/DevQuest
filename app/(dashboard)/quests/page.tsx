@@ -177,164 +177,135 @@ function QuestDot({ status, color }: { status: UIQuestStatus; color: string }) {
   return <div className="w-4 h-4 rounded-full shrink-0 border-2" style={{ borderColor: color, backgroundColor: `${color}30` }} />;
 }
 
-// ─── Hero Progress Card ───────────────────────────────────────────────────────
+// ─── Tier Progress Card ───────────────────────────────────────────────────────
+// Merges earned tier (top) and working-toward tier (bottom) into one arc.
 
-function HeroProgressCard({
+function TierProgressCard({
   teamId,
-  currentTier,
-  tierLabel,
+  earnedTier,
+  earnedTierLabel,
+  currentTierLabel,
   nextTierLabel,
   color,
   quests,
   completions,
-}: {
-  teamId: string;
-  currentTier: string;
-  tierLabel: string;
-  nextTierLabel: string | null;
-  color: string;
-  quests: Quest[];
-  completions: Record<string, QuestCompletion>;
-}) {
-  const total = quests.length;
-  const completedCount = quests.filter(
-    (q) => completions[q.questId]?.status === "completed"
-  ).length;
-  const pct = total > 0 ? (completedCount / total) * 100 : 0;
-
-  const [barsReady, setBarsReady] = useState(false);
-  useEffect(() => {
-    setBarsReady(false);
-    const t = setTimeout(() => setBarsReady(true), 350);
-    return () => clearTimeout(t);
-  }, [teamId, currentTier]);
-
-  return (
-    <div
-      className="rounded-2xl overflow-hidden border border-[#27272A] relative"
-      style={{ background: `linear-gradient(135deg, #1a1a2e 0%, ${color}18 100%)` }}
-    >
-      {/* Color accent bar */}
-      <div className="h-1 w-full" style={{ backgroundColor: color }} />
-
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <p className="text-xs font-semibold tracking-widest mb-1" style={{ color }}>
-              NEXT MILESTONE
-            </p>
-            <h2 className="font-heading text-2xl text-text-primary leading-tight">
-              {tierLabel} Journey
-            </h2>
-            <p className="text-text-secondary text-sm mt-1">
-              {nextTierLabel
-                ? `Complete all ${total} quests to advance to ${nextTierLabel}`
-                : "You've reached the final tier — complete all quests to earn your title"}
-            </p>
-          </div>
-
-          {/* Badge + count */}
-          <div className="shrink-0 flex flex-col items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`/badges/${teamId}_${currentTier}.png`}
-              alt={tierLabel}
-              width={72}
-              height={72}
-              className="object-contain drop-shadow-lg"
-            />
-            <div className="text-center leading-tight">
-              <span className="font-heading text-xl font-bold" style={{ color }}>{completedCount}</span>
-              <span className="text-text-muted font-heading text-base"> / {total}</span>
-              <p className="text-xs text-text-muted">quests done</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress dots */}
-        <div className="flex items-center gap-2 mb-3">
-          {quests.map((q) => {
-            const s = completions[q.questId]?.status;
-            const isDone = s === "completed";
-            const isPending = s === "pending_approval";
-            return (
-              <div
-                key={q.questId}
-                className="h-3 flex-1 rounded-full transition-all"
-                style={{
-                  backgroundColor: isDone
-                    ? color
-                    : isPending
-                    ? "#F59E0B"
-                    : `${color}20`,
-                  border: isDone || isPending ? "none" : `1px solid ${color}40`,
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-2 w-full rounded-full bg-zinc-800/60 overflow-hidden">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: "100%",
-              backgroundColor: color,
-              transformOrigin: "left center",
-              transform: `scaleX(${barsReady ? pct / 100 : 0})`,
-              transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── EarnedTierCard — shows the tier the volunteer currently holds ──────────────
-function EarnedTierCard({
-  teamId,
-  earnedTier,
-  earnedTierLabel,
-  color,
   isMaxTier,
 }: {
   teamId: string;
   earnedTier: Quest["tier"];
   earnedTierLabel: string;
+  currentTierLabel: string;
+  nextTierLabel: string | null;
   color: string;
+  quests: Quest[];
+  completions: Record<string, QuestCompletion>;
   isMaxTier: boolean;
 }) {
+  const total = quests.length;
+  const completedCount = quests.filter(
+    (q) => completions[q.questId]?.status === "completed"
+  ).length;
+
   return (
-    <div
-      className="rounded-2xl overflow-hidden border border-[#27272A]"
-      style={{ background: `linear-gradient(135deg, #1a1a2e 0%, ${color}12 100%)` }}
-    >
+    <div className="rounded-2xl overflow-hidden border border-[#27272A] bg-[#1a1a2e]">
+      {/* 4px team-color bar */}
       <div className="h-1 w-full" style={{ backgroundColor: color }} />
-      <div className="p-5 flex items-center gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`/badges/${teamId}_${earnedTier}.png`}
-          alt={earnedTierLabel}
-          width={60}
-          height={60}
-          className="object-contain drop-shadow-lg shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold tracking-widest mb-0.5" style={{ color }}>
-            CURRENT TIER
-          </p>
-          <h2 className="font-heading text-xl text-text-primary leading-tight">
-            {earnedTierLabel}
-          </h2>
-          <p className="text-sm text-text-secondary mt-0.5">
-            {isMaxTier
-              ? "You've reached the highest tier — your title is fully earned."
-              : "Complete the milestones below to advance to the next tier."}
-          </p>
+
+      <div className="p-5">
+        {/* ── Top: earned tier — compact, 1 line ── */}
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/badges/${teamId}_${earnedTier}.png`}
+            alt={earnedTierLabel}
+            width={44}
+            height={44}
+            className="object-contain drop-shadow-md shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold tracking-widest text-text-muted">CURRENT TIER</p>
+            <p className="font-heading text-base text-text-primary leading-tight truncate">{earnedTierLabel}</p>
+          </div>
+          {isMaxTier && (
+            <span
+              className="text-[10px] font-heading font-semibold px-2 py-0.5 rounded-full shrink-0"
+              style={{ color, backgroundColor: `${color}18` }}
+            >
+              MAX
+            </span>
+          )}
         </div>
+
+        {/* ── Step divider + working-toward section (hidden when maxed) ── */}
+        {!isMaxTier && (
+          <>
+            {/* Arrow divider */}
+            <div className="flex items-center gap-2 my-4">
+              <div className="flex-1 h-px" style={{ backgroundColor: `${color}25` }} />
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="opacity-50 shrink-0"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              <div className="flex-1 h-px" style={{ backgroundColor: `${color}25` }} />
+            </div>
+
+            {/* ── Bottom: working toward ── */}
+            <div>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold tracking-widest text-text-muted mb-0.5">WORKING TOWARD</p>
+                  <p className="font-heading text-lg text-text-primary leading-tight">
+                    {nextTierLabel ?? currentTierLabel}
+                  </p>
+                  <p className="text-text-secondary text-xs mt-1">
+                    {nextTierLabel
+                      ? `Complete all ${total} quests to advance`
+                      : "Complete all quests to earn your title"}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right leading-none">
+                  <div>
+                    <span className="font-heading text-2xl font-bold" style={{ color }}>{completedCount}</span>
+                    <span className="text-text-muted font-heading text-lg"> / {total}</span>
+                  </div>
+                  <p className="text-[10px] text-text-muted mt-0.5">quests done</p>
+                </div>
+              </div>
+
+              {/* Progress dots — sole progress indicator */}
+              <div className="flex items-center gap-1.5">
+                {quests.map((q) => {
+                  const s = completions[q.questId]?.status;
+                  const isDone = s === "completed";
+                  const isPending = s === "pending_approval";
+                  return (
+                    <div
+                      key={q.questId}
+                      className="h-2.5 flex-1 rounded-full transition-all duration-500"
+                      style={{
+                        backgroundColor: isDone
+                          ? color
+                          : isPending
+                          ? "#F59E0B"
+                          : `${color}20`,
+                        border: isDone || isPending ? "none" : `1px solid ${color}40`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -421,8 +392,26 @@ function CollapsibleQuestTile({
             </span>
           )}
           {!locked && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 hidden sm:inline">
-              {methodLabel(quest.completionMethod)}
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+              {/* Icon — always visible */}
+              {quest.completionMethod === "qr_scan" && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                  <path d="M14 14h.01M14 18h.01M18 14h.01M18 18h.01M18 21v.01M21 18h.01M21 21h.01" />
+                </svg>
+              )}
+              {quest.completionMethod === "self_mark" && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              {quest.completionMethod === "coordinator_approval" && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
+              )}
+              {/* Text label — sm and up only */}
+              <span className="text-xs font-semibold hidden sm:inline">{methodLabel(quest.completionMethod)}</span>
             </span>
           )}
           {!locked && (
@@ -604,6 +593,7 @@ function CollapsibleQuestTile({
 }
 
 // ─── Path Journey Sidebar ─────────────────────────────────────────────────────
+// Three states: completed (muted, 1 line), current (elevated), future (name only).
 
 function PathJourneySidebar({
   teamId,
@@ -621,8 +611,8 @@ function PathJourneySidebar({
   const currentTier = getCurrentTier(teamId, completions, allQuests);
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold tracking-widest text-text-muted mb-2">
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[10px] font-semibold tracking-widest text-text-muted mb-3">
         YOUR JOURNEY
       </p>
 
@@ -633,63 +623,76 @@ function PathJourneySidebar({
           (q) => completions[q.questId]?.status === "completed"
         ).length;
         const total = tierQuests.length;
-        const allDone = completedCount === total && total > 0;
         const isCurrent = tier === currentTier;
-        const tierLabel =
-          tier === "lead" ? leadTitle : (TIER_LABELS[tier] ?? tier);
-        const pct = total > 0 ? (completedCount / total) * 100 : 0;
+        const isCompleted = unlocked && !isCurrent;
+        const tierLabel = tier === "lead" ? leadTitle : (TIER_LABELS[tier] ?? tier);
 
-        return (
-          <div
-            key={tier}
-            className={`rounded-xl p-3.5 flex items-center gap-3 transition-colors ${
-              isCurrent
-                ? "bg-[#1a1a2e] border border-[#27272A]"
-                : "bg-transparent"
-            }`}
-            style={isCurrent ? { borderLeft: `3px solid ${teamColor}` } : {}}
-          >
-            {/* Badge icon */}
-            <div className="shrink-0 w-10 h-10 flex items-center justify-center relative">
+        // ── Future / locked ──────────────────────────────────────────────────
+        if (!unlocked) {
+          return (
+            <div key={tier} className="px-3 py-2.5">
+              <span className="text-sm font-heading text-zinc-600">{tierLabel}</span>
+            </div>
+          );
+        }
+
+        // ── Completed ────────────────────────────────────────────────────────
+        if (isCompleted) {
+          return (
+            <div key={tier} className="px-3 py-2 flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`/badges/${teamId}_${tier}.png`}
                 alt={tierLabel}
-                width={40}
-                height={40}
-                className={`object-contain transition-all duration-300 ${
-                  !unlocked ? "grayscale opacity-25" : "drop-shadow-md"
-                }`}
+                width={24}
+                height={24}
+                className="object-contain shrink-0 opacity-40"
               />
+              <span className="flex-1 text-sm font-heading text-zinc-500 truncate">{tierLabel}</span>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#52525B"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
+          );
+        }
 
-            {/* Text + bar */}
+        // ── Current ──────────────────────────────────────────────────────────
+        return (
+          <div
+            key={tier}
+            className="rounded-xl py-3 pr-3.5 flex items-center gap-3 bg-[#16213e] border border-[#27272A]"
+            style={{ borderLeft: `3px solid ${teamColor}`, paddingLeft: "0.875rem" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/badges/${teamId}_${tier}.png`}
+              alt={tierLabel}
+              width={40}
+              height={40}
+              className="object-contain drop-shadow-md shrink-0"
+            />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span
-                  className="text-sm font-heading font-semibold truncate"
-                  style={{ color: !unlocked ? "#52525B" : isCurrent ? teamColor : "white" }}
-                >
-                  {tierLabel}
-                </span>
-                <span
-                  className="text-xs font-semibold shrink-0"
-                  style={{ color: !unlocked ? "#52525B" : isCurrent ? teamColor : "#A1A1AA" }}
-                >
-                  {total === 0 ? "✓" : `${completedCount}/${total}`}
-                </span>
-              </div>
-              <div className="h-1.5 rounded-full bg-zinc-800/60">
-                {unlocked && (
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: total === 0 ? "100%" : `${pct}%`,
-                      backgroundColor: (allDone || total === 0) ? "#06B6D4" : teamColor,
-                    }}
-                  />
-                )}
-              </div>
+              <p
+                className="text-sm font-heading font-bold leading-tight truncate"
+                style={{ color: teamColor }}
+              >
+                {tierLabel}
+              </p>
+              {total > 0 && (
+                <p className="text-xs text-text-muted mt-0.5">
+                  {completedCount}/{total} quests
+                </p>
+              )}
             </div>
           </div>
         );
@@ -1000,13 +1003,14 @@ function MissionsPanel({
       className="rounded-2xl border border-border overflow-hidden animate-fade-up"
       style={{ backgroundColor: "#1e1a2e", animationDelay: "280ms" }}
     >
-      <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg, #7C3AED, #A855F7)" }} />
+      <div className="h-[3px] w-full" style={{ backgroundColor: "#A855F7" }} />
       <div className="p-5">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-xs font-semibold text-text-muted tracking-widest uppercase flex-1">
-            Missions
-          </p>
+        <div className="flex items-start gap-2 mb-4">
+          <div className="flex-1 min-w-0">
+            <p className="font-heading text-base font-bold text-text-primary leading-tight">MISSIONS</p>
+            <p className="text-xs text-text-muted mt-0.5">Coordinator-assigned tasks · Bonus XP</p>
+          </div>
           {isCoordinator && (
             <Link
               href="/missions/new"
@@ -1814,6 +1818,29 @@ function QuestsPageContent() {
       avatarUrl={avatarUrl}
       loading={!authChecked || loadingCompletions}
       skeleton={<QuestsSkeleton />}
+      actions={
+        userData?.role === "coordinator" ? (
+          <Link
+            href="/missions/new"
+            className="flex items-center gap-2 px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors whitespace-nowrap shrink-0"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Mission
+          </Link>
+        ) : null
+      }
     >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 items-start">
@@ -1874,14 +1901,48 @@ function QuestsPageContent() {
                   </div>
                 </div>
               ) : approvals.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-4 animate-float">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <div className="text-center py-16 flex flex-col items-center gap-4">
+                  {/* Success ring + checkmark */}
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor: "#22C55E12",
+                      border: "2px solid #22C55E30",
+                      boxShadow: "0 0 32px #22C55E18",
+                    }}
+                  >
+                    <svg
+                      width="36"
+                      height="36"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#22C55E"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
-                  <p className="text-text-secondary font-heading">No pending approvals</p>
-                  <p className="text-text-muted text-sm mt-1">All caught up for your chapter.</p>
+
+                  {/* Copy */}
+                  <div className="flex flex-col gap-1.5">
+                    <p className="font-heading text-xl font-bold text-text-primary">All caught up</p>
+                    <p className="text-text-secondary text-sm max-w-xs mx-auto leading-relaxed">
+                      Every submission from your chapter has been reviewed.
+                    </p>
+                  </div>
+
+                  {/* Secondary action */}
+                  <Link
+                    href="/chapter"
+                    className="text-sm font-heading font-semibold transition-colors"
+                    style={{ color: "#A855F7" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#7C3AED")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "#A855F7")}
+                  >
+                    View chapter dashboard →
+                  </Link>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
@@ -1905,36 +1966,25 @@ function QuestsPageContent() {
               {/* Left column */}
               <div className="flex flex-col gap-5 lg:col-span-2">
 
-                {/* Current Tier card — what the volunteer holds right now */}
+                {/* Tier progress arc — earned tier + working-toward in one card */}
                 <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
-                  <EarnedTierCard
+                  <TierProgressCard
                     teamId={activeTab}
                     earnedTier={earnedTier}
                     earnedTierLabel={earnedTierLabel}
+                    currentTierLabel={currentTierLabel}
+                    nextTierLabel={nextTierLabel}
                     color={activeMeta.color}
+                    quests={currentTierQuests}
+                    completions={completions}
                     isMaxTier={isMaxTier}
                   />
                 </div>
 
-                {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
-                {!isMaxTier && (
-                  <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
-                    <HeroProgressCard
-                      teamId={activeTab}
-                      currentTier={currentTier}
-                      tierLabel={currentTierLabel}
-                      nextTierLabel={nextTierLabel}
-                      color={activeMeta.color}
-                      quests={currentTierQuests}
-                      completions={completions}
-                    />
-                  </div>
-                )}
-
                 {/* Milestones card */}
                 <div
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
-                  style={{ backgroundColor: "#1e1a2e", animationDelay: "180ms" }}
+                  style={{ backgroundColor: "#1e1a2e", animationDelay: "120ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
                   <div className="p-5">

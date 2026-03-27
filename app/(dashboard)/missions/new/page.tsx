@@ -83,10 +83,12 @@ const LABEL_CLS =
 function SectionCard({
   stripe = "linear-gradient(90deg, #7C3AED, #A855F7)",
   animDelay = 0,
+  padding = "p-5",
   children,
 }: {
   stripe?: string;
   animDelay?: number;
+  padding?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -94,8 +96,8 @@ function SectionCard({
       className="rounded-2xl border border-border overflow-hidden animate-fade-up"
       style={{ backgroundColor: "#1e1a2e", animationDelay: `${animDelay}ms` }}
     >
-      <div className="h-[3px] w-full" style={{ background: stripe }} />
-      <div className="p-5">{children}</div>
+      <div className="h-[3px] w-full" style={{ background: stripe, transition: "background 200ms ease-out" }} />
+      <div className={padding}>{children}</div>
     </div>
   );
 }
@@ -163,6 +165,7 @@ function AddMissionPageInner() {
   const [difficulty, setDifficulty] = useState<MissionDifficulty>("medium");
   const [assignmentType, setAssignmentType] = useState<MissionAssignmentType>("open");
   const [slots, setSlots] = useState(10);
+  const [slotsRaw, setSlotsRaw] = useState("10");
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [selectedVolunteers, setSelectedVolunteers] = useState<ChapterVolunteer[]>([]);
   const [volunteerSearch, setVolunteerSearch] = useState("");
@@ -178,6 +181,7 @@ function AddMissionPageInner() {
   // Errors + submission
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [successInfo, setSuccessInfo] = useState<{ count: number; type: MissionAssignmentType } | null>(null);
 
   // ── Auth guard ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -236,14 +240,20 @@ function AddMissionPageInner() {
   // ── Validation ───────────────────────────────────────────────────────────────
   function validate(): boolean {
     const errs: Record<string, string> = {};
-    if (!title.trim()) errs.title = "Title is required.";
-    if (!description.trim()) errs.description = "Description is required.";
+    if (!title.trim()) errs.title = "Give this mission a name.";
+    if (!description.trim()) errs.description = "Describe what needs to be done.";
     if (assignmentType === "specific" && selectedVolunteers.length === 0)
-      errs.assignees = "Select at least one volunteer.";
+      errs.assignees = "Pick at least one volunteer.";
     if (assignmentType === "team" && selectedTeams.length === 0)
-      errs.team = "Select at least one team.";
-    if (hasDeadline && (!deadlineDate || !deadlineTime))
-      errs.deadline = "Enter a deadline date and time.";
+      errs.team = "Pick at least one team.";
+    if (hasDeadline && (!deadlineDate || !deadlineTime)) {
+      errs.deadline = "Set both a date and time for the deadline.";
+    } else if (hasDeadline && deadlineDate && deadlineTime) {
+      const deadlineTs = new Date(`${deadlineDate}T${deadlineTime}:00`).getTime();
+      if (deadlineTs <= Date.now()) {
+        errs.deadline = "The deadline has already passed — pick a future date and time.";
+      }
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -291,50 +301,66 @@ function AddMissionPageInner() {
       const missionId = missionRef.id;
 
       // Pre-create completions for specific and team assignments
-      if (assignmentType === "specific") {
-        const batch = writeBatch(db);
-        for (const v of selectedVolunteers) {
-          batch.set(doc(db, "users", v.uid, "missionCompletions", missionId), {
-            missionId,
-            status: "assigned",
-            xpGranted: xpReward,
-          });
-        }
-        await batch.commit();
-      } else if (assignmentType === "team" && selectedTeams.length > 0) {
-        // Load all chapter volunteers, then filter to those in any selected team
-        // (fetching per-team and deduplicating is safer than array-contains-any limits)
-        const allUsersSnap = await getDocs(
-          query(
-            collection(db, "users"),
-            where("chapterId", "==", userData.chapterId),
-            where("role", "==", "volunteer")
-          )
-        );
-        const targetUids = new Set<string>();
-        allUsersSnap.docs.forEach((d) => {
-          const userTeams = (d.data().teams as string[]) ?? [];
-          if (userTeams.some((t) => selectedTeams.includes(t))) {
-            targetUids.add(d.id);
-          }
-        });
-        if (targetUids.size > 0) {
+      // Nested try/catch: if addDoc succeeded but batch fails, we show a targeted
+      // message instead of letting the outer catch suggest a full retry (which
+      // would create a duplicate mission document).
+      let notifiedCount = 0;
+      try {
+        if (assignmentType === "specific") {
+          notifiedCount = selectedVolunteers.length;
           const batch = writeBatch(db);
-          targetUids.forEach((uid) => {
-            batch.set(doc(db, "users", uid, "missionCompletions", missionId), {
+          for (const v of selectedVolunteers) {
+            batch.set(doc(db, "users", v.uid, "missionCompletions", missionId), {
               missionId,
               status: "assigned",
               xpGranted: xpReward,
             });
-          });
+          }
           await batch.commit();
+        } else if (assignmentType === "team" && selectedTeams.length > 0) {
+          // Load all chapter volunteers, then filter to those in any selected team
+          // (fetching per-team and deduplicating is safer than array-contains-any limits)
+          const allUsersSnap = await getDocs(
+            query(
+              collection(db, "users"),
+              where("chapterId", "==", userData.chapterId),
+              where("role", "==", "volunteer")
+            )
+          );
+          const targetUids = new Set<string>();
+          allUsersSnap.docs.forEach((d) => {
+            const userTeams = (d.data().teams as string[]) ?? [];
+            if (userTeams.some((t) => selectedTeams.includes(t))) {
+              targetUids.add(d.id);
+            }
+          });
+          notifiedCount = targetUids.size;
+          if (targetUids.size > 0) {
+            const batch = writeBatch(db);
+            targetUids.forEach((uid) => {
+              batch.set(doc(db, "users", uid, "missionCompletions", missionId), {
+                missionId,
+                status: "assigned",
+                xpGranted: xpReward,
+              });
+            });
+            await batch.commit();
+          }
         }
+      } catch (batchErr) {
+        console.error("Assignment batch failed after mission write:", batchErr);
+        setErrors({
+          submit: "Mission was saved, but volunteer assignments couldn't be written. Find it in the missions list to assign manually.",
+        });
+        setSubmitting(false);
+        return;
       }
 
-      router.push("/quests");
+      setSuccessInfo({ count: notifiedCount, type: assignmentType });
+      setTimeout(() => router.push("/quests"), 2400);
     } catch (err) {
       console.error("Failed to create mission:", err);
-      setErrors({ submit: "Something went wrong. Please try again." });
+      setErrors({ submit: "Something went wrong — give it another try." });
       setSubmitting(false);
     }
   }
@@ -351,16 +377,100 @@ function AddMissionPageInner() {
 
   if (!userData) return null;
 
+  // ── Success overlay ───────────────────────────────────────────────────────
+  if (successInfo !== null) {
+    const sc = DIFFICULTY_META[difficulty].color;
+    const msg =
+      successInfo.type === "open"
+        ? "Your chapter can now claim a spot."
+        : successInfo.count === 0
+        ? "Mission is live."
+        : `${successInfo.count} volunteer${successInfo.count !== 1 ? "s" : ""} ${successInfo.count !== 1 ? "have" : "has"} been assigned.`;
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-base"
+        style={{ animation: "successFadeIn 0.35s ease-out forwards" }}
+      >
+        <style>{`
+          @keyframes successFadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
+          }
+          @keyframes circleDraw {
+            from { stroke-dashoffset: 166; }
+            to   { stroke-dashoffset: 0; }
+          }
+          @keyframes checkDraw {
+            from { stroke-dashoffset: 48; }
+            to   { stroke-dashoffset: 0; }
+          }
+          .draw-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            animation: circleDraw 0.55s ease-out 0.15s forwards;
+          }
+          .draw-check {
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: checkDraw 0.3s ease-out 0.65s forwards;
+          }
+        `}</style>
+
+        <svg viewBox="0 0 52 52" className="w-20 h-20 mb-8" style={{ overflow: "visible" }}>
+          <circle
+            cx="26" cy="26" r="25"
+            fill="none"
+            stroke={sc}
+            strokeWidth="1.5"
+            className="draw-circle"
+          />
+          <path
+            fill="none"
+            stroke={sc}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14 27l8 8 16-16"
+            className="draw-check"
+          />
+        </svg>
+
+        <h2 className="font-heading text-3xl text-text-primary mb-3 tracking-wide">
+          Mission live.
+        </h2>
+        <p className="text-text-secondary text-sm text-center max-w-xs leading-relaxed">
+          {msg}
+        </p>
+        <p className="text-text-muted text-xs mt-10">Heading to missions…</p>
+      </div>
+    );
+  }
+
   const diffOptions: MissionDifficulty[] = ["easy", "medium", "hard"];
   const assignmentOptions: { key: MissionAssignmentType; label: string; desc: string }[] = [
-    { key: "open", label: "Open Enrollment", desc: "Any chapter volunteer can join" },
-    { key: "team", label: "Whole Team(s)", desc: "Assign to everyone in one or more teams" },
-    { key: "specific", label: "Specific Volunteers", desc: "Hand-pick individual members" },
+    { key: "open", label: "Open Enrollment", desc: "Any chapter volunteer can sign up" },
+    { key: "team", label: "Whole Team(s)", desc: "Goes to every member of the selected team(s)" },
+    { key: "specific", label: "Specific Volunteers", desc: "You choose exactly who gets assigned" },
   ];
 
   const today = new Date().toISOString().slice(0, 10);
 
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
+
+  // ── Derived stripe colors ─────────────────────────────────────────────────
+  const diffColor = DIFFICULTY_META[difficulty].color;
+  const difficultyStripe = `linear-gradient(90deg, ${diffColor}, ${diffColor}99)`;
+
+  const assignmentStripe = (() => {
+    if (assignmentType === "team" && selectedTeams.length > 0) {
+      const colors = selectedTeams.map((t) => TEAM_META[t]?.color).filter(Boolean) as string[];
+      if (colors.length === 1) return `linear-gradient(90deg, ${colors[0]}, ${colors[0]}99)`;
+      const stops = colors.map((c, i) => `${c} ${Math.round((i / (colors.length - 1)) * 100)}%`).join(", ");
+      return `linear-gradient(90deg, ${stops})`;
+    }
+    return "linear-gradient(90deg, #7C3AED, #A855F7)";
+  })();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -379,25 +489,16 @@ function AddMissionPageInner() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-heading transition-colors"
-          >
-            {submitting ? "Creating…" : "Create Mission"}
-          </button>
-          <Link href="/dashboard">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatarUrl}
-              alt="Profile"
-              width={36}
-              height={36}
-              className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-            />
-          </Link>
-        </div>
+        <Link href="/dashboard">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={avatarUrl}
+            alt="Profile"
+            width={36}
+            height={36}
+            className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
+          />
+        </Link>
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
@@ -408,20 +509,20 @@ function AddMissionPageInner() {
             "radial-gradient(ellipse 80% 40% at 60% 0%, rgba(124,58,237,0.12) 0%, transparent 70%)",
         }}
       >
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col pb-10">
 
           {/* ── Page subtitle ────────────────────────────────────────────────── */}
-          <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
+          <div className="animate-fade-up border-b border-border/60 pb-5 mb-6" style={{ animationDelay: "0ms" }}>
             <p className="text-text-secondary text-sm">
-              Missions are one-off tasks you assign to volunteers. They earn XP upon completion.
+              Set a challenge for your chapter. Volunteers who complete it earn XP — and a real milestone on their record.
             </p>
           </div>
 
           {/* ── Basic info ──────────────────────────────────────────────────── */}
-          <SectionCard animDelay={60}>
+          <SectionCard animDelay={60} padding="p-6">
             <h2 className="font-heading text-sm text-text-primary mb-5">Mission Details</h2>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <div>
                 <label className={LABEL_CLS}>Title *</label>
                 <input
@@ -465,17 +566,18 @@ function AddMissionPageInner() {
                   onChange={(e) => setSubmissionGuidance(e.target.value)}
                 />
                 <p className="text-text-muted text-xs mt-1.5">
-                  This hint will be shown to volunteers inside the submission form.
+                  Volunteers see this when they submit — tell them exactly what to include.
                 </p>
               </div>
             </div>
           </SectionCard>
 
           {/* ── Difficulty ──────────────────────────────────────────────────── */}
-          <SectionCard animDelay={120}>
+          <div className="mt-5">
+          <SectionCard animDelay={120} stripe={difficultyStripe}>
             <h2 className="font-heading text-sm text-text-primary mb-1">Difficulty & XP</h2>
             <p className="text-text-muted text-xs mb-4">
-              Difficulty sets how much XP volunteers earn upon completion.
+              The harder the mission, the more XP volunteers earn.
             </p>
 
             <div className="grid grid-cols-3 gap-3">
@@ -522,12 +624,14 @@ function AddMissionPageInner() {
               })}
             </div>
           </SectionCard>
+          </div>
 
           {/* ── Assignment ──────────────────────────────────────────────────── */}
-          <SectionCard animDelay={180}>
+          <div className="mt-3">
+          <SectionCard animDelay={180} stripe={assignmentStripe}>
             <h2 className="font-heading text-sm text-text-primary mb-1">Assignment</h2>
             <p className="text-text-muted text-xs mb-4">
-              Choose who this mission is for.
+              Choose who gets the call.
             </p>
 
             {/* Assignment type toggle */}
@@ -569,32 +673,62 @@ function AddMissionPageInner() {
 
             {/* Open enrollment — slot count */}
             {assignmentType === "open" && (
-              <div>
-                <label className={LABEL_CLS}>Number of Slots</label>
+              <div className="animate-fade-up" style={{ animationDuration: "180ms" }}>
+                <label className={LABEL_CLS}>Available Spots</label>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setSlots((s) => Math.max(1, s - 1))}
-                    className="w-9 h-9 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-accent-highlight transition-colors flex items-center justify-center font-sans text-lg"
+                  <div
+                    className="inline-flex items-center rounded-lg border border-border overflow-hidden"
+                    style={{ backgroundColor: "#16213e" }}
                   >
-                    −
-                  </button>
-                  <span className="w-10 text-center font-heading text-lg text-text-primary">
-                    {slots}
-                  </span>
-                  <button
-                    onClick={() => setSlots((s) => s + 1)}
-                    className="w-9 h-9 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-accent-highlight transition-colors flex items-center justify-center font-sans text-lg"
-                  >
-                    +
-                  </button>
-                  <span className="text-text-muted text-xs">volunteers max</span>
+                    <button
+                      onClick={() => {
+                        const next = Math.max(1, slots - 1);
+                        setSlots(next);
+                        setSlotsRaw(String(next));
+                      }}
+                      className="w-9 h-9 text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors flex items-center justify-center font-sans text-lg shrink-0"
+                    >
+                      −
+                    </button>
+                    <div className="w-px self-stretch bg-border" />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="w-14 h-9 text-center font-heading text-sm text-text-primary bg-transparent focus:outline-none"
+                      value={slotsRaw}
+                      onChange={(e) => {
+                        setSlotsRaw(e.target.value);
+                        const n = parseInt(e.target.value, 10);
+                        if (!isNaN(n) && n >= 1) setSlots(n);
+                      }}
+                      onBlur={() => {
+                        const n = parseInt(slotsRaw, 10);
+                        const clamped = isNaN(n) || n < 1 ? 1 : n;
+                        setSlots(clamped);
+                        setSlotsRaw(String(clamped));
+                      }}
+                    />
+                    <div className="w-px self-stretch bg-border" />
+                    <button
+                      onClick={() => {
+                        const next = slots + 1;
+                        setSlots(next);
+                        setSlotsRaw(String(next));
+                      }}
+                      className="w-9 h-9 text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors flex items-center justify-center font-sans text-lg shrink-0"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-text-muted text-xs">max volunteers</span>
                 </div>
               </div>
             )}
 
             {/* Team selection — multi-select */}
             {assignmentType === "team" && (
-              <div>
+              <div className="animate-fade-up" style={{ animationDuration: "180ms" }}>
                 <label className={LABEL_CLS}>Select Team(s) *</label>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(TEAM_META).map(([teamId, meta]) => {
@@ -659,8 +793,8 @@ function AddMissionPageInner() {
 
             {/* Specific volunteer picker */}
             {assignmentType === "specific" && (
-              <div>
-                <label className={LABEL_CLS}>Pick Volunteers *</label>
+              <div className="animate-fade-up" style={{ animationDuration: "180ms" }}>
+                <label className={LABEL_CLS}>Who gets assigned? *</label>
 
                 {/* Selected volunteers chips */}
                 {selectedVolunteers.length > 0 && (
@@ -694,7 +828,7 @@ function AddMissionPageInner() {
                   </span>
                   <input
                     className={`${INPUT_CLS} pl-9`}
-                    placeholder="Search volunteers..."
+                    placeholder="Search by username..."
                     value={volunteerSearch}
                     onChange={(e) => setVolunteerSearch(e.target.value)}
                   />
@@ -716,7 +850,11 @@ function AddMissionPageInner() {
                   </div>
                 ) : filteredVolunteers.length === 0 ? (
                   <p className="text-text-muted text-xs py-2">
-                    {volunteerSearch ? "No volunteers found." : "All chapter volunteers selected."}
+                    {volunteerSearch
+                      ? "No one matches that search."
+                      : chapterVolunteers.length === 0
+                      ? "No volunteers in your chapter yet."
+                      : "Everyone's on the list."}
                   </p>
                 ) : (
                   <div
@@ -755,13 +893,15 @@ function AddMissionPageInner() {
               </div>
             )}
           </SectionCard>
+          </div>
 
           {/* ── Deadline ────────────────────────────────────────────────────── */}
-          <SectionCard animDelay={240}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="mt-5">
+          <SectionCard animDelay={240} padding="p-4">
+            <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="font-heading text-sm text-text-primary">Deadline</h2>
-                <p className="text-text-muted text-xs mt-0.5">Optional end date for this mission.</p>
+                <p className="text-text-muted text-xs mt-0.5">Set a cutoff, or leave it open-ended.</p>
               </div>
               <button
                 onClick={() => {
@@ -789,7 +929,7 @@ function AddMissionPageInner() {
                     <label className={LABEL_CLS}>Date *</label>
                     <input
                       type="date"
-                      className={INPUT_CLS}
+                      className={`${INPUT_CLS} [&::-webkit-calendar-picker-indicator]:invert`}
                       min={today}
                       value={deadlineDate}
                       onChange={(e) => {
@@ -802,7 +942,7 @@ function AddMissionPageInner() {
                     <label className={LABEL_CLS}>Time *</label>
                     <input
                       type="time"
-                      className={INPUT_CLS}
+                      className={`${INPUT_CLS} [&::-webkit-calendar-picker-indicator]:invert`}
                       value={deadlineTime}
                       onChange={(e) => {
                         setDeadlineTime(e.target.value);
@@ -817,13 +957,27 @@ function AddMissionPageInner() {
               </div>
             )}
           </SectionCard>
+          </div>
 
-          {/* ── Submit error ─────────────────────────────────────────────────── */}
-          {errors.submit && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 animate-fade-up">
-              <p className="text-red-400 text-sm">{errors.submit}</p>
-            </div>
-          )}
+          {/* ── Bottom CTA ───────────────────────────────────────────────────── */}
+          <div className="mt-8 animate-fade-up" style={{ animationDelay: "280ms" }}>
+
+            {/* Submit error sits directly above the button */}
+            {errors.submit && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 mb-4">
+                <p className="text-red-400 text-sm">{errors.submit}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl font-heading text-base text-white transition-all duration-200 hover:brightness-110 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "#A855F7" }}
+            >
+              {submitting ? "Creating…" : "Create Mission"}
+            </button>
+          </div>
 
         </div>
       </div>
