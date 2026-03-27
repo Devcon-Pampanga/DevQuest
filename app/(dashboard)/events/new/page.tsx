@@ -312,6 +312,7 @@ export default function NewEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [successInfo, setSuccessInfo] = useState<{ eventId: string; eventName: string } | null>(null);
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -495,11 +496,11 @@ export default function NewEventPage() {
         createdAt: serverTimestamp(),
       });
 
-      router.push(`/events/${eventRef.id}`);
+      setSuccessInfo({ eventId: eventRef.id, eventName: eventName.trim() });
+      setTimeout(() => router.push(`/events/${eventRef.id}`), 2400);
     } catch (err) {
       console.error(err);
       setSubmitError("Failed to create the event. Please try again.");
-    } finally {
       setSubmitting(false);
     }
   }
@@ -518,6 +519,68 @@ export default function NewEventPage() {
   }
 
   if (!userData) return null;
+
+  // ── Success overlay ───────────────────────────────────────────────────────
+  if (successInfo !== null) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-base"
+        style={{ animation: "successFadeIn 0.35s ease-out forwards" }}
+      >
+        <style>{`
+          @keyframes successFadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
+          }
+          @keyframes circleDraw {
+            from { stroke-dashoffset: 166; }
+            to   { stroke-dashoffset: 0; }
+          }
+          @keyframes checkDraw {
+            from { stroke-dashoffset: 48; }
+            to   { stroke-dashoffset: 0; }
+          }
+          .draw-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            animation: circleDraw 0.55s ease-out 0.15s forwards;
+          }
+          .draw-check {
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: checkDraw 0.3s ease-out 0.65s forwards;
+          }
+        `}</style>
+
+        <svg viewBox="0 0 52 52" className="w-20 h-20 mb-8" style={{ overflow: "visible" }}>
+          <circle
+            cx="26" cy="26" r="25"
+            fill="none"
+            stroke="#A855F7"
+            strokeWidth="1.5"
+            className="draw-circle"
+          />
+          <path
+            fill="none"
+            stroke="#A855F7"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14 27l8 8 16-16"
+            className="draw-check"
+          />
+        </svg>
+
+        <h2 className="font-heading text-3xl text-text-primary mb-3 tracking-wide">
+          Event live.
+        </h2>
+        <p className="text-text-secondary text-sm text-center max-w-xs leading-relaxed">
+          Volunteers can now register for {successInfo.eventName}.
+        </p>
+        <p className="text-text-muted text-xs mt-10">Taking you to the event page…</p>
+      </div>
+    );
+  }
 
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
 
