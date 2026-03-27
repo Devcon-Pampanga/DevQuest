@@ -211,7 +211,7 @@ function TierProgressCard({
       {/* 4px team-color bar */}
       <div className="h-1 w-full" style={{ backgroundColor: color }} />
 
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         {/* ── Top: earned tier — compact, 1 line ── */}
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -593,7 +593,7 @@ function CollapsibleQuestTile({
 }
 
 // ─── Path Journey Sidebar ─────────────────────────────────────────────────────
-// Three states: completed (muted, 1 line), current (elevated), future (name only).
+// Three states: completed (muted, 1 line), current (elevated), future (expandable preview).
 
 function PathJourneySidebar({
   teamId,
@@ -609,6 +609,7 @@ function PathJourneySidebar({
   allQuests: Quest[];
 }) {
   const currentTier = getCurrentTier(teamId, completions, allQuests);
+  const [expandedTier, setExpandedTier] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -626,12 +627,75 @@ function PathJourneySidebar({
         const isCurrent = tier === currentTier;
         const isCompleted = unlocked && !isCurrent;
         const tierLabel = tier === "lead" ? leadTitle : (TIER_LABELS[tier] ?? tier);
+        const currentTierLabel = currentTier === "lead" ? leadTitle : (TIER_LABELS[currentTier] ?? currentTier);
 
         // ── Future / locked ──────────────────────────────────────────────────
         if (!unlocked) {
+          const isExpanded = expandedTier === tier;
           return (
-            <div key={tier} className="px-3 py-2.5">
-              <span className="text-sm font-heading text-zinc-600">{tierLabel}</span>
+            <div key={tier}>
+              <div
+                className="px-3 py-2.5 flex items-center gap-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
+                onClick={() => setExpandedTier(isExpanded ? null : tier)}
+              >
+                {/* Greyed-out tier badge */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/badges/${teamId}_${tier}.png`}
+                  alt={tierLabel}
+                  width={20}
+                  height={20}
+                  className="object-contain shrink-0 grayscale opacity-30"
+                />
+                <span className="flex-1 text-sm font-heading text-zinc-600">{tierLabel}</span>
+                {total > 0 && (
+                  <span className="text-[10px] text-zinc-700 mr-1">· {total} quest{total !== 1 ? "s" : ""}</span>
+                )}
+                {/* Chevron */}
+                <svg
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  className="shrink-0 transition-transform duration-200"
+                  style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+
+              {/* Expanded quest preview */}
+              {isExpanded && total > 0 && (
+                <div className="ml-3 pl-3 border-l border-zinc-800 pb-2 flex flex-col gap-1 mt-0.5">
+                  {tierQuests.map((q) => (
+                    <div key={q.questId} className="flex items-start gap-2 py-1">
+                      {/* Method icon */}
+                      <div className="mt-0.5 shrink-0">
+                        {q.completionMethod === "qr_scan" && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                            <path d="M14 14h.01M18 14h.01M14 18h.01M18 18h.01M14 21h.01M21 14h.01M21 18h.01M21 21h.01" />
+                          </svg>
+                        )}
+                        {q.completionMethod === "self_mark" && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                        {q.completionMethod === "coordinator_approval" && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="flex-1 text-[11px] text-zinc-600 leading-snug">{q.name}</span>
+                      {q.xpReward > 0 && (
+                        <span className="text-[10px] text-zinc-700 shrink-0">+{q.xpReward}</span>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-zinc-700 italic pt-0.5">
+                    Complete {currentTierLabel} to unlock
+                  </p>
+                </div>
+              )}
             </div>
           );
         }
@@ -1004,7 +1068,7 @@ function MissionsPanel({
       style={{ backgroundColor: "#1e1a2e", animationDelay: "280ms" }}
     >
       <div className="h-[3px] w-full" style={{ backgroundColor: "#A855F7" }} />
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         {/* Header */}
         <div className="flex items-start gap-2 mb-4">
           <div className="flex-1 min-w-0">
@@ -1842,8 +1906,8 @@ function QuestsPageContent() {
         ) : null
       }
     >
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 items-start">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-5 lg:items-start">
 
           {/* ── Team pill switcher ─────────────────────────────────────────────── */}
           {tabs.length > 1 && (
@@ -1987,7 +2051,7 @@ function QuestsPageContent() {
                   style={{ backgroundColor: "#1e1a2e", animationDelay: "120ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     {/* Section header */}
                     <div className="flex items-center gap-3 mb-4">
                       <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">
@@ -2033,13 +2097,13 @@ function QuestsPageContent() {
               </div>
 
               {/* Right column — Journey sidebar + Missions */}
-              <div className="lg:col-span-1 flex flex-col gap-5">
+              <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-5">
                 <div
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
                   style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
                       teamColor={activeMeta.color}
