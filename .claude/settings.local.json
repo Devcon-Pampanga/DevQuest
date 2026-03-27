@@ -24,7 +24,13 @@
       "Bash(wc -l \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\events\\\\new\\\\page.tsx\" \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\quests\\\\page.tsx\")",
       "Bash(find \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest/app/\\(dashboard\\)\" -type f -name \"*.tsx\" ! -path \"*/.next/*\")",
       "Bash(wc -l \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\missions\\\\new\\\\page.tsx\")",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(mv \"Associate.png\" \"associate.png\")",
+      "Bash(mv \"Dedicated Volunteer.png\" \"dedicated-volunteer.png\")",
+      "Bash(mv \"Deep Thinker_2.png\" \"deep-thinker.png\")",
+      "Bash(mv \"Event Veteran_2.png\" \"event-veteran.png\")",
+      "Bash(mv \"First Reflection.png\" \"first-reflection.png\")",
+      "Bash(wc -l \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\quests\\\\page.tsx\")"
     ]
   }
 }

@@ -17,6 +17,7 @@ import {
   serverTimestamp,
   increment,
   Timestamp,
+  getCountFromServer,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
@@ -35,6 +36,7 @@ import {
   DIFFICULTY_META,
 } from "@/types/mission";
 import Link from "next/link";
+import Image from "next/image";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
@@ -702,62 +704,105 @@ function PathJourneySidebar({
 
         // ── Completed ────────────────────────────────────────────────────────
         if (isCompleted) {
+          const isExpanded = expandedTier === tier;
           return (
-            <div key={tier} className="px-3 py-2 flex items-center gap-2.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/badges/${teamId}_${tier}.png`}
-                alt={tierLabel}
-                width={24}
-                height={24}
-                className="object-contain shrink-0 opacity-40"
-              />
-              <span className="flex-1 text-sm font-heading text-zinc-500 truncate">{tierLabel}</span>
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#52525B"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="shrink-0"
+            <div key={tier}>
+              <div
+                className="px-3 py-2 flex items-center gap-2.5 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
+                onClick={() => setExpandedTier(isExpanded ? null : tier)}
               >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/badges/${teamId}_${tier}.png`}
+                  alt={tierLabel}
+                  width={24}
+                  height={24}
+                  className="object-contain shrink-0 opacity-40"
+                />
+                <span className="flex-1 text-sm font-heading text-zinc-500 truncate">{tierLabel}</span>
+                {/* Checkmark */}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {/* Chevron */}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              {isExpanded && total > 0 && (
+                <div className="ml-3 pl-3 border-l border-zinc-800 pb-2 flex flex-col gap-1 mt-0.5">
+                  {tierQuests.map((q) => (
+                    <div key={q.questId} className="flex items-start gap-2 py-1">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span className="flex-1 text-[11px] text-zinc-600 leading-snug line-through">{q.name}</span>
+                      {q.xpReward > 0 && (
+                        <span className="text-[10px] text-zinc-700 shrink-0">+{q.xpReward}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         }
 
         // ── Current ──────────────────────────────────────────────────────────
+        const isExpanded = expandedTier === tier;
         return (
           <div
             key={tier}
-            className="rounded-xl py-3 pr-3.5 flex items-center gap-3 bg-[#16213e] border border-[#27272A]"
-            style={{ borderLeft: `3px solid ${teamColor}`, paddingLeft: "0.875rem" }}
+            className="rounded-xl bg-[#16213e] border border-[#27272A] overflow-hidden"
+            style={{ borderLeft: `3px solid ${teamColor}` }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`/badges/${teamId}_${tier}.png`}
-              alt={tierLabel}
-              width={40}
-              height={40}
-              className="object-contain drop-shadow-md shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-sm font-heading font-bold leading-tight truncate"
-                style={{ color: teamColor }}
-              >
-                {tierLabel}
-              </p>
-              {total > 0 && (
-                <p className="text-xs text-text-muted mt-0.5">
-                  {completedCount}/{total} quests
+            <div
+              className="py-3 pr-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors"
+              style={{ paddingLeft: "0.875rem" }}
+              onClick={() => setExpandedTier(isExpanded ? null : tier)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/badges/${teamId}_${tier}.png`}
+                alt={tierLabel}
+                width={40}
+                height={40}
+                className="object-contain drop-shadow-md shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-heading font-bold leading-tight truncate" style={{ color: teamColor }}>
+                  {tierLabel}
                 </p>
-              )}
+                {total > 0 && (
+                  <p className="text-xs text-text-muted mt-0.5">{completedCount}/{total} quests</p>
+                )}
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </div>
+            {isExpanded && total > 0 && (
+              <div className="px-3.5 pb-3 flex flex-col gap-1 border-t border-[#27272A] pt-2.5">
+                {tierQuests.map((q) => {
+                  const done = completions[q.questId]?.status === "completed";
+                  return (
+                    <div key={q.questId} className="flex items-start gap-2 py-0.5">
+                      {done ? (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <div className="w-[11px] h-[11px] rounded-full border mt-0.5 shrink-0" style={{ borderColor: teamColor }} />
+                      )}
+                      <span className={`flex-1 text-[11px] leading-snug ${done ? "text-zinc-600 line-through" : "text-zinc-300"}`}>{q.name}</span>
+                      {q.xpReward > 0 && (
+                        <span className="text-[10px] text-zinc-600 shrink-0">+{q.xpReward}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
@@ -1403,6 +1448,149 @@ function QuestsSkeleton() {
   );
 }
 
+// ─── Badges ───────────────────────────────────────────────────────────────────
+
+function LockIconSmall() {
+  return (
+    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function getEarnedTier(
+  teamId: string,
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
+): Quest["tier"] {
+  for (const tier of TIER_ORDER) {
+    if (!isTierUnlocked(teamId, tier, completions, allQuests)) continue;
+    const tierQuests = allQuests.filter((q) => q.teamId === teamId && q.tier === tier);
+    const allDone = tierQuests.every((q) => completions[q.questId]?.status === "completed");
+    if (!allDone) return tier;
+  }
+  return TIER_ORDER[TIER_ORDER.length - 1];
+}
+
+interface QuestBadgeDef {
+  name: string;
+  description: string;
+  earned: boolean;
+  image: string;
+}
+
+function QuestBadgeTile({ badge }: { badge: QuestBadgeDef }) {
+  return (
+    <div
+      className="relative rounded-xl border border-border bg-[#0a0a0f] p-3 flex flex-col items-center gap-2 text-center hover:scale-[1.03] transition-transform duration-200"
+      title={badge.earned ? badge.name : badge.description}
+    >
+      <div
+        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+          badge.earned ? "" : "grayscale opacity-50"
+        }`}
+        style={
+          badge.earned
+            ? { boxShadow: "0 0 0 2px #7C3AED", backgroundColor: "#1a1a2e" }
+            : { backgroundColor: "#1a1a2e" }
+        }
+      >
+        <Image src={badge.image} alt={badge.name} width={32} height={32} className="object-contain" />
+      </div>
+      {!badge.earned && (
+        <div className="absolute bottom-2 right-2 w-5 h-5 rounded-full bg-zinc-800 border border-zinc-600 flex items-center justify-center text-zinc-500">
+          <LockIconSmall />
+        </div>
+      )}
+      <p className="text-[10px] font-heading font-semibold text-text-primary leading-tight">{badge.name}</p>
+    </div>
+  );
+}
+
+function QuestBadgesCard({
+  teamColor,
+  completions,
+  allQuests,
+  teams,
+  xp,
+  eventCount,
+  reflectionCount,
+  profileSetupCount,
+}: {
+  teamColor: string;
+  completions: Record<string, QuestCompletion>;
+  allQuests: Quest[];
+  teams: string[];
+  xp: number;
+  eventCount: number;
+  reflectionCount: number;
+  profileSetupCount: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const LIMIT = 6;
+
+  const completedQuestCount = Object.values(completions).filter(
+    (c) => c.status === "completed"
+  ).length;
+
+  const earnedIdx = (tid: string) =>
+    TIER_ORDER.indexOf(getEarnedTier(tid, completions, allQuests));
+
+  const b10 = teams.some((tid) => earnedIdx(tid) >= TIER_ORDER.indexOf("associate"));
+  const b11 = teams.some((tid) => earnedIdx(tid) >= TIER_ORDER.indexOf("specialist"));
+  const b12 = teams.some((tid) => getEarnedTier(tid, completions, allQuests) === "lead");
+
+  const badges: QuestBadgeDef[] = [
+    { name: "First Steps",           description: "Attend at least 1 event",                         earned: eventCount >= 1,           image: "/medals/first-steps.png" },
+    { name: "Dedicated Volunteer",   description: "Attend at least 5 events",                        earned: eventCount >= 5,           image: "/medals/dedicated-volunteer.png" },
+    { name: "Event Veteran",         description: "Attend at least 10 events",                       earned: eventCount >= 10,          image: "/medals/event-veteran.png" },
+    { name: "First Reflection",      description: "Submit at least 1 reflection",                    earned: reflectionCount >= 1,      image: "/medals/first-reflection.png" },
+    { name: "Reflective Contributor",description: "Submit at least 5 reflections",                   earned: reflectionCount >= 5,      image: "/medals/reflective-contributor.png" },
+    { name: "Deep Thinker",          description: "Submit at least 10 reflections",                  earned: reflectionCount >= 10,     image: "/medals/deep-thinker.png" },
+    { name: "Quest Starter",         description: "Complete at least 1 quest",                       earned: completedQuestCount >= 1,  image: "/medals/quest-starter.png" },
+    { name: "Quest Achiever",        description: "Complete at least 5 quests",                      earned: completedQuestCount >= 5,  image: "/medals/quest-achiever.png" },
+    { name: "Quest Master",          description: "Complete at least 10 quests",                     earned: completedQuestCount >= 10, image: "/medals/quest-master.png" },
+    { name: "Associate",             description: "Reach Associate tier or higher on any team",      earned: b10,                       image: "/medals/associate.png" },
+    { name: "Specialist",            description: "Reach Specialist tier or higher on any team",     earned: b11,                       image: "/medals/specialist.png" },
+    { name: "Team Lead",             description: "Complete the Lead tier on any team",              earned: b12,                       image: "/medals/team-lead.png" },
+    { name: "Profile Complete",      description: "Complete profile setup",                          earned: profileSetupCount >= 1,    image: "/medals/profile-complete.png" },
+    { name: "XP Milestone: 500",     description: "Reach 500 total XP",                             earned: xp >= 500,                 image: "/medals/xp-500.png" },
+    { name: "XP Milestone: 1000",    description: "Reach 1000 total XP",                            earned: xp >= 1000,                image: "/medals/xp-1000.png" },
+  ];
+
+  const earnedBadges = badges.filter((b) => b.earned);
+  const unearnedBadges = badges.filter((b) => !b.earned);
+  const preview = [...earnedBadges, ...unearnedBadges].slice(0, LIMIT);
+  const displayed = expanded ? badges : preview;
+  const earned = earnedBadges.length;
+
+  return (
+    <div className="rounded-2xl border border-border overflow-hidden animate-fade-up" style={{ backgroundColor: "#1e1a2e", animationDelay: "300ms" }}>
+      <div className="h-[3px] w-full" style={{ backgroundColor: teamColor }} />
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">Badges</p>
+          <div className="flex-1 h-px bg-[#27272A]" />
+          <p className="text-xs text-text-muted">{earned} / {badges.length}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {displayed.map((b) => (
+            <QuestBadgeTile key={b.name} badge={b} />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-3 w-full py-2 rounded-xl border border-border text-xs font-heading uppercase tracking-widest text-text-secondary hover:text-text-primary hover:border-accent-primary/50 transition-colors"
+        >
+          {expanded ? "Show Less" : `Show All ${badges.length} Badges`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function QuestsPageContent() {
@@ -1416,6 +1604,9 @@ function QuestsPageContent() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [completions, setCompletions] = useState<Record<string, QuestCompletion>>({});
   const [loadingCompletions, setLoadingCompletions] = useState(true);
+  const [eventCount, setEventCount] = useState(0);
+  const [reflectionCount, setReflectionCount] = useState(0);
+  const [profileSetupCount, setProfileSetupCount] = useState(0);
 
   const [approvals, setApprovals] = useState<ApprovalsQueueItem[]>([]);
   const [loadingApprovals, setLoadingApprovals] = useState(false);
@@ -1464,11 +1655,15 @@ function QuestsPageContent() {
       setLoadingCompletions(true);
       setLoadingMissions(true);
       try {
-        const [questsSnap, completionsSnap, missionsSnap, missionCompletionsSnap] = await Promise.all([
+        const xpCol = collection(db, "users", firebaseUid, "xpLog");
+        const [questsSnap, completionsSnap, missionsSnap, missionCompletionsSnap, reflCountSnap, eventCountSnap, profileSetupSnap] = await Promise.all([
           getDocs(collection(db, "quests")),
           getDocs(collection(db, "users", firebaseUid, "questCompletions")),
           getDocs(query(collection(db, "missions"), where("chapterId", "==", userData!.chapterId), where("status", "==", "active"))),
           getDocs(collection(db, "users", firebaseUid, "missionCompletions")),
+          getCountFromServer(collection(db, "users", firebaseUid, "reflections")),
+          getCountFromServer(query(xpCol, where("source", "==", "event_attendance"))),
+          getCountFromServer(query(xpCol, where("source", "==", "profile_setup"))),
         ]);
         setQuests(questsSnap.docs.map(d => d.data() as Quest));
         const map: Record<string, QuestCompletion> = {};
@@ -1478,6 +1673,9 @@ function QuestsPageContent() {
         const mmap: Record<string, MissionCompletion> = {};
         missionCompletionsSnap.docs.forEach((d) => { mmap[d.id] = d.data() as MissionCompletion; });
         setMissionCompletions(mmap);
+        setReflectionCount(reflCountSnap.data().count);
+        setEventCount(eventCountSnap.data().count);
+        setProfileSetupCount(profileSetupSnap.data().count);
       } finally {
         setLoadingCompletions(false);
         setLoadingMissions(false);
@@ -2094,9 +2292,26 @@ function QuestsPageContent() {
                   </div>
                 </div>
 
+                {/* Missions */}
+                <MissionsPanel
+                  userData={userData!}
+                  missions={missions}
+                  missionCompletions={missionCompletions}
+                  missionApprovals={missionApprovals}
+                  loadingMissions={loadingMissions}
+                  loadingMissionApprovals={loadingMissionApprovals}
+                  expandedMissionId={expandedMissionId}
+                  setExpandedMissionId={setExpandedMissionId}
+                  submitting={submitting}
+                  onJoin={handleJoinMission}
+                  onSubmit={handleSubmitMission}
+                  onApprove={handleApproveMission}
+                  onRevise={handleReviseMission}
+                />
+
               </div>
 
-              {/* Right column — Journey sidebar + Missions */}
+              {/* Right column — Journey sidebar + Badges */}
               <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-5">
                 <div
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
@@ -2113,20 +2328,15 @@ function QuestsPageContent() {
                     />
                   </div>
                 </div>
-                <MissionsPanel
-                  userData={userData!}
-                  missions={missions}
-                  missionCompletions={missionCompletions}
-                  missionApprovals={missionApprovals}
-                  loadingMissions={loadingMissions}
-                  loadingMissionApprovals={loadingMissionApprovals}
-                  expandedMissionId={expandedMissionId}
-                  setExpandedMissionId={setExpandedMissionId}
-                  submitting={submitting}
-                  onJoin={handleJoinMission}
-                  onSubmit={handleSubmitMission}
-                  onApprove={handleApproveMission}
-                  onRevise={handleReviseMission}
+                <QuestBadgesCard
+                  teamColor={activeMeta.color}
+                  completions={completions}
+                  allQuests={quests}
+                  teams={userData!.teams ?? []}
+                  xp={userData!.xp ?? 0}
+                  eventCount={eventCount}
+                  reflectionCount={reflectionCount}
+                  profileSetupCount={profileSetupCount}
                 />
               </div>
             </>
