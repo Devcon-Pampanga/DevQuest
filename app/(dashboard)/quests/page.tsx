@@ -27,6 +27,14 @@ import {
   TEAM_META,
 } from "@/lib/seed/quests";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
+import {
+  Mission,
+  MissionCompletion,
+  MissionCompletionStatus,
+  MissionApprovalItem,
+  DIFFICULTY_META,
+} from "@/types/mission";
+import Link from "next/link";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
 
@@ -169,164 +177,135 @@ function QuestDot({ status, color }: { status: UIQuestStatus; color: string }) {
   return <div className="w-4 h-4 rounded-full shrink-0 border-2" style={{ borderColor: color, backgroundColor: `${color}30` }} />;
 }
 
-// ─── Hero Progress Card ───────────────────────────────────────────────────────
+// ─── Tier Progress Card ───────────────────────────────────────────────────────
+// Merges earned tier (top) and working-toward tier (bottom) into one arc.
 
-function HeroProgressCard({
+function TierProgressCard({
   teamId,
-  currentTier,
-  tierLabel,
+  earnedTier,
+  earnedTierLabel,
+  currentTierLabel,
   nextTierLabel,
   color,
   quests,
   completions,
-}: {
-  teamId: string;
-  currentTier: string;
-  tierLabel: string;
-  nextTierLabel: string | null;
-  color: string;
-  quests: Quest[];
-  completions: Record<string, QuestCompletion>;
-}) {
-  const total = quests.length;
-  const completedCount = quests.filter(
-    (q) => completions[q.questId]?.status === "completed"
-  ).length;
-  const pct = total > 0 ? (completedCount / total) * 100 : 0;
-
-  const [barsReady, setBarsReady] = useState(false);
-  useEffect(() => {
-    setBarsReady(false);
-    const t = setTimeout(() => setBarsReady(true), 350);
-    return () => clearTimeout(t);
-  }, [teamId, currentTier]);
-
-  return (
-    <div
-      className="rounded-2xl overflow-hidden border border-[#27272A] relative"
-      style={{ background: `linear-gradient(135deg, #1a1a2e 0%, ${color}18 100%)` }}
-    >
-      {/* Color accent bar */}
-      <div className="h-1 w-full" style={{ backgroundColor: color }} />
-
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <p className="text-xs font-semibold tracking-widest mb-1" style={{ color }}>
-              NEXT MILESTONE
-            </p>
-            <h2 className="font-heading text-2xl text-text-primary leading-tight">
-              {tierLabel} Journey
-            </h2>
-            <p className="text-text-secondary text-sm mt-1">
-              {nextTierLabel
-                ? `Complete all ${total} quests to advance to ${nextTierLabel}`
-                : "You've reached the final tier — complete all quests to earn your title"}
-            </p>
-          </div>
-
-          {/* Badge + count */}
-          <div className="shrink-0 flex flex-col items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`/badges/${teamId}_${currentTier}.png`}
-              alt={tierLabel}
-              width={72}
-              height={72}
-              className="object-contain drop-shadow-lg"
-            />
-            <div className="text-center leading-tight">
-              <span className="font-heading text-xl font-bold" style={{ color }}>{completedCount}</span>
-              <span className="text-text-muted font-heading text-base"> / {total}</span>
-              <p className="text-xs text-text-muted">quests done</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress dots */}
-        <div className="flex items-center gap-2 mb-3">
-          {quests.map((q) => {
-            const s = completions[q.questId]?.status;
-            const isDone = s === "completed";
-            const isPending = s === "pending_approval";
-            return (
-              <div
-                key={q.questId}
-                className="h-3 flex-1 rounded-full transition-all"
-                style={{
-                  backgroundColor: isDone
-                    ? color
-                    : isPending
-                    ? "#F59E0B"
-                    : `${color}20`,
-                  border: isDone || isPending ? "none" : `1px solid ${color}40`,
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-2 w-full rounded-full bg-zinc-800/60 overflow-hidden">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: "100%",
-              backgroundColor: color,
-              transformOrigin: "left center",
-              transform: `scaleX(${barsReady ? pct / 100 : 0})`,
-              transition: barsReady ? "transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms" : "none",
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── EarnedTierCard — shows the tier the volunteer currently holds ──────────────
-function EarnedTierCard({
-  teamId,
-  earnedTier,
-  earnedTierLabel,
-  color,
   isMaxTier,
 }: {
   teamId: string;
   earnedTier: Quest["tier"];
   earnedTierLabel: string;
+  currentTierLabel: string;
+  nextTierLabel: string | null;
   color: string;
+  quests: Quest[];
+  completions: Record<string, QuestCompletion>;
   isMaxTier: boolean;
 }) {
+  const total = quests.length;
+  const completedCount = quests.filter(
+    (q) => completions[q.questId]?.status === "completed"
+  ).length;
+
   return (
-    <div
-      className="rounded-2xl overflow-hidden border border-[#27272A]"
-      style={{ background: `linear-gradient(135deg, #1a1a2e 0%, ${color}12 100%)` }}
-    >
+    <div className="rounded-2xl overflow-hidden border border-[#27272A] bg-[#1a1a2e]">
+      {/* 4px team-color bar */}
       <div className="h-1 w-full" style={{ backgroundColor: color }} />
-      <div className="p-5 flex items-center gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`/badges/${teamId}_${earnedTier}.png`}
-          alt={earnedTierLabel}
-          width={60}
-          height={60}
-          className="object-contain drop-shadow-lg shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold tracking-widest mb-0.5" style={{ color }}>
-            CURRENT TIER
-          </p>
-          <h2 className="font-heading text-xl text-text-primary leading-tight">
-            {earnedTierLabel}
-          </h2>
-          <p className="text-sm text-text-secondary mt-0.5">
-            {isMaxTier
-              ? "You've reached the highest tier — your title is fully earned."
-              : "Complete the milestones below to advance to the next tier."}
-          </p>
+
+      <div className="p-4 sm:p-5">
+        {/* ── Top: earned tier — compact, 1 line ── */}
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/badges/${teamId}_${earnedTier}.png`}
+            alt={earnedTierLabel}
+            width={44}
+            height={44}
+            className="object-contain drop-shadow-md shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold tracking-widest text-text-muted">CURRENT TIER</p>
+            <p className="font-heading text-base text-text-primary leading-tight truncate">{earnedTierLabel}</p>
+          </div>
+          {isMaxTier && (
+            <span
+              className="text-[10px] font-heading font-semibold px-2 py-0.5 rounded-full shrink-0"
+              style={{ color, backgroundColor: `${color}18` }}
+            >
+              MAX
+            </span>
+          )}
         </div>
+
+        {/* ── Step divider + working-toward section (hidden when maxed) ── */}
+        {!isMaxTier && (
+          <>
+            {/* Arrow divider */}
+            <div className="flex items-center gap-2 my-4">
+              <div className="flex-1 h-px" style={{ backgroundColor: `${color}25` }} />
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="opacity-50 shrink-0"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              <div className="flex-1 h-px" style={{ backgroundColor: `${color}25` }} />
+            </div>
+
+            {/* ── Bottom: working toward ── */}
+            <div>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold tracking-widest text-text-muted mb-0.5">WORKING TOWARD</p>
+                  <p className="font-heading text-lg text-text-primary leading-tight">
+                    {nextTierLabel ?? currentTierLabel}
+                  </p>
+                  <p className="text-text-secondary text-xs mt-1">
+                    {nextTierLabel
+                      ? `Complete all ${total} quests to advance`
+                      : "Complete all quests to earn your title"}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right leading-none">
+                  <div>
+                    <span className="font-heading text-2xl font-bold" style={{ color }}>{completedCount}</span>
+                    <span className="text-text-muted font-heading text-lg"> / {total}</span>
+                  </div>
+                  <p className="text-[10px] text-text-muted mt-0.5">quests done</p>
+                </div>
+              </div>
+
+              {/* Progress dots — sole progress indicator */}
+              <div className="flex items-center gap-1.5">
+                {quests.map((q) => {
+                  const s = completions[q.questId]?.status;
+                  const isDone = s === "completed";
+                  const isPending = s === "pending_approval";
+                  return (
+                    <div
+                      key={q.questId}
+                      className="h-2.5 flex-1 rounded-full transition-all duration-500"
+                      style={{
+                        backgroundColor: isDone
+                          ? color
+                          : isPending
+                          ? "#F59E0B"
+                          : `${color}20`,
+                        border: isDone || isPending ? "none" : `1px solid ${color}40`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -413,8 +392,26 @@ function CollapsibleQuestTile({
             </span>
           )}
           {!locked && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 hidden sm:inline">
-              {methodLabel(quest.completionMethod)}
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+              {/* Icon — always visible */}
+              {quest.completionMethod === "qr_scan" && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                  <path d="M14 14h.01M14 18h.01M18 14h.01M18 18h.01M18 21v.01M21 18h.01M21 21h.01" />
+                </svg>
+              )}
+              {quest.completionMethod === "self_mark" && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              {quest.completionMethod === "coordinator_approval" && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
+              )}
+              {/* Text label — sm and up only */}
+              <span className="text-xs font-semibold hidden sm:inline">{methodLabel(quest.completionMethod)}</span>
             </span>
           )}
           {!locked && (
@@ -596,6 +593,7 @@ function CollapsibleQuestTile({
 }
 
 // ─── Path Journey Sidebar ─────────────────────────────────────────────────────
+// Three states: completed (muted, 1 line), current (elevated), future (expandable preview).
 
 function PathJourneySidebar({
   teamId,
@@ -611,10 +609,11 @@ function PathJourneySidebar({
   allQuests: Quest[];
 }) {
   const currentTier = getCurrentTier(teamId, completions, allQuests);
+  const [expandedTier, setExpandedTier] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold tracking-widest text-text-muted mb-2">
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[10px] font-semibold tracking-widest text-text-muted mb-3">
         YOUR JOURNEY
       </p>
 
@@ -625,63 +624,139 @@ function PathJourneySidebar({
           (q) => completions[q.questId]?.status === "completed"
         ).length;
         const total = tierQuests.length;
-        const allDone = completedCount === total && total > 0;
         const isCurrent = tier === currentTier;
-        const tierLabel =
-          tier === "lead" ? leadTitle : (TIER_LABELS[tier] ?? tier);
-        const pct = total > 0 ? (completedCount / total) * 100 : 0;
+        const isCompleted = unlocked && !isCurrent;
+        const tierLabel = tier === "lead" ? leadTitle : (TIER_LABELS[tier] ?? tier);
+        const currentTierLabel = currentTier === "lead" ? leadTitle : (TIER_LABELS[currentTier] ?? currentTier);
 
-        return (
-          <div
-            key={tier}
-            className={`rounded-xl p-3.5 flex items-center gap-3 transition-colors ${
-              isCurrent
-                ? "bg-[#1a1a2e] border border-[#27272A]"
-                : "bg-transparent"
-            }`}
-            style={isCurrent ? { borderLeft: `3px solid ${teamColor}` } : {}}
-          >
-            {/* Badge icon */}
-            <div className="shrink-0 w-10 h-10 flex items-center justify-center relative">
+        // ── Future / locked ──────────────────────────────────────────────────
+        if (!unlocked) {
+          const isExpanded = expandedTier === tier;
+          return (
+            <div key={tier}>
+              <div
+                className="px-3 py-2.5 flex items-center gap-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
+                onClick={() => setExpandedTier(isExpanded ? null : tier)}
+              >
+                {/* Greyed-out tier badge */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/badges/${teamId}_${tier}.png`}
+                  alt={tierLabel}
+                  width={20}
+                  height={20}
+                  className="object-contain shrink-0 grayscale opacity-30"
+                />
+                <span className="flex-1 text-sm font-heading text-zinc-600">{tierLabel}</span>
+                {total > 0 && (
+                  <span className="text-[10px] text-zinc-700 mr-1">· {total} quest{total !== 1 ? "s" : ""}</span>
+                )}
+                {/* Chevron */}
+                <svg
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  className="shrink-0 transition-transform duration-200"
+                  style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+
+              {/* Expanded quest preview */}
+              {isExpanded && total > 0 && (
+                <div className="ml-3 pl-3 border-l border-zinc-800 pb-2 flex flex-col gap-1 mt-0.5">
+                  {tierQuests.map((q) => (
+                    <div key={q.questId} className="flex items-start gap-2 py-1">
+                      {/* Method icon */}
+                      <div className="mt-0.5 shrink-0">
+                        {q.completionMethod === "qr_scan" && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                            <path d="M14 14h.01M18 14h.01M14 18h.01M18 18h.01M14 21h.01M21 14h.01M21 18h.01M21 21h.01" />
+                          </svg>
+                        )}
+                        {q.completionMethod === "self_mark" && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                        {q.completionMethod === "coordinator_approval" && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="flex-1 text-[11px] text-zinc-600 leading-snug">{q.name}</span>
+                      {q.xpReward > 0 && (
+                        <span className="text-[10px] text-zinc-700 shrink-0">+{q.xpReward}</span>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-zinc-700 italic pt-0.5">
+                    Complete {currentTierLabel} to unlock
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // ── Completed ────────────────────────────────────────────────────────
+        if (isCompleted) {
+          return (
+            <div key={tier} className="px-3 py-2 flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`/badges/${teamId}_${tier}.png`}
                 alt={tierLabel}
-                width={40}
-                height={40}
-                className={`object-contain transition-all duration-300 ${
-                  !unlocked ? "grayscale opacity-25" : "drop-shadow-md"
-                }`}
+                width={24}
+                height={24}
+                className="object-contain shrink-0 opacity-40"
               />
+              <span className="flex-1 text-sm font-heading text-zinc-500 truncate">{tierLabel}</span>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#52525B"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
+          );
+        }
 
-            {/* Text + bar */}
+        // ── Current ──────────────────────────────────────────────────────────
+        return (
+          <div
+            key={tier}
+            className="rounded-xl py-3 pr-3.5 flex items-center gap-3 bg-[#16213e] border border-[#27272A]"
+            style={{ borderLeft: `3px solid ${teamColor}`, paddingLeft: "0.875rem" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/badges/${teamId}_${tier}.png`}
+              alt={tierLabel}
+              width={40}
+              height={40}
+              className="object-contain drop-shadow-md shrink-0"
+            />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span
-                  className="text-sm font-heading font-semibold truncate"
-                  style={{ color: !unlocked ? "#52525B" : isCurrent ? teamColor : "white" }}
-                >
-                  {tierLabel}
-                </span>
-                <span
-                  className="text-xs font-semibold shrink-0"
-                  style={{ color: !unlocked ? "#52525B" : isCurrent ? teamColor : "#A1A1AA" }}
-                >
-                  {total === 0 ? "✓" : `${completedCount}/${total}`}
-                </span>
-              </div>
-              <div className="h-1.5 rounded-full bg-zinc-800/60">
-                {unlocked && (
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: total === 0 ? "100%" : `${pct}%`,
-                      backgroundColor: (allDone || total === 0) ? "#06B6D4" : teamColor,
-                    }}
-                  />
-                )}
-              </div>
+              <p
+                className="text-sm font-heading font-bold leading-tight truncate"
+                style={{ color: teamColor }}
+              >
+                {tierLabel}
+              </p>
+              {total > 0 && (
+                <p className="text-xs text-text-muted mt-0.5">
+                  {completedCount}/{total} quests
+                </p>
+              )}
             </div>
           </div>
         );
@@ -818,6 +893,466 @@ function ApprovalItem({
   );
 }
 
+// ─── Missions Panel ───────────────────────────────────────────────────────────
+
+function MissionStatusPill({ status }: { status: MissionCompletionStatus | "available" }) {
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    available:    { label: "Open",            bg: "#06B6D41A", color: "#06B6D4" },
+    assigned:     { label: "Assigned",         bg: "#A855F71A", color: "#A855F7" },
+    joined:       { label: "In Progress",      bg: "#F5C5181A", color: "#F5C518" },
+    submitted:    { label: "Pending Review",   bg: "#F974161A", color: "#F97316" },
+    completed:    { label: "Completed",        bg: "#22C55E1A", color: "#22C55E" },
+  };
+  const s = map[status] ?? map.available;
+  return (
+    <span
+      className="text-[10px] font-heading font-semibold px-2 py-0.5 rounded-full"
+      style={{ backgroundColor: s.bg, color: s.color }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+function MissionApprovalCard({
+  item,
+  onApprove,
+  onRevise,
+  submitting,
+}: {
+  item: MissionApprovalItem;
+  onApprove: () => void;
+  onRevise: (note: string) => void;
+  submitting: boolean;
+}) {
+  const [revising, setRevising] = useState(false);
+  const [revNote, setRevNote] = useState("");
+  const diffMeta = DIFFICULTY_META[item.difficulty];
+  const avatarUrl = `https://api.dicebear.com/9.x/bottts-neutral/svg?${new URLSearchParams({
+    seed: item.username,
+    backgroundColor: item.avatarOptions?.backgroundColor ?? "5e35b1",
+    backgroundType: item.avatarOptions?.backgroundType ?? "solid",
+    eyes: item.avatarOptions?.eyes ?? "round",
+    mouth: item.avatarOptions?.mouth ?? "smile01",
+  })}`;
+
+  return (
+    <div className="rounded-xl border border-[#27272A] bg-[#16213e] p-3.5">
+      <div className="flex items-start gap-3">
+        <img src={avatarUrl} alt={item.username} className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-heading text-text-primary">{item.username}</p>
+            <span
+              className="text-[10px] font-heading px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: `${diffMeta.color}1A`, color: diffMeta.color }}
+            >
+              {diffMeta.label}
+            </span>
+          </div>
+          <p className="text-xs text-text-muted truncate mt-0.5">{item.missionTitle}</p>
+          {item.submissionNotes && (
+            <p className="text-xs text-text-secondary mt-1.5 italic">&ldquo;{item.submissionNotes}&rdquo;</p>
+          )}
+          {item.evidenceUrl && (
+            <a
+              href={item.evidenceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent-highlight hover:underline mt-1 block truncate"
+            >
+              {item.evidenceUrl}
+            </a>
+          )}
+        </div>
+        <span className="text-xs font-heading text-accent-highlight shrink-0 mt-0.5">+{item.xpReward} XP</span>
+      </div>
+
+      {!revising ? (
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={onApprove}
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg text-xs font-heading font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 disabled:opacity-50 transition-colors"
+          >
+            Approve
+          </button>
+          <button
+            onClick={() => setRevising(true)}
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg text-xs font-heading font-semibold text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 disabled:opacity-50 transition-colors"
+          >
+            Request Revision
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2">
+          <textarea
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight resize-none"
+            rows={2}
+            placeholder="What needs to be revised?"
+            value={revNote}
+            onChange={(e) => setRevNote(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => { onRevise(revNote); setRevising(false); setRevNote(""); }}
+              disabled={submitting || !revNote.trim()}
+              className="flex-1 py-2 rounded-lg text-xs font-heading font-semibold text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 disabled:opacity-50 transition-colors"
+            >
+              Send
+            </button>
+            <button
+              onClick={() => { setRevising(false); setRevNote(""); }}
+              className="px-3 py-2 rounded-lg text-xs text-zinc-400 bg-zinc-800/40 hover:bg-zinc-700/40 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MissionsPanel({
+  userData,
+  missions,
+  missionCompletions,
+  missionApprovals,
+  loadingMissions,
+  loadingMissionApprovals,
+  expandedMissionId,
+  setExpandedMissionId,
+  submitting,
+  onJoin,
+  onSubmit,
+  onApprove,
+  onRevise,
+}: {
+  userData: { uid: string; username: string; role: string; teams: string[] };
+  missions: Mission[];
+  missionCompletions: Record<string, MissionCompletion>;
+  missionApprovals: MissionApprovalItem[];
+  loadingMissions: boolean;
+  loadingMissionApprovals: boolean;
+  expandedMissionId: string | null;
+  setExpandedMissionId: (id: string | null) => void;
+  submitting: boolean;
+  onJoin: (m: Mission) => void;
+  onSubmit: (m: Mission, notes: string, evidence: string) => void;
+  onApprove: (item: MissionApprovalItem) => void;
+  onRevise: (item: MissionApprovalItem, note: string) => void;
+}) {
+  const isCoordinator = userData.role === "coordinator";
+
+  // Filter missions visible to this volunteer
+  const visibleMissions = isCoordinator
+    ? missions
+    : missions.filter((m) => {
+        if (m.assignmentType === "open") return true;
+        if (m.assignmentType === "specific") return m.assignedTo?.includes(userData.uid);
+        if (m.assignmentType === "team") return m.assignedTeams?.some((t) => userData.teams.includes(t));
+        return false;
+      });
+
+  function getMissionStatus(mission: Mission): MissionCompletionStatus | "available" {
+    const c = missionCompletions[mission.missionId];
+    if (!c) return "available";
+    return c.status;
+  }
+
+  return (
+    <div
+      className="rounded-2xl border border-border overflow-hidden animate-fade-up"
+      style={{ backgroundColor: "#1e1a2e", animationDelay: "280ms" }}
+    >
+      <div className="h-[3px] w-full" style={{ backgroundColor: "#A855F7" }} />
+      <div className="p-4 sm:p-5">
+        {/* Header */}
+        <div className="flex items-start gap-2 mb-4">
+          <div className="flex-1 min-w-0">
+            <p className="font-heading text-base font-bold text-text-primary leading-tight">MISSIONS</p>
+            <p className="text-xs text-text-muted mt-0.5">Coordinator-assigned tasks · Bonus XP</p>
+          </div>
+          {isCoordinator && (
+            <Link
+              href="/missions/new"
+              className="w-6 h-6 rounded-md flex items-center justify-center text-text-muted hover:text-white hover:bg-accent-primary transition-colors"
+              title="Create Mission"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </Link>
+          )}
+        </div>
+
+        {loadingMissions ? (
+          <div className="flex items-center gap-1.5 py-4 justify-center">
+            {["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"].map((c, i) => (
+              <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+        ) : visibleMissions.length === 0 ? (
+          <div className="text-center py-6">
+            <div className="w-10 h-10 rounded-xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <p className="text-text-secondary text-xs font-heading">No active missions</p>
+            {isCoordinator && (
+              <Link href="/missions/new" className="text-accent-highlight text-xs hover:underline mt-1 inline-block">
+                Create one →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {visibleMissions.map((mission) => {
+              const diffMeta = DIFFICULTY_META[mission.difficulty];
+              const status = getMissionStatus(mission);
+              const completion = missionCompletions[mission.missionId];
+              const isExpanded = expandedMissionId === mission.missionId;
+
+              return (
+                <MissionTile
+                  key={mission.missionId}
+                  mission={mission}
+                  diffMeta={diffMeta}
+                  status={status}
+                  completion={completion}
+                  isExpanded={isExpanded}
+                  isCoordinator={isCoordinator}
+                  submitting={submitting}
+                  onToggle={() => setExpandedMissionId(isExpanded ? null : mission.missionId)}
+                  onJoin={() => onJoin(mission)}
+                  onSubmit={(notes, evidence) => onSubmit(mission, notes, evidence)}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* Coordinator: mission approvals */}
+        {isCoordinator && (
+          <>
+            <div className="flex items-center gap-3 mt-5 mb-3">
+              <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">
+                Pending Approvals
+              </p>
+              <div className="flex-1 h-px bg-[#27272A]" />
+              {missionApprovals.length > 0 && (
+                <span className="text-xs bg-accent-highlight text-white rounded-full px-1.5 py-0.5">
+                  {missionApprovals.length}
+                </span>
+              )}
+            </div>
+            {loadingMissionApprovals ? (
+              <div className="flex items-center gap-1.5 py-3 justify-center">
+                {["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"].map((c, i) => (
+                  <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                ))}
+              </div>
+            ) : missionApprovals.length === 0 ? (
+              <p className="text-text-muted text-xs text-center py-2">No pending reviews</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {missionApprovals.map((item) => (
+                  <MissionApprovalCard
+                    key={`${item.userId}-${item.missionId}`}
+                    item={item}
+                    onApprove={() => onApprove(item)}
+                    onRevise={(note) => onRevise(item, note)}
+                    submitting={submitting}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MissionTile({
+  mission,
+  diffMeta,
+  status,
+  completion,
+  isExpanded,
+  isCoordinator,
+  submitting,
+  onToggle,
+  onJoin,
+  onSubmit,
+}: {
+  mission: Mission;
+  diffMeta: { label: string; color: string; xp: number };
+  status: MissionCompletionStatus | "available";
+  completion?: MissionCompletion;
+  isExpanded: boolean;
+  isCoordinator: boolean;
+  submitting: boolean;
+  onToggle: () => void;
+  onJoin: () => void;
+  onSubmit: (notes: string, evidence: string) => void;
+}) {
+  const [notes, setNotes] = useState("");
+  const [evidence, setEvidence] = useState("");
+
+  const canJoin = !isCoordinator && status === "available" && mission.assignmentType === "open";
+  const canSubmit = !isCoordinator && (status === "joined" || status === "assigned");
+
+  const deadlineStr = mission.deadline
+    ? mission.deadline.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
+  return (
+    <div>
+      {/* Tile header — click to expand */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-start gap-3 rounded-xl border p-3 text-left transition-all duration-200"
+        style={{
+          borderColor: isExpanded ? `${diffMeta.color}40` : "#27272A",
+          backgroundColor: isExpanded ? `${diffMeta.color}0D` : "transparent",
+        }}
+      >
+        {/* Difficulty color bar */}
+        <div
+          className="w-0.5 self-stretch rounded-full shrink-0"
+          style={{ backgroundColor: diffMeta.color, minHeight: "20px" }}
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-heading text-text-primary leading-tight truncate">
+            {mission.title}
+          </p>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            <span
+              className="text-[10px] font-heading px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: `${diffMeta.color}1A`, color: diffMeta.color }}
+            >
+              {diffMeta.label}
+            </span>
+            <MissionStatusPill status={status} />
+            <span className="text-[10px] text-text-muted">+{mission.xpReward} XP</span>
+          </div>
+        </div>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className="shrink-0 mt-1 transition-transform duration-200"
+          style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {/* Expanded details */}
+      {isExpanded && (
+        <div
+          className="border border-t-0 rounded-b-xl px-3 pb-3"
+          style={{ borderColor: `${diffMeta.color}30`, backgroundColor: `${diffMeta.color}06` }}
+        >
+          <p className="text-xs text-text-secondary pt-3 leading-relaxed">
+            {mission.description}
+          </p>
+
+          <div className="flex flex-wrap gap-3 mt-3">
+            {deadlineStr && (
+              <div className="flex items-center gap-1.5">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span className="text-[10px] text-text-muted">Due {deadlineStr}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span className="text-[10px] text-text-muted capitalize">{mission.assignmentType === "open" ? `Open · ${mission.slots ?? "∞"} slots` : mission.assignmentType}</span>
+            </div>
+          </div>
+
+          {/* Revision note */}
+          {completion?.revisionNote && (
+            <div className="mt-3 rounded-lg bg-orange-500/10 border border-orange-500/20 px-3 py-2">
+              <p className="text-[10px] font-heading text-orange-400 uppercase tracking-wide mb-1">Revision Requested</p>
+              <p className="text-xs text-orange-300">{completion.revisionNote}</p>
+            </div>
+          )}
+
+          {/* Submission guidance */}
+          {mission.submissionGuidance && canSubmit && (
+            <div className="mt-3 rounded-lg bg-[#ffffff06] border border-[#27272A] px-3 py-2">
+              <p className="text-[10px] font-heading text-text-muted uppercase tracking-wide mb-1">What to submit</p>
+              <p className="text-xs text-text-secondary">{mission.submissionGuidance}</p>
+            </div>
+          )}
+
+          {/* Action: Join */}
+          {canJoin && (
+            <button
+              onClick={onJoin}
+              disabled={submitting}
+              className="mt-3 w-full py-2.5 rounded-xl text-xs font-heading font-semibold text-white transition-all disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}
+            >
+              {submitting ? "Joining…" : "Join Mission"}
+            </button>
+          )}
+
+          {/* Action: Submit */}
+          {canSubmit && (
+            <div className="mt-3 flex flex-col gap-2">
+              <textarea
+                className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight resize-none"
+                rows={2}
+                placeholder="Describe what you did…"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+              <input
+                className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-highlight"
+                placeholder="Evidence URL (optional)"
+                value={evidence}
+                onChange={(e) => setEvidence(e.target.value)}
+              />
+              <button
+                onClick={() => onSubmit(notes, evidence)}
+                disabled={submitting || !notes.trim()}
+                className="w-full py-2.5 rounded-xl text-xs font-heading font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}
+              >
+                {submitting ? "Submitting…" : "Submit for Review"}
+              </button>
+            </div>
+          )}
+
+          {/* Status: submitted / completed */}
+          {!canJoin && !canSubmit && !isCoordinator && (
+            <div className="mt-3">
+              {status === "submitted" && (
+                <p className="text-xs text-text-muted text-center py-2">
+                  Waiting for coordinator review…
+                </p>
+              )}
+              {status === "completed" && (
+                <p className="text-xs text-emerald-400 text-center py-2 font-heading">
+                  ✓ Completed · +{mission.xpReward} XP earned
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function QuestsSkeleton() {
@@ -885,6 +1420,13 @@ function QuestsPageContent() {
   const [approvals, setApprovals] = useState<ApprovalsQueueItem[]>([]);
   const [loadingApprovals, setLoadingApprovals] = useState(false);
 
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [missionCompletions, setMissionCompletions] = useState<Record<string, MissionCompletion>>({});
+  const [loadingMissions, setLoadingMissions] = useState(true);
+  const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
+  const [loadingMissionApprovals, setLoadingMissionApprovals] = useState(false);
+  const [expandedMissionId, setExpandedMissionId] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<string>("");
   const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -917,24 +1459,33 @@ function QuestsPageContent() {
 
   // ── Load quests (from Firestore) + completions ──────────────────────────────
   useEffect(() => {
-    if (!firebaseUid) return;
+    if (!firebaseUid || !userData) return;
     async function load() {
       setLoadingCompletions(true);
+      setLoadingMissions(true);
       try {
-        const [questsSnap, completionsSnap] = await Promise.all([
+        const [questsSnap, completionsSnap, missionsSnap, missionCompletionsSnap] = await Promise.all([
           getDocs(collection(db, "quests")),
           getDocs(collection(db, "users", firebaseUid, "questCompletions")),
+          getDocs(query(collection(db, "missions"), where("chapterId", "==", userData!.chapterId), where("status", "==", "active"))),
+          getDocs(collection(db, "users", firebaseUid, "missionCompletions")),
         ]);
         setQuests(questsSnap.docs.map(d => d.data() as Quest));
         const map: Record<string, QuestCompletion> = {};
         completionsSnap.docs.forEach((d) => { map[d.id] = d.data() as QuestCompletion; });
         setCompletions(map);
+        setMissions(missionsSnap.docs.map(d => ({ ...d.data(), missionId: d.id } as Mission)));
+        const mmap: Record<string, MissionCompletion> = {};
+        missionCompletionsSnap.docs.forEach((d) => { mmap[d.id] = d.data() as MissionCompletion; });
+        setMissionCompletions(mmap);
       } finally {
         setLoadingCompletions(false);
+        setLoadingMissions(false);
       }
     }
     load();
-  }, [firebaseUid]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUid, userData?.chapterId]);
 
   // ── Load approvals (coordinator only) ──────────────────────────────────────
   const loadApprovals = useCallback(async () => {
@@ -983,6 +1534,57 @@ function QuestsPageContent() {
   useEffect(() => {
     if (authChecked && userData?.role === "coordinator") loadApprovals();
   }, [authChecked, userData, loadApprovals]);
+
+  // ── Load mission approvals (coordinator only) ────────────────────────────────
+  const loadMissionApprovals = useCallback(async () => {
+    if (!userData || userData.role !== "coordinator") return;
+    setLoadingMissionApprovals(true);
+    try {
+      const usersSnap = await getDocs(
+        query(collection(db, "users"), where("chapterId", "==", userData.chapterId))
+      );
+      const items: MissionApprovalItem[] = [];
+      await Promise.all(
+        usersSnap.docs.map(async (userDoc) => {
+          const u = userDoc.data();
+          const mCompletionsSnap = await getDocs(
+            query(
+              collection(db, "users", userDoc.id, "missionCompletions"),
+              where("status", "==", "submitted")
+            )
+          );
+          mCompletionsSnap.docs.forEach((cd) => {
+            const c = cd.data() as MissionCompletion;
+            const mission = missions.find((m) => m.missionId === cd.id);
+            if (!mission) return;
+            items.push({
+              userId: userDoc.id,
+              username: u.username,
+              avatarOptions: u.avatarOptions,
+              missionId: mission.missionId,
+              missionTitle: mission.title,
+              difficulty: mission.difficulty,
+              xpReward: mission.xpReward,
+              submissionNotes: c.submissionNotes,
+              evidenceUrl: c.evidenceUrl,
+              submittedAt: (cd.data() as Record<string, Timestamp>).updatedAt,
+            });
+          });
+        })
+      );
+      setMissionApprovals(items);
+    } finally {
+      setLoadingMissionApprovals(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData, missions]);
+
+  useEffect(() => {
+    if (authChecked && userData?.role === "coordinator" && missions.length > 0) {
+      loadMissionApprovals();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authChecked, userData?.role, missions.length]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleSelfMark(quest: Quest) {
@@ -1111,6 +1713,115 @@ function QuestsPageContent() {
     }
   }
 
+  // ── Mission actions ─────────────────────────────────────────────────────────
+  async function handleJoinMission(mission: Mission) {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await setDoc(doc(db, "users", firebaseUid, "missionCompletions", mission.missionId), {
+        missionId: mission.missionId,
+        status: "joined",
+        xpGranted: mission.xpReward,
+      });
+      setMissionCompletions((prev) => ({
+        ...prev,
+        [mission.missionId]: { missionId: mission.missionId, status: "joined", xpGranted: mission.xpReward },
+      }));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSubmitMission(mission: Mission, notes: string, evidenceUrl: string) {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await setDoc(doc(db, "users", firebaseUid, "missionCompletions", mission.missionId), {
+        missionId: mission.missionId,
+        status: "submitted",
+        submissionNotes: notes,
+        evidenceUrl: evidenceUrl || null,
+        xpGranted: mission.xpReward,
+        updatedAt: serverTimestamp(),
+      });
+      setMissionCompletions((prev) => ({
+        ...prev,
+        [mission.missionId]: {
+          missionId: mission.missionId,
+          status: "submitted",
+          submissionNotes: notes,
+          evidenceUrl: evidenceUrl || undefined,
+          xpGranted: mission.xpReward,
+        },
+      }));
+      setExpandedMissionId(null);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleApproveMission(item: MissionApprovalItem) {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const now = serverTimestamp();
+      const batch = writeBatch(db);
+      batch.update(doc(db, "users", item.userId, "missionCompletions", item.missionId), {
+        status: "completed",
+        completedAt: now,
+        approvedBy: firebaseUid,
+      });
+      batch.update(doc(db, "users", item.userId), { xp: increment(item.xpReward) });
+      await batch.commit();
+      await Promise.all([
+        addDoc(collection(db, "users", item.userId, "xpLog"), {
+          source: "quest_completion",
+          sourceId: item.missionId,
+          description: `Mission approved: ${item.missionTitle}`,
+          xp: item.xpReward,
+          createdAt: now,
+        }),
+        addDoc(collection(db, "users", item.userId, "notifications"), {
+          type: "quest_approved",
+          message: `Your mission "${item.missionTitle}" was approved! +${item.xpReward} XP`,
+          read: false,
+          relatedId: item.missionId,
+          createdAt: now,
+        }),
+      ]);
+      setMissionApprovals((prev) =>
+        prev.filter((a) => !(a.userId === item.userId && a.missionId === item.missionId))
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleReviseMission(item: MissionApprovalItem, revisionNote: string) {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const now = serverTimestamp();
+      await updateDoc(doc(db, "users", item.userId, "missionCompletions", item.missionId), {
+        status: "joined",
+        revisionNote,
+        updatedAt: now,
+      });
+      await addDoc(collection(db, "users", item.userId, "notifications"), {
+        type: "quest_revision",
+        message: `Revision requested for mission "${item.missionTitle}": ${revisionNote}`,
+        read: false,
+        relatedId: item.missionId,
+        createdAt: now,
+      });
+      setMissionApprovals((prev) =>
+        prev.filter((a) => !(a.userId === item.userId && a.missionId === item.missionId))
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
   const avatarUrl = userData
     ? buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR)
@@ -1171,9 +1882,32 @@ function QuestsPageContent() {
       avatarUrl={avatarUrl}
       loading={!authChecked || loadingCompletions}
       skeleton={<QuestsSkeleton />}
+      actions={
+        userData?.role === "coordinator" ? (
+          <Link
+            href="/missions/new"
+            className="flex items-center gap-2 px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors whitespace-nowrap shrink-0"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Mission
+          </Link>
+        ) : null
+      }
     >
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 items-start">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-5 lg:items-start">
 
           {/* ── Team pill switcher ─────────────────────────────────────────────── */}
           {tabs.length > 1 && (
@@ -1231,14 +1965,48 @@ function QuestsPageContent() {
                   </div>
                 </div>
               ) : approvals.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-4 animate-float">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <div className="text-center py-16 flex flex-col items-center gap-4">
+                  {/* Success ring + checkmark */}
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor: "#22C55E12",
+                      border: "2px solid #22C55E30",
+                      boxShadow: "0 0 32px #22C55E18",
+                    }}
+                  >
+                    <svg
+                      width="36"
+                      height="36"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#22C55E"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
-                  <p className="text-text-secondary font-heading">No pending approvals</p>
-                  <p className="text-text-muted text-sm mt-1">All caught up for your chapter.</p>
+
+                  {/* Copy */}
+                  <div className="flex flex-col gap-1.5">
+                    <p className="font-heading text-xl font-bold text-text-primary">All caught up</p>
+                    <p className="text-text-secondary text-sm max-w-xs mx-auto leading-relaxed">
+                      Every submission from your chapter has been reviewed.
+                    </p>
+                  </div>
+
+                  {/* Secondary action */}
+                  <Link
+                    href="/chapter"
+                    className="text-sm font-heading font-semibold transition-colors"
+                    style={{ color: "#A855F7" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#7C3AED")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "#A855F7")}
+                  >
+                    View chapter dashboard →
+                  </Link>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
@@ -1262,39 +2030,28 @@ function QuestsPageContent() {
               {/* Left column */}
               <div className="flex flex-col gap-5 lg:col-span-2">
 
-                {/* Current Tier card — what the volunteer holds right now */}
+                {/* Tier progress arc — earned tier + working-toward in one card */}
                 <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
-                  <EarnedTierCard
+                  <TierProgressCard
                     teamId={activeTab}
                     earnedTier={earnedTier}
                     earnedTierLabel={earnedTierLabel}
+                    currentTierLabel={currentTierLabel}
+                    nextTierLabel={nextTierLabel}
                     color={activeMeta.color}
+                    quests={currentTierQuests}
+                    completions={completions}
                     isMaxTier={isMaxTier}
                   />
                 </div>
 
-                {/* Next Milestone card — the tier being worked toward (hidden when maxed out) */}
-                {!isMaxTier && (
-                  <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
-                    <HeroProgressCard
-                      teamId={activeTab}
-                      currentTier={currentTier}
-                      tierLabel={currentTierLabel}
-                      nextTierLabel={nextTierLabel}
-                      color={activeMeta.color}
-                      quests={currentTierQuests}
-                      completions={completions}
-                    />
-                  </div>
-                )}
-
                 {/* Milestones card */}
                 <div
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
-                  style={{ backgroundColor: "#1e1a2e", animationDelay: "180ms" }}
+                  style={{ backgroundColor: "#1e1a2e", animationDelay: "120ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     {/* Section header */}
                     <div className="flex items-center gap-3 mb-4">
                       <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">
@@ -1339,14 +2096,14 @@ function QuestsPageContent() {
 
               </div>
 
-              {/* Right column — Journey sidebar */}
-              <div className="lg:col-span-1 lg:sticky lg:top-0">
+              {/* Right column — Journey sidebar + Missions */}
+              <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-5">
                 <div
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
                   style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
                 >
                   <div className="h-[3px] w-full" style={{ backgroundColor: activeMeta.color }} />
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
                       teamColor={activeMeta.color}
@@ -1356,6 +2113,21 @@ function QuestsPageContent() {
                     />
                   </div>
                 </div>
+                <MissionsPanel
+                  userData={userData!}
+                  missions={missions}
+                  missionCompletions={missionCompletions}
+                  missionApprovals={missionApprovals}
+                  loadingMissions={loadingMissions}
+                  loadingMissionApprovals={loadingMissionApprovals}
+                  expandedMissionId={expandedMissionId}
+                  setExpandedMissionId={setExpandedMissionId}
+                  submitting={submitting}
+                  onJoin={handleJoinMission}
+                  onSubmit={handleSubmitMission}
+                  onApprove={handleApproveMission}
+                  onRevise={handleReviseMission}
+                />
               </div>
             </>
           )}

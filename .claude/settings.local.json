@@ -20,7 +20,11 @@
       "Bash(cat \"/c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/app/\\(dashboard\\)/dashboard/page.tsx\")",
       "Bash(find /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest -iname *qr* -o -iname *scan* -o -iname *camera*)",
       "Bash(find /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/components -name *.tsx -o -name *.ts)",
-      "Bash(find /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/lib -name *.tsx -o -name *.ts)"
+      "Bash(find /c/Users/L-JOAQUIN/Documents/Projects/Web/DevQuest/lib -name *.tsx -o -name *.ts)",
+      "Bash(wc -l \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\events\\\\new\\\\page.tsx\" \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\quests\\\\page.tsx\")",
+      "Bash(find \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest/app/\\(dashboard\\)\" -type f -name \"*.tsx\" ! -path \"*/.next/*\")",
+      "Bash(wc -l \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\missions\\\\new\\\\page.tsx\")",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
