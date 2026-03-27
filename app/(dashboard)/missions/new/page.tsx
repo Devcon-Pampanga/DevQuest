@@ -9,7 +9,6 @@ import {
   getDoc,
   getDocs,
   addDoc,
-  setDoc,
   collection,
   query,
   where,
@@ -17,7 +16,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
+import PageShell, { SkeletonBlock } from "@/components/layout/PageShell";
 import { TEAM_META } from "@/lib/seed/quests";
 import {
   MissionDifficulty,

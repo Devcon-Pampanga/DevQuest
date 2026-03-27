@@ -952,7 +952,7 @@ function MissionApprovalCard({
           </div>
           <p className="text-xs text-text-muted truncate mt-0.5">{item.missionTitle}</p>
           {item.submissionNotes && (
-            <p className="text-xs text-text-secondary mt-1.5 italic">"{item.submissionNotes}"</p>
+            <p className="text-xs text-text-secondary mt-1.5 italic">&ldquo;{item.submissionNotes}&rdquo;</p>
           )}
           {item.evidenceUrl && (
             <a
