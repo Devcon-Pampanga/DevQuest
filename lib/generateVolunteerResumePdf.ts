@@ -1,7 +1,7 @@
 export type {
   VolunteerResumeTeamRow,
   VolunteerResumeQuestLine,
-  VolunteerResumeActivityLine,
+  VolunteerResumeEventContribution,
   VolunteerResumeInput,
 } from "./resumePdf/types";
 export { generateVolunteerResumePdf } from "./resumePdf/generateVolunteerResumePdf";
