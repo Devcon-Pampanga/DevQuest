@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
 import { useQuestData } from "@/hooks/useQuestData";
 import { useXpActivityLog } from "@/hooks/useXpActivityLog";
@@ -21,11 +19,30 @@ import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import type { ProfilePageUser } from "@/components/profile/types";
 
 export default function ProfilePage() {
-  const router = useRouter();
+  const { user: sessionUser, status } = useAuth();
+  const { ready } = useRequireDashboardAuth();
 
-  const [authChecked, setAuthChecked] = useState(false);
-  const [userData, setUserData] = useState<ProfilePageUser | null>(null);
-  const [firebaseUid, setFirebaseUid] = useState("");
+  const userData = useMemo((): ProfilePageUser | null => {
+    if (!sessionUser) return null;
+    return {
+      uid: sessionUser.uid,
+      username: sessionUser.username,
+      email: sessionUser.email,
+      role: sessionUser.role,
+      chapterId: sessionUser.chapterId,
+      teams: sessionUser.teams,
+      xp: sessionUser.xp,
+      contactNumber: sessionUser.contactNumber,
+      linkedinUrl: sessionUser.linkedinUrl,
+      githubUrl: sessionUser.githubUrl,
+      resumeUrl: sessionUser.resumeUrl,
+      createdAt: sessionUser.createdAt,
+      avatarOptions: sessionUser.avatarOptions,
+      onboardingComplete: sessionUser.onboardingComplete,
+    };
+  }, [sessionUser]);
+
+  const firebaseUid = sessionUser?.uid ?? "";
   const [activeTeam, setActiveTeam] = useState("");
   const [isGeneratingResume, setIsGeneratingResume] = useState(false);
   const { copied, copyUrl } = useShareLinkCopy();
@@ -45,25 +62,9 @@ export default function ProfilePage() {
     useXpActivityLog(firebaseUid);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
-      const data = { uid: user.uid, ...snap.data() } as ProfilePageUser;
-      setUserData(data);
-      setFirebaseUid(user.uid);
-      setAuthChecked(true);
-      const t = data.teams ?? [];
-      if (t.length > 0) setActiveTeam((prev) => (prev && t.includes(prev) ? prev : t[0]));
-    });
-    return () => unsub();
-  }, [router]);
+    const t = userData?.teams ?? [];
+    if (t.length > 0) setActiveTeam((prev) => (prev && t.includes(prev) ? prev : t[0]));
+  }, [userData?.teams]);
 
   const completedQuestCount = useMemo(
     () => Object.values(completions).filter((c) => c.status === "completed").length,
@@ -130,7 +131,9 @@ export default function ProfilePage() {
     }
   }
 
-  if (!authChecked || !userData) {
+  const authLoading = status === "loading" || !ready;
+
+  if (authLoading || !userData) {
     return (
       <PageShell title="Profile" loading skeleton={<ProfileSkeleton />}>
         {null}

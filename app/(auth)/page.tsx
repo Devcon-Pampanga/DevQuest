@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { signIn, getFriendlyAuthError } from "@/lib/auth-helpers";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#06B6D4", "#9333EA", "#22C55E"];
@@ -48,6 +47,7 @@ function EyeOffIcon() {
 
 export default function SignInPage() {
   const router = useRouter();
+  const { firebaseUser, status } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,11 +55,9 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) router.replace("/dashboard");
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (status !== "ready") return;
+    if (firebaseUser) router.replace("/dashboard");
+  }, [status, firebaseUser, router]);
 
   async function handleSignIn() {
     setError("");

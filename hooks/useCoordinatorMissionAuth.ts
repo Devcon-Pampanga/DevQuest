@@ -1,43 +1,61 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import type { ChapterSessionUser } from "@/types/chapter";
+
+function toChapterSessionUser(u: {
+  uid: string;
+  username: string;
+  role: "volunteer" | "coordinator";
+  chapterId: string;
+  xp: number;
+  teams: string[];
+  avatarOptions?: ChapterSessionUser["avatarOptions"];
+}): ChapterSessionUser {
+  return {
+    uid: u.uid,
+    username: u.username,
+    role: u.role,
+    chapterId: u.chapterId,
+    xp: u.xp,
+    teams: u.teams,
+    avatarOptions: u.avatarOptions,
+  };
+}
 
 export function useCoordinatorMissionAuth() {
   const router = useRouter();
-  const [userData, setUserData] = useState<ChapterSessionUser | null>(null);
-  const [loadingAuth, setLoadingAuth] = useState(true);
+  const { user, firebaseUser, status } = useAuth();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.replace("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", firebaseUser.uid));
-      if (!snap.exists()) {
-        router.replace("/");
-        return;
-      }
-      const data = snap.data() as Omit<ChapterSessionUser, "uid"> & { onboardingComplete?: boolean };
-      if (!data.onboardingComplete) {
-        router.replace("/onboarding");
-        return;
-      }
-      if (data.role !== "coordinator") {
-        router.replace("/quests");
-        return;
-      }
-      setUserData({ ...data, uid: firebaseUser.uid } as ChapterSessionUser);
-      setLoadingAuth(false);
-    });
-    return () => unsub();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (status !== "ready") return;
+    if (!firebaseUser) {
+      router.replace("/");
+      return;
+    }
+    if (!user) {
+      router.replace("/");
+      return;
+    }
+    if (!user.onboardingComplete) {
+      router.replace("/onboarding");
+      return;
+    }
+    if (user.role !== "coordinator") {
+      router.replace("/quests");
+    }
+  }, [status, firebaseUser, user, router]);
+
+  const loadingAuth = status !== "ready";
+
+  const userData = useMemo((): ChapterSessionUser | null => {
+    if (!user || !user.onboardingComplete || user.role !== "coordinator") {
+      return null;
+    }
+    return toChapterSessionUser(user);
+  }, [user]);
 
   return { userData, loadingAuth };
 }

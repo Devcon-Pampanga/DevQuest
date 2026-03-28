@@ -2,35 +2,55 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import type { ChapterSessionUser } from "@/types/chapter";
+
+function toChapterSessionUser(u: {
+  uid: string;
+  username: string;
+  role: "volunteer" | "coordinator";
+  chapterId: string;
+  xp: number;
+  teams: string[];
+  avatarOptions?: ChapterSessionUser["avatarOptions"];
+}): ChapterSessionUser {
+  return {
+    uid: u.uid,
+    username: u.username,
+    role: u.role,
+    chapterId: u.chapterId,
+    xp: u.xp,
+    teams: u.teams,
+    avatarOptions: u.avatarOptions,
+  };
+}
 
 export function useChapterSession() {
   const router = useRouter();
-  const [authChecked, setAuthChecked] = useState(false);
-  const [currentUser, setCurrentUser] = useState<ChapterSessionUser | null>(null);
+  const { user, firebaseUser, status } = useAuth();
   const [viewingChapterId, setViewingChapterId] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
-      const data = snap.data() as ChapterSessionUser;
-      setCurrentUser({ ...data, uid: user.uid });
-      setViewingChapterId(data.chapterId);
-      setAuthChecked(true);
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (status !== "ready") return;
+    if (!firebaseUser) {
+      router.replace("/");
+      return;
+    }
+    if (!user || user.onboardingComplete !== true) {
+      router.replace("/onboarding");
+      return;
+    }
+    setViewingChapterId(user.chapterId);
+  }, [status, firebaseUser, user, router]);
+
+  const authChecked =
+    status === "ready" &&
+    !!firebaseUser &&
+    !!user &&
+    user.onboardingComplete === true;
+
+  const currentUser =
+    authChecked && user ? toChapterSessionUser(user) : null;
 
   return {
     authChecked,

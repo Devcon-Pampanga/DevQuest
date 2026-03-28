@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut, deleteUser, User as FirebaseUser } from "firebase/auth";
+import { signOut, deleteUser } from "firebase/auth";
 import {
   doc,
-  getDoc,
   updateDoc,
   deleteDoc,
   setDoc,
@@ -13,6 +12,8 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import PageShell from "@/components/layout/PageShell";
 import { DEFAULT_AVATAR, type AvatarOptions, buildAvatarUrl } from "@/lib/avatar";
 import { SettingsSkeleton } from "@/components/settings/SettingsSkeleton";
@@ -24,11 +25,11 @@ import type { SettingsPageUser } from "@/components/settings/types";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { ready } = useRequireDashboardAuth();
+  const { user: sessionUser, firebaseUser, status } = useAuth();
+  const authLoading = status === "loading" || !ready;
 
-  const [authChecked, setAuthChecked] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<SettingsPageUser | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
 
   const [username, setUsername] = useState("");
   const [contactNumber, setContactNumber] = useState("");
@@ -49,28 +50,32 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
-      const data = { uid: user.uid, ...snap.data() } as SettingsPageUser;
-      setFirebaseUser(user);
-      setUserData(data);
-      setUsername(data.username ?? "");
-      setContactNumber(data.contactNumber ?? "");
-      setLinkedinUrl(data.linkedinUrl ?? "");
-      setGithubUrl(data.githubUrl ?? "");
-      setAuthChecked(true);
-      setDataLoading(false);
-    });
-    return () => unsub();
-  }, [router]);
+    if (!sessionUser) {
+      setUserData(null);
+      return;
+    }
+    const data: SettingsPageUser = {
+      uid: sessionUser.uid,
+      username: sessionUser.username,
+      email: sessionUser.email,
+      role: sessionUser.role,
+      chapterId: sessionUser.chapterId,
+      teams: sessionUser.teams,
+      xp: sessionUser.xp,
+      contactNumber: sessionUser.contactNumber,
+      linkedinUrl: sessionUser.linkedinUrl,
+      githubUrl: sessionUser.githubUrl,
+      resumeUrl: sessionUser.resumeUrl,
+      createdAt: sessionUser.createdAt,
+      avatarOptions: sessionUser.avatarOptions,
+      onboardingComplete: sessionUser.onboardingComplete,
+    };
+    setUserData(data);
+    setUsername(data.username ?? "");
+    setContactNumber(data.contactNumber ?? "");
+    setLinkedinUrl(data.linkedinUrl ?? "");
+    setGithubUrl(data.githubUrl ?? "");
+  }, [sessionUser]);
 
   function openAvatarEditor() {
     if (!userData) return;
@@ -190,7 +195,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (!authChecked || !userData) {
+  if (authLoading || !userData) {
     return (
       <PageShell title="Settings" backHref="/profile" loading skeleton={<SettingsSkeleton />}>
         {null}
@@ -206,7 +211,7 @@ export default function SettingsPage() {
       title="Settings"
       avatarUrl={avatarUrl}
       backHref="/profile"
-      loading={dataLoading}
+      loading={false}
       skeleton={<SettingsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">

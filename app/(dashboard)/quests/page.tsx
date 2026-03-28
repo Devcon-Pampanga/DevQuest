@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
 import {
-  doc,
-  getDoc,
   getDocs,
   collection,
   query,
   where,
   Timestamp,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { AvatarOptions, DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
 import { useQuestData } from "@/hooks/useQuestData";
 import { useQuestActions } from "@/hooks/useQuestActions";
@@ -44,10 +43,23 @@ interface UserData {
 function QuestsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user: sessionUser } = useAuth();
+  const { ready } = useRequireDashboardAuth();
 
-  const [authChecked, setAuthChecked] = useState(false);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [firebaseUid, setFirebaseUid] = useState<string>("");
+  const userData = useMemo((): UserData | null => {
+    if (!sessionUser) return null;
+    return {
+      uid: sessionUser.uid,
+      username: sessionUser.username,
+      role: sessionUser.role,
+      chapterId: sessionUser.chapterId,
+      teams: sessionUser.teams,
+      xp: sessionUser.xp,
+      avatarOptions: sessionUser.avatarOptions,
+    };
+  }, [sessionUser]);
+
+  const firebaseUid = sessionUser?.uid ?? "";
 
   const {
     quests,
@@ -74,21 +86,9 @@ function QuestsPageContent() {
   const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.replace("/"); return; }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
-      const data = { uid: user.uid, ...snap.data() } as UserData;
-      setUserData(data);
-      setFirebaseUid(user.uid);
-      setAuthChecked(true);
-      if (data.teams?.length > 0) setActiveTab(data.teams[0]);
-    });
-    return () => unsub();
-  }, [router]);
+    if (!userData?.teams?.length) return;
+    setActiveTab((prev) => (prev ? prev : userData.teams[0]));
+  }, [userData]);
 
   useEffect(() => {
     if (!userData) return;
@@ -142,8 +142,8 @@ function QuestsPageContent() {
   }, [userData]);
 
   useEffect(() => {
-    if (authChecked && userData?.role === "coordinator") loadApprovals();
-  }, [authChecked, userData, loadApprovals]);
+    if (ready && userData?.role === "coordinator") loadApprovals();
+  }, [ready, userData, loadApprovals]);
 
   const loadMissionApprovals = useCallback(async () => {
     if (!userData || userData.role !== "coordinator") return;
@@ -189,11 +189,11 @@ function QuestsPageContent() {
   }, [userData, missions]);
 
   useEffect(() => {
-    if (authChecked && userData?.role === "coordinator" && missions.length > 0) {
+    if (ready && userData?.role === "coordinator" && missions.length > 0) {
       loadMissionApprovals();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authChecked, userData?.role, missions.length]);
+  }, [ready, userData?.role, missions.length]);
 
   const {
     submitting,
@@ -221,7 +221,7 @@ function QuestsPageContent() {
   const userTeams = userData?.teams ?? [];
 
   const tabs = [
-    ...userTeams.map((t) => ({ key: t, label: TEAM_META[t]?.label ?? t, isApprovals: false })),
+    ...userTeams.map((t: string) => ({ key: t, label: TEAM_META[t]?.label ?? t, isApprovals: false })),
     ...(userData?.role === "coordinator"
       ? [{ key: "approvals", label: "Approvals", isApprovals: true }]
       : []),
@@ -233,7 +233,7 @@ function QuestsPageContent() {
     <PageShell
       title="Quests"
       avatarUrl={avatarUrl}
-      loading={!authChecked || loadingCompletions}
+      loading={!ready || loadingCompletions}
       skeleton={<QuestsSkeleton />}
       actions={
         userData?.role === "coordinator" ? (

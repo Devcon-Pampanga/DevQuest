@@ -33,40 +33,49 @@ DevQuest is an open-source career progression platform for DEVCON Kids student v
 
 ## Project Structure
 
+Application code lives at the **repository root** (there is no `src/` folder).
+
 ```
-src/
-├── app/                        # Next.js App Router pages
-│   ├── (auth)/                 # Sign-in, Sign-up (no sidebar)
-│   ├── (onboarding)/           # Onboarding (no sidebar)
-│   └── (dashboard)/            # All authenticated pages (with sidebar)
-│       ├── dashboard/
-│       ├── quests/
-│       ├── events/
-│       │   ├── [eventId]/
-│       │   │   └── reflect/    # Reflection form
-│       │   └── new/            # Add event (coordinator only)
-│       ├── chapter/
-│       ├── market/
-│       ├── profile/
-│       ├── notifications/
-│       └── settings/
-├── components/
-│   ├── ui/                     # Reusable primitives (Button, Card, Input, Badge, etc.)
-│   ├── layout/                 # Sidebar, TopBar, BottomNav
-│   ├── quests/                 # QuestCard, QuestPath, ApprovalsQueue
-│   ├── events/                 # EventCard, RoleSelector, QRCodeCard, VolunteersTab
-│   ├── dashboard/              # HeroCard, XPProgressBar, ReflectionNudge
-│   ├── profile/                # MilestoneLadder, ActivityFeed, PortfolioPreview
-│   └── chapter/                # Leaderboard, VolunteerTable, StatsRow
-├── lib/
-│   ├── firebase.ts             # Firebase app initialization
-│   ├── firestore.ts            # Firestore helper functions
-│   └── xp.ts                  # XP grant logic and constants
-├── hooks/                      # useAuth, useUser, useQuests, useEvents
-├── context/                    # AuthContext, UserContext
-├── types/                      # TypeScript interfaces for all data models
-└── utils/                      # QR generation, PDF export, date helpers
+app/                            # Next.js App Router pages
+├── (auth)/                     # Sign-in, register (no sidebar)
+├── onboarding/                 # Onboarding (no sidebar)
+├── (dashboard)/                # Authenticated shell (sidebar)
+│   ├── dashboard/
+│   ├── quests/
+│   ├── events/
+│   │   ├── [eventId]/          # Event detail (modular: components/events/eventDetail/)
+│   │   └── new/
+│   ├── chapter/
+│   ├── leaderboard/
+│   ├── profile/
+│   ├── notifications/
+│   └── settings/
+└── api/                        # Route handlers (e.g. seed-quests, resume-enhance)
+
+components/
+├── ui/                         # Small primitives (Avatar, icons, etc.)
+├── layout/                     # PageShell, Sidebar
+├── events/                     # Event list, new event, event detail screens
+├── quests/                     # Quest map, missions, approvals
+├── profile/, settings/, chapter/, etc.
+
+context/
+├── AuthContext.tsx             # AuthProvider + useAuth — single Firebase auth + Firestore user subscription
+└── SidebarContext.tsx          # Mobile sidebar open state
+
+hooks/                          # Feature hooks (useQuestData, useEventDetailPage, useRequireDashboardAuth, …)
+
+lib/
+├── firebase.ts                 # Firebase app, auth, db, storage
+├── auth-helpers.ts             # Sign-in, sign-up, onboarding write
+├── events/                     # Event detail types, registration/attendance helpers, QR parsing
+├── resumePdf/                  # Volunteer resume PDF (types, layout constants, generator)
+└── …                           # Domain helpers (xp, quests seed, etc.)
+
+types/                          # Shared models (quest, user, session, …)
 ```
+
+**Session / auth:** Use `useAuth()` from `context/AuthContext.tsx` for `firebaseUser`, Firestore-backed `user` (`SessionUser` in `types/session.ts`), and `status` (`loading` | `ready`). Dashboard routes that require a completed profile use `useRequireDashboardAuth()` or mirror the same redirect rules. Do not add new `onAuthStateChanged` listeners in pages unless there is a strong reason (e.g. third-party-only flows).
 
 ---
 

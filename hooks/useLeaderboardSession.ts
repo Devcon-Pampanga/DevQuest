@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { ReadonlyURLSearchParams } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import type { ChapterSessionUser } from "@/types/chapter";
 
 /** Minimal router API used by this hook (matches `useRouter()`). */
@@ -12,33 +10,59 @@ interface LeaderboardRouter {
   replace: (href: string) => void;
 }
 
+function toChapterSessionUser(u: {
+  uid: string;
+  username: string;
+  role: "volunteer" | "coordinator";
+  chapterId: string;
+  xp: number;
+  teams: string[];
+  avatarOptions?: ChapterSessionUser["avatarOptions"];
+}): ChapterSessionUser {
+  return {
+    uid: u.uid,
+    username: u.username,
+    role: u.role,
+    chapterId: u.chapterId,
+    xp: u.xp,
+    teams: u.teams,
+    avatarOptions: u.avatarOptions,
+  };
+}
+
 export function useLeaderboardSession(
   router: LeaderboardRouter,
   searchParams: ReadonlyURLSearchParams
 ) {
-  const [authChecked, setAuthChecked] = useState(false);
-  const [currentUser, setCurrentUser] = useState<ChapterSessionUser | null>(null);
+  const { user, firebaseUser, status } = useAuth();
   const [viewingChapterId, setViewingChapterId] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
-      const data = snap.data() as ChapterSessionUser;
-      const fromParam = searchParams.get("chapter");
-      setCurrentUser({ ...data, uid: user.uid });
-      setViewingChapterId(fromParam ?? data.chapterId);
-      setAuthChecked(true);
-    });
-    return () => unsubscribe();
-  }, [router, searchParams]);
+    if (status !== "ready") return;
+    if (!firebaseUser) {
+      router.replace("/");
+      return;
+    }
+    if (!user || user.onboardingComplete !== true) {
+      router.replace("/onboarding");
+      return;
+    }
+  }, [status, firebaseUser, user, router]);
+
+  useEffect(() => {
+    if (!user || user.onboardingComplete !== true) return;
+    const fromParam = searchParams.get("chapter");
+    setViewingChapterId(fromParam ?? user.chapterId);
+  }, [searchParams, user]);
+
+  const authChecked =
+    status === "ready" &&
+    !!firebaseUser &&
+    !!user &&
+    user.onboardingComplete === true;
+
+  const currentUser =
+    authChecked && user ? toChapterSessionUser(user) : null;
 
   return {
     authChecked,

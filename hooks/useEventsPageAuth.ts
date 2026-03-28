@@ -1,37 +1,55 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import type { ChapterSessionUser } from "@/types/chapter";
+
+function toChapterSessionUser(u: {
+  uid: string;
+  username: string;
+  role: "volunteer" | "coordinator";
+  chapterId: string;
+  xp: number;
+  teams: string[];
+  avatarOptions?: ChapterSessionUser["avatarOptions"];
+}): ChapterSessionUser {
+  return {
+    uid: u.uid,
+    username: u.username,
+    role: u.role,
+    chapterId: u.chapterId,
+    xp: u.xp,
+    teams: u.teams,
+    avatarOptions: u.avatarOptions,
+  };
+}
 
 export function useEventsPageAuth() {
   const router = useRouter();
-  const [userData, setUserData] = useState<ChapterSessionUser | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const { user, firebaseUser, status } = useAuth();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/");
-        return;
-      }
+    if (status !== "ready") return;
+    if (!firebaseUser) {
+      router.replace("/");
+      return;
+    }
+    if (!user || user.onboardingComplete !== true) {
+      router.replace("/onboarding");
+    }
+  }, [status, firebaseUser, user, router]);
 
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
+  const authChecked =
+    status === "ready" &&
+    !!firebaseUser &&
+    !!user &&
+    user.onboardingComplete === true;
 
-      const data = snap.data() as Omit<ChapterSessionUser, "uid"> & { onboardingComplete?: boolean };
-      setUserData({ ...data, uid: user.uid } as ChapterSessionUser);
-      setAuthChecked(true);
-    });
-    return () => unsub();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const userData = useMemo(() => {
+    if (!authChecked || !user) return null;
+    return toChapterSessionUser(user);
+  }, [authChecked, user]);
 
   return { userData, authChecked };
 }
