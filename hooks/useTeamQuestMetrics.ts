@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { getCurrentTier } from "@/lib/quest-utils";
+import { getCurrentTier, getEarnedTier } from "@/lib/quest-utils";
 import { TIER_ORDER, TIER_LABELS, TEAM_META } from "@/lib/seed/quests";
 import { Quest, QuestCompletion } from "@/types/quest";
 
@@ -47,17 +47,7 @@ export function useTeamQuestMetrics(
         : TIER_LABELS[nextTier]
       : null;
 
-    // Earned tier: highest tier where ALL quests are complete.
-    // team_member has 0 quests → vacuously complete → always the floor.
-    let earnedTier: Quest["tier"] = "team_member";
-    for (const tier of TIER_ORDER) {
-      const tierQs = quests.filter((q) => q.teamId === activeTab && q.tier === tier);
-      if (tierQs.every((q) => completions[q.questId]?.status === "completed")) {
-        earnedTier = tier;
-      } else {
-        break;
-      }
-    }
+    const earnedTier = getEarnedTier(activeTab, completions, quests);
     const earnedTierLabel =
       earnedTier === "lead"
         ? (activeMeta.leadTitle ?? TIER_LABELS["lead"])

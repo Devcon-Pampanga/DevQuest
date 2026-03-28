@@ -37,6 +37,24 @@ export function getCurrentTier(
   return TIER_ORDER[TIER_ORDER.length - 1];
 }
 
+/** Highest tier where every quest in that tier is completed (sequential from team_member). */
+export function getEarnedTier(
+  teamId: string,
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
+): Quest["tier"] {
+  let earned: Quest["tier"] = "team_member";
+  for (const tier of TIER_ORDER) {
+    const tierQs = allQuests.filter((q) => q.teamId === teamId && q.tier === tier);
+    if (tierQs.every((q) => completions[q.questId]?.status === "completed")) {
+      earned = tier;
+    } else {
+      break;
+    }
+  }
+  return earned;
+}
+
 export function getQuestUIStatus(
   quest: Quest,
   completions: Record<string, QuestCompletion>,

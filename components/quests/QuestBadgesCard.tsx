@@ -2,24 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { isTierUnlocked } from "@/lib/quest-utils";
-import { TIER_ORDER } from "@/lib/seed/quests";
+import { buildVolunteerBadgeList } from "@/lib/volunteerBadges";
 import { LockIcon } from "@/components/ui/icons";
 import { Quest, QuestCompletion } from "@/types/quest";
-
-function getEarnedTier(
-  teamId: string,
-  completions: Record<string, QuestCompletion>,
-  allQuests: Quest[]
-): Quest["tier"] {
-  for (const tier of TIER_ORDER) {
-    if (!isTierUnlocked(teamId, tier, completions, allQuests)) continue;
-    const tierQuests = allQuests.filter((q) => q.teamId === teamId && q.tier === tier);
-    const allDone = tierQuests.every((q) => completions[q.questId]?.status === "completed");
-    if (!allDone) return tier;
-  }
-  return TIER_ORDER[TIER_ORDER.length - 1];
-}
 
 interface QuestBadgeDef {
   name: string;
@@ -82,30 +67,16 @@ export function QuestBadgesCard({
     (c) => c.status === "completed"
   ).length;
 
-  const earnedIdx = (tid: string) =>
-    TIER_ORDER.indexOf(getEarnedTier(tid, completions, allQuests));
-
-  const b10 = teams.some((tid) => earnedIdx(tid) >= TIER_ORDER.indexOf("associate"));
-  const b11 = teams.some((tid) => earnedIdx(tid) >= TIER_ORDER.indexOf("specialist"));
-  const b12 = teams.some((tid) => getEarnedTier(tid, completions, allQuests) === "lead");
-
-  const badges: QuestBadgeDef[] = [
-    { name: "First Steps", description: "Attend at least 1 event", earned: eventCount >= 1, image: "/medals/first-steps.png" },
-    { name: "Dedicated Volunteer", description: "Attend at least 5 events", earned: eventCount >= 5, image: "/medals/dedicated-volunteer.png" },
-    { name: "Event Veteran", description: "Attend at least 10 events", earned: eventCount >= 10, image: "/medals/event-veteran.png" },
-    { name: "First Reflection", description: "Submit at least 1 reflection", earned: reflectionCount >= 1, image: "/medals/first-reflection.png" },
-    { name: "Reflective Contributor", description: "Submit at least 5 reflections", earned: reflectionCount >= 5, image: "/medals/reflective-contributor.png" },
-    { name: "Deep Thinker", description: "Submit at least 10 reflections", earned: reflectionCount >= 10, image: "/medals/deep-thinker.png" },
-    { name: "Quest Starter", description: "Complete at least 1 quest", earned: completedQuestCount >= 1, image: "/medals/quest-starter.png" },
-    { name: "Quest Achiever", description: "Complete at least 5 quests", earned: completedQuestCount >= 5, image: "/medals/quest-achiever.png" },
-    { name: "Quest Master", description: "Complete at least 10 quests", earned: completedQuestCount >= 10, image: "/medals/quest-master.png" },
-    { name: "Associate", description: "Reach Associate tier or higher on any team", earned: b10, image: "/medals/associate.png" },
-    { name: "Specialist", description: "Reach Specialist tier or higher on any team", earned: b11, image: "/medals/specialist.png" },
-    { name: "Team Lead", description: "Complete the Lead tier on any team", earned: b12, image: "/medals/team-lead.png" },
-    { name: "Profile Complete", description: "Complete profile setup", earned: profileSetupCount >= 1, image: "/medals/profile-complete.png" },
-    { name: "XP Milestone: 500", description: "Reach 500 total XP", earned: xp >= 500, image: "/medals/xp-500.png" },
-    { name: "XP Milestone: 1000", description: "Reach 1000 total XP", earned: xp >= 1000, image: "/medals/xp-1000.png" },
-  ];
+  const badges: QuestBadgeDef[] = buildVolunteerBadgeList({
+    teams,
+    completions,
+    allQuests,
+    eventCount,
+    reflectionCount,
+    completedQuestCount,
+    profileSetupCount,
+    xp,
+  }).map(({ name, description, earned, image }) => ({ name, description, earned, image }));
 
   const earnedBadges = badges.filter((b) => b.earned);
   const unearnedBadges = badges.filter((b) => !b.earned);
