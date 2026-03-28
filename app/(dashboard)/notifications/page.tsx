@@ -1,41 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
 import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
-
-interface AvatarOptions {
-  backgroundColor: string;
-  backgroundType: "solid" | "gradientLinear";
-  eyes: string;
-  mouth: string;
-}
-
-interface UserData {
-  username: string;
-  avatarOptions?: AvatarOptions;
-}
-
-const DEFAULT_AVATAR: AvatarOptions = {
-  backgroundColor: "5e35b1",
-  backgroundType: "solid",
-  eyes: "round",
-  mouth: "smile01",
-};
-
-function buildAvatarUrl(seed: string, opts: AvatarOptions): string {
-  const p: Record<string, string> = {
-    seed,
-    backgroundColor: opts.backgroundColor,
-    backgroundType: opts.backgroundType,
-    eyes: opts.eyes,
-    mouth: opts.mouth,
-  };
-  return `https://api.dicebear.com/9.x/bottts-neutral/svg?${new URLSearchParams(p)}`;
-}
+import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
+import { useAuth } from "@/context/AuthContext";
+import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 
 function NotificationsSkeleton() {
   return (
@@ -60,37 +28,19 @@ function NotificationsSkeleton() {
 }
 
 export default function NotificationsPage() {
-  const router = useRouter();
+  const { user: sessionUser, status } = useAuth();
+  const { ready } = useRequireDashboardAuth();
 
-  const [authChecked, setAuthChecked] = useState(false);
-  const [userData, setUserData] = useState<UserData | null>(null);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists() || snap.data()?.onboardingComplete !== true) {
-        router.replace("/onboarding");
-        return;
-      }
-      setUserData(snap.data() as UserData);
-      setAuthChecked(true);
-    });
-    return () => unsub();
-  }, [router]);
-
-  const avatarUrl = userData
-    ? buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR)
+  const authLoading = status === "loading" || !ready;
+  const avatarUrl = sessionUser
+    ? buildAvatarUrl(sessionUser.username, sessionUser.avatarOptions ?? DEFAULT_AVATAR)
     : undefined;
 
   return (
     <PageShell
       title="Notifications"
       avatarUrl={avatarUrl}
-      loading={!authChecked}
+      loading={authLoading}
       skeleton={<NotificationsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
@@ -98,7 +48,7 @@ export default function NotificationsPage() {
           <div className="rounded-2xl border border-border bg-surface p-8 text-center">
             <p className="font-heading text-lg text-text-primary mb-2">No notifications yet</p>
             <p className="text-sm text-text-secondary font-sans leading-relaxed">
-              When you get quest updates, attendance confirmations, or reminders, they will show up here. This inbox is coming soon.
+              When you get quest updates, attendance confirmations, or event reminders, they&apos;ll show up here.
             </p>
           </div>
         </div>

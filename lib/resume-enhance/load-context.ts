@@ -1,7 +1,7 @@
 import { TEAM_META, TIER_LABELS } from "@/lib/seed/quests";
 import type { Quest, QuestCompletion } from "@/types/quest";
 import type { Firestore } from "firebase-admin/firestore";
-import { getEarnedTier } from "./earned-tier";
+import { getEarnedTier } from "@/lib/quest-utils";
 
 const MAX_REFLECTIONS = 8;
 const MAX_TEXT_FIELD = 500;
