@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { verifyBearerUid, getFirebaseAdminOrThrow } from "@/lib/firebase-admin";
 import { buildGeminiModelChain, generateResumeSectionsWithGemini } from "@/lib/resume-enhance/gemini-resume";
 import { loadResumeEnhanceContext } from "@/lib/resume-enhance/load-context";
+import { mergeEventContributions } from "@/lib/resume-enhance/merge-event-contributions";
 import { markResumeEnhanceRateLimit, peekResumeEnhanceRateLimit } from "@/lib/resume-enhance/rate-limit";
 
 export const maxDuration = 60;
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
         uid: uid.slice(0, 8),
         questsCompleted: context.stats.questsCompleted,
         reflectionsInPrompt: context.reflections.length,
+        attendedEvents: context.attendedEvents.length,
         teams: context.teamSummaries.length,
         hasGeminiKey: Boolean(process.env.GEMINI_API_KEY?.trim()),
         modelChain: buildGeminiModelChain(),
@@ -53,6 +55,10 @@ export async function POST(req: Request) {
     }
 
     const sections = await generateResumeSectionsWithGemini(context);
+    const eventContributions = mergeEventContributions(
+      context.attendedEvents,
+      sections.eventContributions
+    );
     const hasContent =
       Boolean(sections.professionalSummary) ||
       sections.skills.length > 0 ||
@@ -64,6 +70,7 @@ export async function POST(req: Request) {
         skills: sections.skills.length,
         bullets: sections.involvementBullets.length,
         hasSummary: Boolean(sections.professionalSummary),
+        eventContributions: eventContributions.length,
       });
     }
 
@@ -73,6 +80,7 @@ export async function POST(req: Request) {
       professionalSummary: sections.professionalSummary,
       skills: sections.skills,
       involvementBullets: sections.involvementBullets,
+      eventContributions,
     });
   } catch (e) {
     console.error("resume-enhance:", e);

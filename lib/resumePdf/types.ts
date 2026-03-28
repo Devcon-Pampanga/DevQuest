@@ -8,9 +8,15 @@ export interface VolunteerResumeQuestLine {
   coordinatorVerified: boolean;
 }
 
-export interface VolunteerResumeActivityLine {
-  description: string;
+export interface VolunteerResumeEarnedBadge {
+  name: string;
+  image: string;
+}
+
+export interface VolunteerResumeEventContribution {
+  name: string;
   dateLabel: string;
+  paragraph: string;
 }
 
 export interface VolunteerResumeInput {
@@ -18,6 +24,7 @@ export interface VolunteerResumeInput {
   chapterId: string;
   totalXp: number;
   role: "volunteer" | "coordinator";
+  joinedAtLabel?: string;
   linkedinUrl?: string;
   githubUrl?: string;
   teams: VolunteerResumeTeamRow[];
@@ -28,8 +35,8 @@ export interface VolunteerResumeInput {
     questsCompleted: number;
     badgesEarned: number;
   };
-  earnedBadgeNames: string[];
-  recentActivity: VolunteerResumeActivityLine[];
+  earnedBadges: VolunteerResumeEarnedBadge[];
+  eventContributions: VolunteerResumeEventContribution[];
   fileBaseName: string;
   aiProfessionalSummary?: string | null;
   aiSkills?: string[];

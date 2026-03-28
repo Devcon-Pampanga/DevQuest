@@ -5,6 +5,8 @@ export interface GeminiResumeSections {
   professionalSummary: string | null;
   skills: string[];
   involvementBullets: string[];
+  /** One paragraph per attended event (match eventId to context.attendedEvents). */
+  eventContributions: { eventId: string; paragraph: string }[];
 }
 
 const SYSTEM_INSTRUCTION = `You are a professional resume writer helping a youth nonprofit volunteer.
@@ -13,7 +15,8 @@ Use only facts from the JSON context. Do not invent employers, dates, or credent
 Use first-person implied phrasing or strong verb-led bullets (no "I" overload).
 Keep professionalSummary to 2–3 short sentences if present.
 skills: 6–12 short phrases (e.g. "Event facilitation", "Peer mentoring").
-involvementBullets: 4–8 bullets highlighting volunteer impact, drawn from quests, reflections, and activity.`;
+involvementBullets: 4–8 bullets highlighting volunteer impact, drawn from quests, reflections, and activity.
+eventContributions: For each object in context.attendedEvents (same order), output one resume-style paragraph (2–4 sentences) that combines the event description and the volunteer's role for that event. Use the exact eventId keys from the input. If attendedEvents is empty, return an empty array.`;
 
 function extractJsonPayload(raw: string): string {
   const trimmed = raw.trim();
@@ -27,6 +30,7 @@ function parseResumeJson(text: string): GeminiResumeSections | null {
     professionalSummary?: string | null;
     skills?: string[];
     involvementBullets?: string[];
+    eventContributions?: { eventId?: string; paragraph?: string }[];
   };
   try {
     parsed = JSON.parse(extractJsonPayload(text)) as typeof parsed;
@@ -45,13 +49,24 @@ function parseResumeJson(text: string): GeminiResumeSections | null {
       ? parsed.professionalSummary.trim().slice(0, 800)
       : null;
 
-  return { professionalSummary, skills, involvementBullets };
+  const eventContributions: { eventId: string; paragraph: string }[] = [];
+  if (Array.isArray(parsed.eventContributions)) {
+    for (const row of parsed.eventContributions) {
+      const eventId = typeof row?.eventId === "string" ? row.eventId.trim() : "";
+      const paragraph = typeof row?.paragraph === "string" ? row.paragraph.trim() : "";
+      if (eventId && paragraph) {
+        eventContributions.push({ eventId, paragraph: paragraph.slice(0, 1200) });
+      }
+    }
+  }
+
+  return { professionalSummary, skills, involvementBullets, eventContributions };
 }
 
 const JSON_ONLY_SUFFIX = `
 
 Respond with valid JSON only (no markdown), exact shape:
-{"professionalSummary":"string or empty string","skills":["..."],"involvementBullets":["..."]}`;
+{"professionalSummary":"string or empty string","skills":["..."],"involvementBullets":["..."],"eventContributions":[{"eventId":"...","paragraph":"..."}]}`;
 
 function isGeminiQuotaError(e: unknown): boolean {
   const m = e instanceof Error ? e.message : String(e);
@@ -70,7 +85,12 @@ function isModelNotFoundError(e: unknown): boolean {
 }
 
 function sectionsEmpty(s: GeminiResumeSections): boolean {
-  return !s.professionalSummary && s.skills.length === 0 && s.involvementBullets.length === 0;
+  return (
+    !s.professionalSummary &&
+    s.skills.length === 0 &&
+    s.involvementBullets.length === 0 &&
+    s.eventContributions.length === 0
+  );
 }
 
 /** Order: primary, optional comma-separated GEMINI_FALLBACK_MODEL, then built-in versioned IDs (deduped). */
@@ -89,7 +109,12 @@ export function buildGeminiModelChain(): string[] {
 export async function generateResumeSectionsWithGemini(
   context: ResumeEnhancePromptContext
 ): Promise<GeminiResumeSections> {
-  const empty: GeminiResumeSections = { professionalSummary: null, skills: [], involvementBullets: [] };
+  const empty: GeminiResumeSections = {
+    professionalSummary: null,
+    skills: [],
+    involvementBullets: [],
+    eventContributions: [],
+  };
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   const debug = process.env.NODE_ENV !== "production";
 
@@ -117,8 +142,19 @@ export async function generateResumeSectionsWithGemini(
         type: SchemaType.ARRAY,
         items: { type: SchemaType.STRING },
       },
+      eventContributions: {
+        type: SchemaType.ARRAY,
+        items: {
+          type: SchemaType.OBJECT,
+          properties: {
+            eventId: { type: SchemaType.STRING },
+            paragraph: { type: SchemaType.STRING },
+          },
+          required: ["eventId", "paragraph"],
+        },
+      },
     },
-    required: ["skills", "involvementBullets"],
+    required: ["skills", "involvementBullets", "eventContributions"],
   };
 
   const userPayload = JSON.stringify(context, null, 0);
@@ -195,6 +231,7 @@ export async function generateResumeSectionsWithGemini(
         summaryLen: parsed.professionalSummary?.length ?? 0,
         skills: parsed.skills.length,
         bullets: parsed.involvementBullets.length,
+        eventContributions: parsed.eventContributions.length,
       });
     }
 

@@ -6,6 +6,8 @@ import {
   ACCENT_BAR_W,
   ACCENT_BAR_GAP,
   HEADER_H,
+  HEADER_LEFT_ZONE_MM,
+  HEADER_INNER_PAD_MM,
   PURPLE,
   PURPLE_TINT,
   PURPLE_PILL,
@@ -19,6 +21,24 @@ import {
   sanitizeFileBaseName,
   truncate,
 } from "./constants";
+
+async function fetchPngDataUrlForPdf(imagePath: string): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const url = new URL(imagePath, window.location.origin).href;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
 
 export async function generateVolunteerResumePdf(input: VolunteerResumeInput): Promise<void> {
   const { jsPDF } = await import("jspdf");
@@ -128,23 +148,26 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
   // Right zone: faint tint with XP and links
 
   const headerY = y;
+  const headerRightZoneW = maxW - HEADER_LEFT_ZONE_MM;
+  const nameInnerW = HEADER_LEFT_ZONE_MM - HEADER_INNER_PAD_MM * 2;
+  const headerTextX = MARGIN_MM + HEADER_INNER_PAD_MM;
 
   // Left zone background
   doc.setFillColor(...PURPLE);
-  doc.rect(MARGIN_MM, headerY, 65, HEADER_H, "F");
+  doc.rect(MARGIN_MM, headerY, HEADER_LEFT_ZONE_MM, HEADER_H, "F");
 
   // Right zone background
   doc.setFillColor(...PURPLE_TINT);
-  doc.rect(MARGIN_MM + 65, headerY, maxW - 65, HEADER_H, "F");
+  doc.rect(MARGIN_MM + HEADER_LEFT_ZONE_MM, headerY, headerRightZoneW, HEADER_H, "F");
 
-  // Name (white, bold) — split if too long
-  const nameParts = doc.splitTextToSize(input.displayName, 58);
+  // Name (white, bold) — split if too long (width matches purple column padding)
+  const nameParts = doc.splitTextToSize(input.displayName, nameInnerW);
   const nameLines = nameParts.slice(0, 2) as string[];
   doc.setFontSize(nameLines.length > 1 ? 16 : 20);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...WHITE);
   const nameStartY = headerY + (nameLines.length > 1 ? 9 : 11);
-  doc.text(nameLines, MARGIN_MM + 4, nameStartY);
+  doc.text(nameLines, headerTextX, nameStartY);
 
   const afterNameY = nameStartY + nameLines.length * (nameLines.length > 1 ? 6 : 7);
 
@@ -152,22 +175,34 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...LAVENDER);
-  doc.text("DEVCON Kids Volunteer", MARGIN_MM + 4, afterNameY + 1);
+  doc.text("DEVCON Kids Volunteer", headerTextX, afterNameY + 1);
 
   // Chapter
   doc.setFontSize(7);
-  doc.text(`\u25B8 ${input.chapterId}`, MARGIN_MM + 4, afterNameY + 6);
+  const chapterLines = doc.splitTextToSize(`\u25B8 ${input.chapterId}`, nameInnerW) as string[];
+  let chapterY = afterNameY + 6;
+  for (const cl of chapterLines.slice(0, 2)) {
+    doc.text(cl, headerTextX, chapterY);
+    chapterY += 4;
+  }
 
-  // Coordinator badge
+  let metaY = chapterY + 1;
   if (input.role === "coordinator") {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6.5);
     doc.setTextColor(...WHITE);
-    doc.text("(Coordinator)", MARGIN_MM + 4, afterNameY + 11);
+    doc.text("(Coordinator)", headerTextX, metaY);
+    metaY += 5;
+  }
+  if (input.joinedAtLabel?.trim()) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...LAVENDER);
+    doc.text(`Joined at ${input.joinedAtLabel.trim()}`, headerTextX, metaY);
   }
 
   // XP — large number in purple on tint background
-  const xpX = MARGIN_MM + 69;
+  const xpX = MARGIN_MM + HEADER_LEFT_ZONE_MM + HEADER_INNER_PAD_MM;
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PURPLE);
@@ -183,13 +218,13 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
   if (input.linkedinUrl?.trim()) {
     doc.setFontSize(7.5);
     doc.setTextColor(...GRAY_600);
-    doc.text("in  " + truncate(input.linkedinUrl.trim(), 32), xpX, linkY);
+    doc.text("in  " + truncate(input.linkedinUrl.trim(), 26), xpX, linkY);
     linkY += 5;
   }
   if (input.githubUrl?.trim()) {
     doc.setFontSize(7.5);
     doc.setTextColor(...GRAY_600);
-    doc.text("gh  " + truncate(input.githubUrl.trim(), 32), xpX, linkY);
+    doc.text("gh  " + truncate(input.githubUrl.trim(), 26), xpX, linkY);
   }
 
   y = headerY + HEADER_H + 5;
@@ -336,82 +371,108 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
 
   sectionTitle("Badges Earned");
 
-  if (input.earnedBadgeNames.length === 0) {
+  if (input.earnedBadges.length === 0) {
     bodyLines(["None yet."]);
   } else {
+    const COLS = 3;
+    const CELL_GAP = 3;
+    const IMG_MM = 12;
+    const cellW = (BODY_W - (COLS - 1) * CELL_GAP) / COLS;
+    const labelLineH = 3.2;
+    const maxLabelLines = 2;
+    const rowH = IMG_MM + 2 + maxLabelLines * labelLineH + 4;
+
     const PILL_H = 6;
     const PILL_PAD_X = 3;
-    const PILL_GAP = 2.5;
-    const PILL_ROW_H = PILL_H + PILL_GAP;
 
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-
-    let px = BODY_X;
-    let py = y;
-
-    for (const name of input.earnedBadgeNames) {
-      const tw = doc.getTextWidth(name);
-      const pillW = tw + PILL_PAD_X * 2;
-
-      // Wrap to next row if overflow
-      if (px + pillW > PAGE_W - MARGIN_MM && px !== BODY_X) {
-        px = BODY_X;
-        py += PILL_ROW_H;
-      }
-
-      // Page break mid-pill-row: reset coordinates
-      const prevY = y;
-      ensureSpace(PILL_H + 2);
-      if (y !== prevY) {
-        px = BODY_X;
-        py = y;
-      }
-
-      // Pill background
-      doc.setFillColor(...PURPLE_PILL);
-      doc.rect(px, py - PILL_H + 1.5, pillW, PILL_H, "F");
-
-      // Badge text
+    const drawPillFallback = (name: string, bx: number, rowTop: number) => {
+      const short = truncate(name, 22);
       doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      const tw = doc.getTextWidth(short);
+      const pillW = Math.min(cellW - 1, tw + PILL_PAD_X * 2);
+      const px = bx + (cellW - pillW) / 2;
+      const py = rowTop + 2;
+      doc.setFillColor(...PURPLE_PILL);
+      doc.rect(px, py, pillW, PILL_H, "F");
       doc.setTextColor(...PURPLE);
-      doc.text(name, px + PILL_PAD_X, py);
+      doc.text(short, px + PILL_PAD_X, py + PILL_H - 1.5);
+    };
 
-      px += pillW + PILL_GAP;
+    let col = 0;
+    let rowStartY = y;
+
+    for (const badge of input.earnedBadges) {
+      if (col === 0) {
+        ensureSpace(rowH);
+        rowStartY = y;
+      }
+
+      const bx = BODY_X + col * (cellW + CELL_GAP);
+      const dataUrl = await fetchPngDataUrlForPdf(badge.image);
+
+      if (dataUrl) {
+        try {
+          const imgX = bx + (cellW - IMG_MM) / 2;
+          doc.addImage(dataUrl, "PNG", imgX, rowStartY, IMG_MM, IMG_MM);
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(...GRAY_900);
+          const labelLines = doc.splitTextToSize(badge.name, cellW - 1) as string[];
+          let ly = rowStartY + IMG_MM + 2;
+          for (const line of labelLines.slice(0, maxLabelLines)) {
+            doc.text(line, bx + cellW / 2, ly, { align: "center" });
+            ly += labelLineH;
+          }
+        } catch {
+          drawPillFallback(badge.name, bx, rowStartY);
+        }
+      } else {
+        drawPillFallback(badge.name, bx, rowStartY);
+      }
+
+      col += 1;
+      if (col >= COLS) {
+        col = 0;
+        y = rowStartY + rowH;
+      }
     }
 
-    y = py + PILL_H + 3;
+    if (col !== 0) {
+      y = rowStartY + rowH;
+    }
+    y += 3;
   }
 
-  // ─── Recent Activity — two-column ─────────────────────────────────────────
+  // ─── Contributions (attended events) ────────────────────────────────────
 
-  sectionTitle("Recent Activity");
+  sectionTitle("Contributions");
 
-  if (input.recentActivity.length === 0) {
-    bodyLines(["No recent activity."]);
+  if (input.eventContributions.length === 0) {
+    bodyLines(["No attended events yet."]);
   } else {
-    const DATE_COL_W = 22;
-    const DESC_COL_W = BODY_W - DATE_COL_W - 3;
-
-    for (const row of input.recentActivity) {
-      const descParts = doc.splitTextToSize(row.description, DESC_COL_W) as string[];
-      ensureSpace(descParts.length * 4 + 2);
-
-      // Description (left)
-      doc.setFontSize(8);
+    for (const ev of input.eventContributions) {
+      const titleLine = `${ev.name} \u2022 ${ev.dateLabel}`;
+      ensureSpace(10);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...GRAY_900);
+      const titleParts = doc.splitTextToSize(titleLine, BODY_W) as string[];
+      for (const line of titleParts) {
+        ensureSpace(5);
+        doc.text(line, BODY_X, y);
+        y += 4.5;
+      }
+      doc.setFontSize(8.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY_900);
-      for (let i = 0; i < descParts.length; i++) {
-        doc.text(descParts[i], BODY_X, y + i * 4);
+      const paraParts = doc.splitTextToSize(ev.paragraph, BODY_W);
+      for (const p of paraParts) {
+        ensureSpace(5.5);
+        doc.text(p, BODY_X, y);
+        y += 4;
       }
-
-      // Date (right-aligned, first line only)
-      doc.setFontSize(7);
-      doc.setTextColor(...GRAY_600);
-      const dateX = PAGE_W - MARGIN_MM - doc.getTextWidth(row.dateLabel);
-      doc.text(row.dateLabel, dateX, y);
-
-      y += descParts.length * 4 + 1.5;
+      y += 4;
     }
   }
 
