@@ -71,3 +71,24 @@ export function methodLabel(method: Quest["completionMethod"]): string {
   if (method === "self_mark") return "SELF-MARK";
   return "COORDINATOR APPROVAL";
 }
+
+/** Team with the most completed quests wins (dashboard primary team highlight). */
+export function pickPrimaryTeam(
+  teamIds: string[],
+  completions: Record<string, QuestCompletion>,
+  allQuests: Quest[]
+): string {
+  if (teamIds.length === 0) return "";
+  let best = teamIds[0];
+  let bestCount = -1;
+  for (const tid of teamIds) {
+    const count = allQuests.filter(
+      (q) => q.teamId === tid && completions[q.questId]?.status === "completed"
+    ).length;
+    if (count > bestCount) {
+      bestCount = count;
+      best = tid;
+    }
+  }
+  return best;
+}

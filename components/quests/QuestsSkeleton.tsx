@@ -12,13 +12,13 @@ function QuestSkeletonCard({ children }: { children: ReactNode }) {
 
 export function QuestsSkeleton() {
   return (
-    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 pb-10 items-start">
-      <div className="lg:col-span-3 flex gap-2">
+    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-5 pb-10 lg:items-start">
+      <div className="lg:col-span-3 flex flex-wrap gap-2 w-full">
         <SkeletonBlock className="h-9 w-28 rounded-full" />
         <SkeletonBlock className="h-9 w-28 rounded-full" />
         <SkeletonBlock className="h-9 w-28 rounded-full" />
       </div>
-      <div className="flex flex-col gap-3 lg:col-span-2">
+      <div className="flex w-full flex-col gap-3 lg:col-span-2">
         <div className="flex flex-col gap-3">
           <SkeletonLine className="w-20" />
           {[0, 1].map((i) => (
@@ -40,7 +40,7 @@ export function QuestsSkeleton() {
           ))}
         </div>
       </div>
-      <div className="lg:col-span-1 flex flex-col gap-3">
+      <div className="flex w-full flex-col gap-3 sm:gap-4 lg:col-span-1 lg:gap-5">
         <QuestSkeletonCard>
           <SkeletonLine className="w-20" />
           <SkeletonLine className="w-full" />

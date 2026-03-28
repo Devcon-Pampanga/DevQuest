@@ -25,7 +25,7 @@ export function ChapterStatCard({
           {label}
         </span>
         <div
-          className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0"
+          className="hidden sm:flex w-7 h-7 rounded-xl items-center justify-center shrink-0"
           style={{ backgroundColor: color + "1a" }}
         >
           <span style={{ color }}>{icon}</span>
