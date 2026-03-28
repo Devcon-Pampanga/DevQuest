@@ -3,6 +3,8 @@ import { Timestamp } from "firebase/firestore";
 export type QuestTier = "team_member" | "associate" | "specialist" | "lead";
 export type CompletionMethod = "qr_scan" | "coordinator_approval" | "self_mark";
 export type QuestStatus = "in_progress" | "pending_approval" | "completed";
+// UI-only status — extends QuestStatus with display-only states
+export type UIQuestStatus = "locked" | "available" | "in_progress" | "pending_approval" | "completed";
 
 export interface Quest {
   questId: string;
