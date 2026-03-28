@@ -1,4 +1,13 @@
 import { Timestamp } from "firebase/firestore";
+import type { AvatarOptions } from "@/lib/avatar";
+
+/** Row in the “specific volunteers” picker on Add Mission (subset of Firestore `users`). */
+export interface MissionVolunteerPickerRow {
+  uid: string;
+  username: string;
+  teams: string[];
+  avatarOptions?: AvatarOptions;
+}
 
 export type MissionDifficulty = "easy" | "medium" | "hard";
 export type MissionAssignmentType = "specific" | "team" | "open";
