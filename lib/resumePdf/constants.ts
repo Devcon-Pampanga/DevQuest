@@ -4,6 +4,10 @@ export const PAGE_H = 297;
 export const ACCENT_BAR_W = 3;
 export const ACCENT_BAR_GAP = 4;
 export const HEADER_H = 38;
+/** Purple profile block width (mm); remainder of content width is XP / links. */
+export const HEADER_LEFT_ZONE_MM = 114;
+/** Horizontal padding inside the purple block for text (mm). */
+export const HEADER_INNER_PAD_MM = 4;
 
 export const PURPLE: [number, number, number] = [124, 58, 237];
 export const PURPLE_LIGHT: [number, number, number] = [168, 85, 247];
