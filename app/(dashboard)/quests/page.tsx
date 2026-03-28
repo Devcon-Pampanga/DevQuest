@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   getDocs,
   collection,
@@ -41,7 +41,6 @@ interface UserData {
 }
 
 function QuestsPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user: sessionUser } = useAuth();
   const { ready } = useRequireDashboardAuth();

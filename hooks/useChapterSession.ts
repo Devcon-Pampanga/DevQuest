@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import type { ChapterSessionUser } from "@/types/chapter";
@@ -49,8 +49,10 @@ export function useChapterSession() {
     !!user &&
     user.onboardingComplete === true;
 
-  const currentUser =
-    authChecked && user ? toChapterSessionUser(user) : null;
+  const currentUser = useMemo(
+    () => (authChecked && user ? toChapterSessionUser(user) : null),
+    [authChecked, user]
+  );
 
   return {
     authChecked,

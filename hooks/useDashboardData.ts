@@ -30,6 +30,7 @@ interface RegistrationDoc {
 
 export function useDashboardData(currentUser: ChapterSessionUser | null, authChecked: boolean) {
   const firebaseUid = currentUser?.uid ?? "";
+  const chapterId = currentUser?.chapterId ?? "";
 
   const [allQuests, setAllQuests] = useState<Quest[]>([]);
   const [completions, setCompletions] = useState<Record<string, QuestCompletion>>({});
@@ -50,8 +51,7 @@ export function useDashboardData(currentUser: ChapterSessionUser | null, authChe
   const [barsReady, setBarsReady] = useState(false);
 
   useEffect(() => {
-    if (!authChecked || !currentUser) return;
-    const chapterId = currentUser.chapterId;
+    if (!authChecked || !firebaseUid || !chapterId) return;
 
     async function load() {
       setDashboardLoading(true);
@@ -152,7 +152,7 @@ export function useDashboardData(currentUser: ChapterSessionUser | null, authChe
     }
 
     void load();
-  }, [authChecked, currentUser, firebaseUid]);
+  }, [authChecked, firebaseUid, chapterId]);
 
   const loadApprovalsCount = useCallback(async () => {
     if (!currentUser || currentUser.role !== "coordinator") return;

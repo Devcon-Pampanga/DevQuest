@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
@@ -46,20 +47,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<SessionUser | null>(null);
+  /** UID we have an active Firestore `users/{uid}` listener for; avoids resetting loading on token refresh. */
+  const subscribedUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     let unsubDoc: (() => void) | undefined;
 
     const unsubAuth = onAuthStateChanged(auth, (fbUser) => {
-      unsubDoc?.();
-      setFirebaseUser(fbUser);
-
       if (!fbUser) {
+        unsubDoc?.();
+        unsubDoc = undefined;
+        subscribedUidRef.current = null;
+        setFirebaseUser(null);
         setUser(null);
         setStatus("ready");
         return;
       }
 
+      setFirebaseUser(fbUser);
+
+      if (subscribedUidRef.current === fbUser.uid) {
+        return;
+      }
+
+      unsubDoc?.();
+      unsubDoc = undefined;
+      subscribedUidRef.current = fbUser.uid;
       setStatus("loading");
       unsubDoc = onSnapshot(
         doc(db, "users", fbUser.uid),
@@ -81,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       unsubAuth();
       unsubDoc?.();
+      subscribedUidRef.current = null;
     };
   }, []);
 
