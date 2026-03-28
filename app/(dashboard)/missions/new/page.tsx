@@ -141,7 +141,7 @@ function IconCheck() {
 
 function AddMissionSkeleton() {
   return (
-    <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-5 pb-10">
+    <div className="max-w-2xl mx-auto flex flex-col gap-5 pb-10">
       <SkeletonBlock className="h-8 w-48 rounded-lg" />
       <SkeletonBlock className="h-40 rounded-2xl" />
       <SkeletonBlock className="h-48 rounded-2xl" />
@@ -508,7 +508,7 @@ function AddMissionPageInner() {
             "radial-gradient(ellipse 80% 40% at 60% 0%, rgba(124,58,237,0.12) 0%, transparent 70%)",
         }}
       >
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col pb-10">
+        <div className="max-w-2xl mx-auto flex flex-col pb-10">
 
           {/* ── Page subtitle ────────────────────────────────────────────────── */}
           <div className="animate-fade-up border-b border-border/60 pb-5 mb-6" style={{ animationDelay: "0ms" }}>

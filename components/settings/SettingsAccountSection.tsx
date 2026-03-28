@@ -20,7 +20,7 @@ export function SettingsAccountSection({
   onDeleteAccount: () => void | Promise<void>;
 }) {
   return (
-    <section className="order-3 lg:order-none rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "120ms" }}>
+    <section className="rounded-2xl border border-border bg-surface overflow-hidden animate-fade-up" style={{ animationDelay: "120ms" }}>
       <div className="px-5 py-3 border-b border-border">
         <span className="font-heading text-sm text-text-primary">Account</span>
       </div>

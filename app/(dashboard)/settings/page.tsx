@@ -210,43 +210,39 @@ export default function SettingsPage() {
       skeleton={<SettingsSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:items-start pb-10">
-          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-2">
-            <SettingsProfileSection
-              avatarUrl={avatarUrl}
-              onOpenAvatarEditor={openAvatarEditor}
-              username={username}
-              setUsername={setUsername}
-              contactNumber={contactNumber}
-              setContactNumber={setContactNumber}
-              linkedinUrl={linkedinUrl}
-              setLinkedinUrl={setLinkedinUrl}
-              githubUrl={githubUrl}
-              setGithubUrl={setGithubUrl}
-              saveError={saveError}
-              saveSuccess={saveSuccess}
-              saving={saving}
-              onSave={handleSaveProfile}
-            />
-            <SettingsAccountSection
-              onLogout={handleLogout}
-              logoutLoading={logoutLoading}
-              deleteLoading={deleteLoading}
-              confirmDelete={confirmDelete}
-              setConfirmDelete={setConfirmDelete}
-              deleteError={deleteError}
-              setDeleteError={setDeleteError}
-              onDeleteAccount={handleDeleteAccount}
-            />
-          </div>
-          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-1">
-            <SettingsVolunteerTeamsSection
-              currentTeams={currentTeams}
-              teamLoading={teamLoading}
-              onLeaveTeam={handleLeaveTeam}
-              onJoinTeam={handleJoinTeam}
-            />
-          </div>
+        <div className="max-w-2xl mx-auto flex flex-col gap-5 pb-10">
+          <SettingsProfileSection
+            avatarUrl={avatarUrl}
+            onOpenAvatarEditor={openAvatarEditor}
+            username={username}
+            setUsername={setUsername}
+            contactNumber={contactNumber}
+            setContactNumber={setContactNumber}
+            linkedinUrl={linkedinUrl}
+            setLinkedinUrl={setLinkedinUrl}
+            githubUrl={githubUrl}
+            setGithubUrl={setGithubUrl}
+            saveError={saveError}
+            saveSuccess={saveSuccess}
+            saving={saving}
+            onSave={handleSaveProfile}
+          />
+          <SettingsVolunteerTeamsSection
+            currentTeams={currentTeams}
+            teamLoading={teamLoading}
+            onLeaveTeam={handleLeaveTeam}
+            onJoinTeam={handleJoinTeam}
+          />
+          <SettingsAccountSection
+            onLogout={handleLogout}
+            logoutLoading={logoutLoading}
+            deleteLoading={deleteLoading}
+            confirmDelete={confirmDelete}
+            setConfirmDelete={setConfirmDelete}
+            deleteError={deleteError}
+            setDeleteError={setDeleteError}
+            onDeleteAccount={handleDeleteAccount}
+          />
         </div>
       </div>
 
