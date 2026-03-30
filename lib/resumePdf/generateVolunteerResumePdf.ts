@@ -374,7 +374,7 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
   if (input.earnedBadges.length === 0) {
     bodyLines(["None yet."]);
   } else {
-    const COLS = 3;
+    const COLS = 5;
     const CELL_GAP = 3;
     const IMG_MM = 12;
     const cellW = (BODY_W - (COLS - 1) * CELL_GAP) / COLS;
@@ -386,7 +386,7 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
     const PILL_PAD_X = 3;
 
     const drawPillFallback = (name: string, bx: number, rowTop: number) => {
-      const short = truncate(name, 22);
+      const short = truncate(name, 14);
       doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
       const tw = doc.getTextWidth(short);
