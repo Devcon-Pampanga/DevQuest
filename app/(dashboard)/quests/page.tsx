@@ -29,7 +29,6 @@ import { TEAM_META } from "@/lib/seed/quests";
 import { QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 import { MissionCompletion, MissionApprovalItem } from "@/types/mission";
 import { CoordinatorHubPage } from "@/components/quests/coordinator/CoordinatorHubPage";
-import Link from "next/link";
 
 interface UserData {
   uid: string;

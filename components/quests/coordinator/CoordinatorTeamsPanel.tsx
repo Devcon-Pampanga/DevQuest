@@ -20,7 +20,7 @@ interface TeamCardProps {
   index: number;
 }
 
-function TeamCard({ teamId, members, color, label, index }: TeamCardProps) {
+function TeamCard({ members, color, label, index }: TeamCardProps) {
   const shown = members.slice(0, MAX_AVATARS);
   const overflow = members.length - MAX_AVATARS;
 
