@@ -19,7 +19,7 @@ export function ChapterEventCard({
     <Link
       href={`/events/${event.eventId}`}
       className="rounded-xl bg-elevated border border-border overflow-hidden flex flex-col hover:border-accent-primary/50 transition-[border-color,box-shadow] hover:shadow-[0_4px_16px_rgba(124,58,237,0.15)] cursor-pointer group shrink-0"
-      style={{ width: 210 }}
+      style={{ width: 210, height: 220 }}
     >
       <div className="relative h-28 overflow-hidden">
         {event.bannerUrl ? (
