@@ -374,7 +374,7 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
   if (input.earnedBadges.length === 0) {
     bodyLines(["None yet."]);
   } else {
-    const COLS = 3;
+    const COLS = 5;
     const CELL_GAP = 3;
     const IMG_MM = 12;
     const cellW = (BODY_W - (COLS - 1) * CELL_GAP) / COLS;
@@ -386,7 +386,7 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
     const PILL_PAD_X = 3;
 
     const drawPillFallback = (name: string, bx: number, rowTop: number) => {
-      const short = truncate(name, 22);
+      const short = truncate(name, 14);
       doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
       const tw = doc.getTextWidth(short);
@@ -442,38 +442,6 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
       y = rowStartY + rowH;
     }
     y += 3;
-  }
-
-  // ─── Contributions (attended events) ────────────────────────────────────
-
-  sectionTitle("Contributions");
-
-  if (input.eventContributions.length === 0) {
-    bodyLines(["No attended events yet."]);
-  } else {
-    for (const ev of input.eventContributions) {
-      const titleLine = `${ev.name} \u2022 ${ev.dateLabel}`;
-      ensureSpace(10);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...GRAY_900);
-      const titleParts = doc.splitTextToSize(titleLine, BODY_W) as string[];
-      for (const line of titleParts) {
-        ensureSpace(5);
-        doc.text(line, BODY_X, y);
-        y += 4.5;
-      }
-      doc.setFontSize(8.5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY_900);
-      const paraParts = doc.splitTextToSize(ev.paragraph, BODY_W);
-      for (const p of paraParts) {
-        ensureSpace(5.5);
-        doc.text(p, BODY_X, y);
-        y += 4;
-      }
-      y += 4;
-    }
   }
 
   footer();
