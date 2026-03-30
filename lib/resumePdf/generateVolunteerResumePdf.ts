@@ -444,38 +444,6 @@ export async function generateVolunteerResumePdf(input: VolunteerResumeInput): P
     y += 3;
   }
 
-  // ─── Contributions (attended events) ────────────────────────────────────
-
-  sectionTitle("Contributions");
-
-  if (input.eventContributions.length === 0) {
-    bodyLines(["No attended events yet."]);
-  } else {
-    for (const ev of input.eventContributions) {
-      const titleLine = `${ev.name} \u2022 ${ev.dateLabel}`;
-      ensureSpace(10);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...GRAY_900);
-      const titleParts = doc.splitTextToSize(titleLine, BODY_W) as string[];
-      for (const line of titleParts) {
-        ensureSpace(5);
-        doc.text(line, BODY_X, y);
-        y += 4.5;
-      }
-      doc.setFontSize(8.5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY_900);
-      const paraParts = doc.splitTextToSize(ev.paragraph, BODY_W);
-      for (const p of paraParts) {
-        ensureSpace(5.5);
-        doc.text(p, BODY_X, y);
-        y += 4;
-      }
-      y += 4;
-    }
-  }
-
   footer();
   const base = sanitizeFileBaseName(input.fileBaseName);
   doc.save(`devquest-resume-${base}.pdf`);

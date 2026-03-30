@@ -28,6 +28,7 @@ import PageShell from "@/components/layout/PageShell";
 import { TEAM_META } from "@/lib/seed/quests";
 import { QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 import { MissionCompletion, MissionApprovalItem } from "@/types/mission";
+import { CoordinatorHubPage } from "@/components/quests/coordinator/CoordinatorHubPage";
 import Link from "next/link";
 
 interface UserData {
@@ -221,12 +222,24 @@ function QuestsPageContent() {
 
   const tabs = [
     ...userTeams.map((t: string) => ({ key: t, label: TEAM_META[t]?.label ?? t, isApprovals: false })),
-    ...(userData?.role === "coordinator"
-      ? [{ key: "approvals", label: "Approvals", isApprovals: true }]
-      : []),
   ];
 
   const metrics = useTeamQuestMetrics(activeTab, quests, completions);
+
+  // ── Coordinator: render the dedicated hub instead of the volunteer quest map ──
+  // Must be after ALL hooks above to satisfy the Rules of Hooks.
+  if (userData?.role === "coordinator") {
+    return (
+      <CoordinatorHubPage
+        user={{
+          uid: userData.uid,
+          username: userData.username,
+          chapterId: userData.chapterId,
+          avatarOptions: userData.avatarOptions,
+        }}
+      />
+    );
+  }
 
   return (
     <PageShell
@@ -234,29 +247,6 @@ function QuestsPageContent() {
       avatarUrl={avatarUrl}
       loading={!ready || loadingCompletions}
       skeleton={<QuestsSkeleton />}
-      actions={
-        userData?.role === "coordinator" ? (
-          <Link
-            href="/missions/new"
-            className="flex items-center gap-2 px-3 py-1.5 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white text-sm font-heading font-medium transition-colors whitespace-nowrap shrink-0"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Mission
-          </Link>
-        ) : null
-      }
     >
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-5 lg:items-start">
