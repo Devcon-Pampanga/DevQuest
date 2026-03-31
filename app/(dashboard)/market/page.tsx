@@ -637,7 +637,8 @@ function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardProps) {
     <div className="group relative flex flex-col rounded-2xl border border-[#ffffff0f] bg-[#13131f] overflow-hidden transition-all duration-300 hover:border-red-700/60 hover:shadow-lg hover:shadow-red-950/20">
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-red-700/0 via-red-600 to-red-700/0 opacity-60 group-hover:opacity-100 transition-opacity" />
 
-      <div className="flex h-52 items-center justify-center select-none bg-[#0d0d14] overflow-hidden">
+      {/* Image area with watermark */}
+      <div className="relative flex h-52 items-center justify-center select-none bg-[#0d0d14] overflow-hidden">
         {product.imgSrc ? (
           <img
             src={product.imgSrc}
@@ -650,6 +651,23 @@ function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardProps) {
             {product.image}
           </span>
         )}
+        {/* Diagonal DEVCON Kids watermark */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ opacity: 0.13 }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span
+              key={i}
+              className="absolute text-[11px] font-bold text-white whitespace-nowrap tracking-widest uppercase"
+              style={{
+                transform: "rotate(-35deg)",
+                left: `${(i % 4) * 38 - 20}%`,
+                top: `${Math.floor(i / 4) * 38 - 10}%`,
+                letterSpacing: "0.15em",
+              }}
+            >
+              SAMPLE
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col flex-1 px-5 pt-4 pb-5 gap-0">
