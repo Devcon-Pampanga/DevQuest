@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import InstallPrompt from "@/components/InstallPrompt";
 import { AuthProvider } from "@/context/AuthContext";
+import Providers from "./providers";
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
+const dmSans = localFont({
+  src: "./fonts/DMSans-VariableFont.woff2",
   variable: "--font-dm-sans",
   display: "swap",
 });
@@ -46,10 +46,12 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${agrandirBold.variable} antialiased`}
       >
-        <AuthProvider>
-          <InstallPrompt />
-          {children}
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <InstallPrompt />
+            {children}
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

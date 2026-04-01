@@ -1,14 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  collection,
-  getDocs,
-  getCountFromServer,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchQuestPageData } from "@/lib/quests/queries";
+import { queryKeys } from "@/lib/queryKeys";
 import { Quest, QuestCompletion } from "@/types/quest";
 import { Mission, MissionCompletion } from "@/types/mission";
 
@@ -29,89 +24,48 @@ export interface QuestDataResult {
 
 /**
  * Fetches all quest/mission data for a given user.
- * Only fires once uid and chapterId are non-empty.
+ * Uses TanStack Query for caching — subsequent visits return data instantly.
+ * Mutable overlays (completions, missions) are seeded from cache on mount
+ * and can be updated locally by quest actions without triggering re-fetches.
  */
 export function useQuestData(uid: string, chapterId: string): QuestDataResult {
-  const [quests, setQuests] = useState<Quest[]>([]);
+  const { data, isPending } = useQuery({
+    queryKey: queryKeys.questData(uid, chapterId),
+    queryFn: () => fetchQuestPageData(uid, chapterId),
+    enabled: !!uid && !!chapterId,
+    staleTime: 60 * 1000,
+  });
+
+  // Mutable overlays — updated optimistically by useQuestActions
   const [completions, setCompletions] = useState<Record<string, QuestCompletion>>({});
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionCompletions, setMissionCompletions] = useState<Record<string, MissionCompletion>>({});
-  const [reflectionCount, setReflectionCount] = useState(0);
-  const [eventCount, setEventCount] = useState(0);
-  const [profileSetupCount, setProfileSetupCount] = useState(0);
-  const [loadingQuests, setLoadingQuests] = useState(true);
-  const [loadingMissions, setLoadingMissions] = useState(true);
 
+  // Seed local state from query data once per mount.
+  // Using a ref ensures optimistic updates from actions aren't overwritten
+  // by background refetches during the same session.
+  const seeded = useRef(false);
   useEffect(() => {
-    if (!uid || !chapterId) return;
-
-    async function load() {
-      setLoadingQuests(true);
-      setLoadingMissions(true);
-      try {
-        const xpCol = collection(db, "users", uid, "xpLog");
-        const [
-          questsSnap,
-          completionsSnap,
-          missionsSnap,
-          missionCompletionsSnap,
-          reflCountSnap,
-          eventCountSnap,
-          profileSetupSnap,
-        ] = await Promise.all([
-          getDocs(collection(db, "quests")),
-          getDocs(collection(db, "users", uid, "questCompletions")),
-          getDocs(
-            query(
-              collection(db, "missions"),
-              where("chapterId", "==", chapterId),
-              where("status", "==", "active")
-            )
-          ),
-          getDocs(collection(db, "users", uid, "missionCompletions")),
-          getCountFromServer(collection(db, "users", uid, "reflections")),
-          getCountFromServer(query(xpCol, where("source", "==", "event_attendance"))),
-          getCountFromServer(query(xpCol, where("source", "==", "profile_setup"))),
-        ]);
-
-        setQuests(questsSnap.docs.map((d) => d.data() as Quest));
-
-        const cmap: Record<string, QuestCompletion> = {};
-        completionsSnap.docs.forEach((d) => { cmap[d.id] = d.data() as QuestCompletion; });
-        setCompletions(cmap);
-
-        setMissions(
-          missionsSnap.docs.map((d) => ({ ...d.data(), missionId: d.id } as Mission))
-        );
-
-        const mmap: Record<string, MissionCompletion> = {};
-        missionCompletionsSnap.docs.forEach((d) => { mmap[d.id] = d.data() as MissionCompletion; });
-        setMissionCompletions(mmap);
-
-        setReflectionCount(reflCountSnap.data().count);
-        setEventCount(eventCountSnap.data().count);
-        setProfileSetupCount(profileSetupSnap.data().count);
-      } finally {
-        setLoadingQuests(false);
-        setLoadingMissions(false);
-      }
+    if (data && !seeded.current) {
+      seeded.current = true;
+      setCompletions(data.completions);
+      setMissions(data.missions);
+      setMissionCompletions(data.missionCompletions);
     }
-
-    load();
-  }, [uid, chapterId]);
+  }, [data]);
 
   return {
-    quests,
+    quests: data?.quests ?? [],
     completions,
     setCompletions,
     missions,
     setMissions,
     missionCompletions,
     setMissionCompletions,
-    reflectionCount,
-    eventCount,
-    profileSetupCount,
-    loadingQuests,
-    loadingMissions,
+    reflectionCount: data?.reflectionCount ?? 0,
+    eventCount: data?.eventCount ?? 0,
+    profileSetupCount: data?.profileSetupCount ?? 0,
+    loadingQuests: isPending,
+    loadingMissions: isPending,
   };
 }

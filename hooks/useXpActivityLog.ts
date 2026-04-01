@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useQuery } from "@tanstack/react-query";
+import { fetchXpLog } from "@/lib/xpLog/queries";
+import { queryKeys } from "@/lib/queryKeys";
 import { XPLogEntry } from "@/types/xp";
 
 export interface UseXpActivityLogResult {
@@ -13,39 +13,19 @@ export interface UseXpActivityLogResult {
 
 /**
  * Loads the user's xpLog (newest first, limit 21) for activity feed and resume.
+ * Uses TanStack Query — subsequent visits return cached data instantly.
  */
 export function useXpActivityLog(uid: string): UseXpActivityLogResult {
-  const [rawEntries, setRawEntries] = useState<XPLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
+  const { data, isPending } = useQuery({
+    queryKey: queryKeys.xpLog(uid),
+    queryFn: () => fetchXpLog(uid),
+    enabled: !!uid,
+    staleTime: 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (!uid) {
-      setRawEntries([]);
-      setHasMore(false);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const xpCol = collection(db, "users", uid, "xpLog");
-        const xpSnap = await getDocs(query(xpCol, orderBy("createdAt", "desc"), limit(21)));
-        if (cancelled) return;
-        const logs = xpSnap.docs.map((d) => ({ ...d.data(), logId: d.id } as XPLogEntry));
-        setHasMore(logs.length === 21);
-        setRawEntries(logs);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [uid]);
-
-  return { rawEntries, loading, hasMore };
+  return {
+    rawEntries: data?.rawEntries ?? [],
+    loading: isPending,
+    hasMore: data?.hasMore ?? false,
+  };
 }
