@@ -13,6 +13,25 @@ body {
   font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #3f3f46;
+  border-radius: 99px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #52525b;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -21,6 +40,14 @@ body {
   [data-no-transition] * {
     transition: none !important;
     animation: none !important;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none !important;
   }
 
   .scrollbar-minimal {
