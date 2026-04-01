@@ -119,9 +119,11 @@ function NavContent({
       {/* Nav items */}
       <nav className="flex flex-col gap-0.5 flex-1 px-2">
         {NAV_ITEMS.map((item) => {
+          const href =
+            isCoordinator && item.href === "/quests" ? "/volunteers" : item.href;
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            pathname === href ||
+            (href !== "/dashboard" && pathname.startsWith(href));
 
           const label =
             isCoordinator && item.href === "/quests" ? "Volunteers" : item.label;
@@ -131,7 +133,7 @@ function NavContent({
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onClose}
               title={collapsed ? label : undefined}
               className={`flex items-center rounded-xl font-heading font-medium text-sm transition-colors duration-150 ${
