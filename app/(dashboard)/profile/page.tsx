@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
+import { TEAM_META } from "@/lib/seed/quests";
 import { useQuestData } from "@/hooks/useQuestData";
 import { useXpActivityLog } from "@/hooks/useXpActivityLog";
 import { useShareLinkCopy } from "@/hooks/useShareLinkCopy";
@@ -11,7 +12,7 @@ import { buildVolunteerBadgeList } from "@/lib/volunteerBadges";
 import { generateVolunteerProfileResume } from "@/lib/profileResume";
 import PageShell from "@/components/layout/PageShell";
 import { ProfileHeaderCard } from "@/components/profile/ProfileHeaderCard";
-import { ProfilePortfolioCard } from "@/components/profile/ProfilePortfolioCard";
+import { ProfileStatCards } from "@/components/profile/ProfileStatCards";
 import { ProfileMilestonesSection } from "@/components/profile/ProfileMilestonesSection";
 import { ProfileActivityFeed } from "@/components/profile/ProfileActivityFeed";
 import { ProfileBadgesGrid } from "@/components/profile/ProfileBadgesGrid";
@@ -144,6 +145,7 @@ export default function ProfilePage() {
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
   const teams = userData.teams ?? [];
   const milestoneTeam = activeTeam && teams.includes(activeTeam) ? activeTeam : teams[0] ?? "";
+  const primaryTeamColor = teams[0] && TEAM_META[teams[0]] ? TEAM_META[teams[0]].color : "#A855F7";
 
   return (
     <PageShell
@@ -153,39 +155,29 @@ export default function ProfilePage() {
       skeleton={<ProfileSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:items-start pb-10">
-          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-2">
-            <div className="order-1 lg:order-none animate-fade-up" style={{ animationDelay: "0ms" }}>
-              <ProfileHeaderCard
-                userData={userData}
-                avatarUrl={avatarUrl}
-                onGenerateResume={handleGenerateResume}
-                isGeneratingResume={isGeneratingResume}
-                onCopyShare={handleCopyShare}
-                copied={copied}
-              />
-            </div>
-            <div className="order-4 lg:order-none animate-fade-up" style={{ animationDelay: "180ms" }}>
-              <ProfileBadgesGrid badges={badges} />
-            </div>
-            <div className="order-5 lg:order-none animate-fade-up" style={{ animationDelay: "240ms" }}>
-              <ProfileActivityFeed entries={activityEntries} hasMore={activityHasMore} />
-            </div>
+        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:gap-6 items-stretch lg:items-start pb-10">
+
+          {/* Full-width header */}
+          <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "0ms" }}>
+            <ProfileHeaderCard
+              userData={userData}
+              avatarUrl={avatarUrl}
+              onGenerateResume={handleGenerateResume}
+              isGeneratingResume={isGeneratingResume}
+              onCopyShare={handleCopyShare}
+              copied={copied}
+            />
           </div>
-          <div className="contents lg:flex lg:flex-col gap-5 lg:col-span-1">
-            <div className="order-2 lg:order-none animate-fade-up" style={{ animationDelay: "60ms" }}>
-              <ProfilePortfolioCard
-                completions={completions}
-                allQuests={allQuests}
-                eventCount={eventCount}
-                reflectionCount={reflectionCount}
-                badgesEarned={badgesEarned}
-                onCopyShare={handleCopyShare}
-                copied={copied}
-              />
-            </div>
+
+          {/* Full-width stat cards */}
+          <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
+            <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} />
+          </div>
+
+          {/* Left 2/3: milestones + activity */}
+          <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2">
             {milestoneTeam ? (
-              <div className="order-3 lg:order-none animate-fade-up" style={{ animationDelay: "120ms" }}>
+              <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                 <ProfileMilestonesSection
                   userData={userData}
                   completions={completions}
@@ -195,7 +187,18 @@ export default function ProfilePage() {
                 />
               </div>
             ) : null}
+            <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
+              <ProfileActivityFeed entries={activityEntries} hasMore={activityHasMore} />
+            </div>
           </div>
+
+          {/* Right 1/3: badges */}
+          <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1">
+            <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
+              <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+            </div>
+          </div>
+
         </div>
       </div>
     </PageShell>
