@@ -1,15 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import {
-  getDocs,
-  collection,
-  query,
-  where,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { AvatarOptions, DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
@@ -19,16 +10,14 @@ import { useTeamQuestMetrics } from "@/hooks/useTeamQuestMetrics";
 import { QuestTierSection } from "@/components/quests/QuestTierSection";
 import { QuestFilterBar } from "@/components/quests/QuestFilterBar";
 import { TeamQuestProgress } from "@/components/quests/TeamQuestProgress";
-import { ApprovalsQueue } from "@/components/quests/ApprovalsQueue";
 import { PathJourneySidebar } from "@/components/quests/PathJourneySidebar";
 import { MissionsPanel } from "@/components/quests/missions/MissionsPanel";
 import { QuestsSkeleton } from "@/components/quests/QuestsSkeleton";
 import { QuestBadgesCard } from "@/components/quests/QuestBadgesCard";
 import PageShell from "@/components/layout/PageShell";
 import { TEAM_META } from "@/lib/seed/quests";
-import { QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
-import { MissionCompletion, MissionApprovalItem } from "@/types/mission";
-import { CoordinatorHubPage } from "@/components/quests/coordinator/CoordinatorHubPage";
+import { ApprovalsQueueItem } from "@/types/quest";
+import { MissionApprovalItem } from "@/types/mission";
 
 interface UserData {
   uid: string;
@@ -41,7 +30,6 @@ interface UserData {
 }
 
 function QuestsPageContent() {
-  const searchParams = useSearchParams();
   const { user: sessionUser } = useAuth();
   const { ready } = useRequireDashboardAuth();
 
@@ -74,132 +62,23 @@ function QuestsPageContent() {
     loadingMissions,
   } = useQuestData(firebaseUid, userData?.chapterId ?? "");
 
+  // Kept for useQuestActions type compatibility — volunteers don't populate these
   const [approvals, setApprovals] = useState<ApprovalsQueueItem[]>([]);
-  const [loadingApprovals, setLoadingApprovals] = useState(false);
-
   const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
-  const [loadingMissionApprovals, setLoadingMissionApprovals] = useState(false);
-  const [expandedMissionId, setExpandedMissionId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>("");
   const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
+  const [expandedMissionId, setExpandedMissionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userData?.teams?.length) return;
     setActiveTab((prev) => (prev ? prev : userData.teams[0]));
   }, [userData]);
 
-  useEffect(() => {
-    if (!userData) return;
-    const tab = searchParams.get("tab");
-    if (tab === "approvals" && userData.role === "coordinator") {
-      setActiveTab("approvals");
-    }
-  }, [searchParams, userData]);
-
-  const loadApprovals = useCallback(async () => {
-    if (!userData || userData.role !== "coordinator") return;
-    setLoadingApprovals(true);
-    try {
-      const usersSnap = await getDocs(
-        query(collection(db, "users"), where("chapterId", "==", userData.chapterId))
-      );
-      const items: ApprovalsQueueItem[] = [];
-      await Promise.all(
-        usersSnap.docs.map(async (userDoc) => {
-          const u = userDoc.data();
-          const completionsSnap = await getDocs(
-            query(
-              collection(db, "users", userDoc.id, "questCompletions"),
-              where("status", "==", "pending_approval")
-            )
-          );
-          completionsSnap.docs.forEach((cd) => {
-            const c = cd.data() as QuestCompletion;
-            const quest = quests.find((q) => q.questId === cd.id);
-            if (!quest) return;
-            items.push({
-              userId: userDoc.id,
-              username: u.username,
-              avatarOptions: u.avatarOptions,
-              teamId: quest.teamId,
-              questId: quest.questId,
-              questName: quest.name,
-              submissionNotes: c.submissionNotes,
-              evidenceUrl: c.evidenceUrl,
-              xpReward: quest.xpReward,
-              submittedAt: (cd.data() as Record<string, Timestamp>).updatedAt,
-            });
-          });
-        })
-      );
-      setApprovals(items);
-    } finally {
-      setLoadingApprovals(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userData]);
-
-  useEffect(() => {
-    if (ready && userData?.role === "coordinator") loadApprovals();
-  }, [ready, userData, loadApprovals]);
-
-  const loadMissionApprovals = useCallback(async () => {
-    if (!userData || userData.role !== "coordinator") return;
-    setLoadingMissionApprovals(true);
-    try {
-      const usersSnap = await getDocs(
-        query(collection(db, "users"), where("chapterId", "==", userData.chapterId))
-      );
-      const items: MissionApprovalItem[] = [];
-      await Promise.all(
-        usersSnap.docs.map(async (userDoc) => {
-          const u = userDoc.data();
-          const mCompletionsSnap = await getDocs(
-            query(
-              collection(db, "users", userDoc.id, "missionCompletions"),
-              where("status", "==", "submitted")
-            )
-          );
-          mCompletionsSnap.docs.forEach((cd) => {
-            const c = cd.data() as MissionCompletion;
-            const mission = missions.find((m) => m.missionId === cd.id);
-            if (!mission) return;
-            items.push({
-              userId: userDoc.id,
-              username: u.username,
-              avatarOptions: u.avatarOptions,
-              missionId: mission.missionId,
-              missionTitle: mission.title,
-              difficulty: mission.difficulty,
-              xpReward: mission.xpReward,
-              submissionNotes: c.submissionNotes,
-              evidenceUrl: c.evidenceUrl,
-              submittedAt: (cd.data() as Record<string, Timestamp>).updatedAt,
-            });
-          });
-        })
-      );
-      setMissionApprovals(items);
-    } finally {
-      setLoadingMissionApprovals(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userData, missions]);
-
-  useEffect(() => {
-    if (ready && userData?.role === "coordinator" && missions.length > 0) {
-      loadMissionApprovals();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, userData?.role, missions.length]);
-
   const {
     submitting,
     handleSelfMark,
     handleSubmitApproval,
-    handleApprove,
-    handleRevise,
     handleJoinMission,
     handleSubmitMission,
     handleApproveMission,
@@ -225,21 +104,6 @@ function QuestsPageContent() {
 
   const metrics = useTeamQuestMetrics(activeTab, quests, completions);
 
-  // ── Coordinator: render the dedicated hub instead of the volunteer quest map ──
-  // Must be after ALL hooks above to satisfy the Rules of Hooks.
-  if (userData?.role === "coordinator") {
-    return (
-      <CoordinatorHubPage
-        user={{
-          uid: userData.uid,
-          username: userData.username,
-          chapterId: userData.chapterId,
-          avatarOptions: userData.avatarOptions,
-        }}
-      />
-    );
-  }
-
   return (
     <PageShell
       title="Quests"
@@ -259,17 +123,6 @@ function QuestsPageContent() {
             }}
             approvalsCount={approvals.length}
           />
-
-          {!loadingCompletions && activeTab === "approvals" && (
-            <ApprovalsQueue
-              loading={loadingApprovals}
-              items={approvals}
-              onRefresh={loadApprovals}
-              onApprove={handleApprove}
-              onRevise={handleRevise}
-              submitting={submitting}
-            />
-          )}
 
           {!loadingCompletions && activeTab !== "approvals" && metrics && (
             <>
@@ -306,7 +159,7 @@ function QuestsPageContent() {
                   missionCompletions={missionCompletions}
                   missionApprovals={missionApprovals}
                   loadingMissions={loadingMissions}
-                  loadingMissionApprovals={loadingMissionApprovals}
+                  loadingMissionApprovals={false}
                   expandedMissionId={expandedMissionId}
                   setExpandedMissionId={setExpandedMissionId}
                   submitting={submitting}

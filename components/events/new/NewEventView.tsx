@@ -202,6 +202,15 @@ export function NewEventView({
     setFieldErrors({});
     setSubmitError("");
 
+    const handleSetSuccessInfo = (v: { eventId: string; eventName: string } | null) => {
+      if (!v) return;
+      if (window.innerWidth < 768) {
+        setSuccessInfo(v);
+      } else {
+        router.push(`/events/${v.eventId}`);
+      }
+    };
+
     await submitNewEvent({
       router,
       chapterId: userData.chapterId,
@@ -219,7 +228,7 @@ export function NewEventView({
       attendeeSlots,
       attendeeXP,
       roles,
-      setSuccessInfo,
+      setSuccessInfo: handleSetSuccessInfo,
       setSubmitError,
       setSubmitting,
     });

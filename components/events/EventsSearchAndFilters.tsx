@@ -45,7 +45,7 @@ export function EventsSearchAndFilters({
 }) {
   return (
     <div
-      className="relative animate-fade-up"
+      className="relative z-10 animate-fade-up"
       style={{ animationDelay: "0ms" }}
       ref={filterRef as LegacyRef<HTMLDivElement>}
     >

@@ -77,6 +77,15 @@ export function AddMissionView({ userData }: { userData: ChapterSessionUser }) {
     ) {
       return;
     }
+    const handleSetSuccessInfo = (v: { count: number; type: MissionAssignmentType } | null) => {
+      if (!v) return;
+      if (window.innerWidth < 768) {
+        setSuccessInfo(v);
+      } else {
+        router.push("/quests");
+      }
+    };
+
     await createMissionAndAssignments({
       router,
       userData,
@@ -93,7 +102,7 @@ export function AddMissionView({ userData }: { userData: ChapterSessionUser }) {
       submissionGuidance,
       setErrors,
       setSubmitting,
-      setSuccessInfo,
+      setSuccessInfo: handleSetSuccessInfo,
     });
   }
 

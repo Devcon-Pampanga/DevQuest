@@ -85,7 +85,7 @@ export function CoordinatorHubPage({ user }: CoordinatorHubPageProps) {
 
   return (
     <PageShell
-      title="Coordinator Hub"
+      title="Volunteers"
       avatarUrl={avatarUrl}
       loading={loading}
       skeleton={<CoordinatorHubSkeleton />}
