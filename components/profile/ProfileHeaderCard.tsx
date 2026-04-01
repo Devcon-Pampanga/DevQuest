@@ -73,23 +73,46 @@ export function ProfileHeaderCard({
       <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
 
       <div className="p-5 relative z-10 flex flex-col gap-4">
-        <div className="hidden sm:flex absolute top-5 right-5 z-20 gap-2">
+        {/* Top-right icon actions */}
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
           <button
             type="button"
+            title={copied ? "Copied!" : "Share profile"}
             onClick={onCopyShare}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
+            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors border border-white/20 backdrop-blur-sm"
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
-            <span key={copied ? "copied" : "share"}>
-              {copied ? "Copied" : "Share"}
-            </span>
           </button>
+          <button
+            type="button"
+            title={isGeneratingResume ? "Generating…" : "Generate resume"}
+            onClick={() => void onGenerateResume()}
+            disabled={isGeneratingResume}
+            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors border border-white/20 backdrop-blur-sm disabled:opacity-60 disabled:cursor-wait"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+          <Link
+            href="/settings"
+            title="Settings"
+            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors border border-white/20 backdrop-blur-sm"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </Link>
         </div>
 
-        <div className="flex items-center gap-4 min-w-0 sm:pr-[8rem]">
+        {/* Avatar + info */}
+        <div className="flex items-center gap-4 min-w-0 pr-32">
           <div
             className="relative shrink-0 size-[4.5rem] sm:size-20 rounded-xl overflow-hidden border-2"
             style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
@@ -101,11 +124,8 @@ export function ProfileHeaderCard({
             <h2 className="font-heading text-xl sm:text-2xl text-white leading-tight truncate">
               {profileDisplayName(userData.username)}
             </h2>
-            <span className="inline-flex w-fit text-[10px] font-sans uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-white leading-normal mt-0.5">
-              {userData.role === "coordinator" ? "Coordinator" : "Volunteer"}
-            </span>
             <p className="text-sm text-white/70 font-sans truncate leading-snug mt-0.5">
-              {userData.chapterId}
+              {userData.chapterId} &bull; {userData.role === "coordinator" ? "Coordinator" : "Volunteer"}
             </p>
             {email ? (
               <a
@@ -118,6 +138,7 @@ export function ProfileHeaderCard({
           </div>
         </div>
 
+        {/* XP / Level bar */}
         <div className="pt-4 border-t border-white/15">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -145,23 +166,7 @@ export function ProfileHeaderCard({
           </p>
         </div>
 
-        {teams.length > 0 ? (
-          <div className="pt-3 border-t border-white/15 flex flex-wrap gap-2">
-            {teams.filter((tid) => TEAM_META[tid]).map((tid) => {
-              const meta = TEAM_META[tid];
-              return (
-                <span
-                  key={tid}
-                  className="px-3 py-1.5 rounded-lg text-xs font-sans border"
-                  style={{ borderColor: `${meta.color}66`, backgroundColor: `${meta.color}22`, color: meta.color }}
-                >
-                  {meta.label}
-                </span>
-              );
-            })}
-          </div>
-        ) : null}
-
+        {/* Social links */}
         {hasSocialLinks ? (
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {userData.linkedinUrl ? (
@@ -188,46 +193,6 @@ export function ProfileHeaderCard({
             ) : null}
           </div>
         ) : null}
-
-        <div className="flex sm:hidden">
-          <button
-            type="button"
-            onClick={onCopyShare}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-heading uppercase tracking-wider transition-colors backdrop-blur-sm border border-white/20"
-          >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-            </svg>
-            <span key={copied ? "copied" : "share"}>{copied ? "Copied" : "Share Profile"}</span>
-          </button>
-        </div>
-
-        <div className="pt-3 border-t border-white/15 flex flex-col sm:flex-row gap-2">
-          <button
-            type="button"
-            onClick={() => void onGenerateResume()}
-            disabled={isGeneratingResume}
-            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-heading text-sm bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors disabled:opacity-60 disabled:cursor-wait backdrop-blur-sm"
-          >
-            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            {isGeneratingResume ? "Generating…" : "Generate Resume"}
-          </button>
-          <Link
-            href="/settings"
-            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-heading text-sm bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 transition-colors backdrop-blur-sm"
-          >
-            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-            Settings
-          </Link>
-        </div>
       </div>
     </div>
   );

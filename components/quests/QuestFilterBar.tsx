@@ -24,7 +24,7 @@ export function QuestFilterBar({
   if (tabs.length <= 1) return null;
 
   return (
-    <div className="lg:col-span-3 flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "0ms" }}>
+    <div className="lg:col-span-3 flex flex-wrap gap-2 overflow-x-auto scrollbar-none animate-fade-up" style={{ animationDelay: "0ms" }}>
       {tabs.map((tab) => {
         const color = tab.isApprovals
           ? "#A855F7"
