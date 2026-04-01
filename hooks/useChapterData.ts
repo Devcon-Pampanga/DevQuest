@@ -1,79 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  getCountFromServer,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchChapterData } from "@/lib/chapter/queries";
+import { queryKeys } from "@/lib/queryKeys";
 import type { ChapterVolunteer, ChapterEventDoc } from "@/types/chapter";
 
 export function useChapterData(viewingChapterId: string) {
+  const { data, isPending } = useQuery({
+    queryKey: queryKeys.chapter(viewingChapterId),
+    queryFn: () => fetchChapterData(viewingChapterId),
+    enabled: !!viewingChapterId,
+    staleTime: 60 * 1000,
+  });
+
+  // Volunteers are mutable — the chapter page optimistically removes entries
+  // via setVolunteers. Seed from cache on mount; ref gate prevents background
+  // refetches from overwriting in-session mutations.
   const [volunteers, setVolunteers] = useState<ChapterVolunteer[]>([]);
-  const [events, setEvents] = useState<ChapterEventDoc[]>([]);
-  const [regCounts, setRegCounts] = useState<Record<string, number>>({});
-  const [loadingChapter, setLoadingChapter] = useState(true);
-
+  const seeded = useRef(false);
   useEffect(() => {
-    if (!viewingChapterId) return;
-    let cancelled = false;
-
-    async function fetchChapterData() {
-      setLoadingChapter(true);
-      setVolunteers([]);
-      setEvents([]);
-      setRegCounts({});
-      try {
-        const [usersSnap, eventsSnap] = await Promise.all([
-          getDocs(query(collection(db, "users"), where("chapterId", "==", viewingChapterId))),
-          getDocs(query(collection(db, "events"), where("chapterId", "==", viewingChapterId))),
-        ]);
-
-        if (cancelled) return;
-
-        const vols = usersSnap.docs.map(
-          (d) => ({ ...d.data(), uid: d.id } as ChapterVolunteer)
-        );
-        setVolunteers(vols);
-
-        const evDocs = eventsSnap.docs
-          .map((d) => ({ ...d.data(), eventId: d.id } as ChapterEventDoc))
-          .sort((a, b) => b.date.toMillis() - a.date.toMillis());
-        setEvents(evDocs);
-
-        const recentSlice = evDocs.slice(0, 12);
-        const counts = await Promise.all(
-          recentSlice.map(async (ev) => {
-            const snap = await getCountFromServer(
-              collection(db, "events", ev.eventId, "registrations")
-            );
-            return [ev.eventId, snap.data().count] as [string, number];
-          })
-        );
-        if (!cancelled) {
-          setRegCounts(Object.fromEntries(counts));
-        }
-      } catch (err) {
-        console.error("Failed to fetch chapter data:", err);
-      } finally {
-        if (!cancelled) setLoadingChapter(false);
-      }
+    if (data && !seeded.current) {
+      seeded.current = true;
+      setVolunteers(data.volunteers);
     }
-
-    fetchChapterData();
-    return () => {
-      cancelled = true;
-    };
-  }, [viewingChapterId]);
+  }, [data]);
 
   return {
-    loadingChapter,
+    loadingChapter: isPending,
     volunteers,
     setVolunteers,
-    events,
-    regCounts,
+    events: (data?.events ?? []) as ChapterEventDoc[],
+    regCounts: data?.regCounts ?? {},
   };
 }
