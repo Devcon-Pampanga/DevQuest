@@ -446,92 +446,6 @@ function ReceiptViewer({ receipt, onClose, fromHistory }: ReceiptViewerProps) {
   );
 }
 
-// ─── XP → DevCoins Converter ─────────────────────────────────────────────────
-// 10 XP = 1 DevCoin
-
-interface XpConverterProps {
-  xpBalance: number;
-  onClose: () => void;
-  onConvert: (xpSpent: number, coins: number) => void;
-}
-
-function XpConverter({ xpBalance, onClose, onConvert }: XpConverterProps) {
-  const [xpInput, setXpInput] = useState("");
-  const xpValue = Math.min(parseInt(xpInput) || 0, xpBalance);
-  const coinsEarned = Math.floor(xpValue / 10);
-  const xpSpent = coinsEarned * 10;
-  const remainder = xpValue % 10;
-  const xpAfter = xpBalance - xpSpent;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-      <div className="relative w-full max-w-sm rounded-2xl border border-red-900/40 bg-[#13131f] p-6 shadow-2xl shadow-red-950/30">
-        <button onClick={onClose} className="absolute right-4 top-4 text-gray-500 hover:text-white transition">✕</button>
-
-        <h2 className="mb-1 text-lg text-white" style={{ fontFamily: "var(--font-heading), sans-serif", fontWeight: 700 }}>Convert XP to DevCoins</h2>
-        <p className="mb-1 text-xs text-gray-500">10 XP = 1 🪙 DevCoin</p>
-
-        {/* Current XP balance */}
-        <div className="mb-4 flex items-center justify-between rounded-xl bg-white/5 border border-white/8 px-4 py-2.5">
-          <span className="text-xs text-gray-400">Your XP Balance</span>
-          <span className="text-sm font-extrabold text-white">{xpBalance.toLocaleString()} <span className="text-gray-500 font-normal text-xs">XP</span></span>
-        </div>
-
-        {/* Input */}
-        <div className="mb-4">
-          <label className="block text-xs text-gray-400 mb-1.5">XP to convert</label>
-          <input
-            type="number"
-            min="0"
-            max={xpBalance}
-            placeholder={`Max: ${xpBalance.toLocaleString()} XP`}
-            value={xpInput}
-            onChange={(e) => {
-              const val = e.target.value.replace(/[^0-9]/g, "");
-              setXpInput(val === "" ? "" : String(Math.min(parseInt(val), xpBalance)));
-            }}
-            className="w-full rounded-xl border border-red-900/30 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-red-500 transition"
-          />
-        </div>
-
-        {/* Conversion preview */}
-        <div className="rounded-xl bg-[#0d0d14] border border-white/5 p-4 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-center flex-1">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">XP Spent</p>
-              <p className="text-xl font-extrabold text-white" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
-                {xpSpent.toLocaleString()}
-              </p>
-            </div>
-            <div className="px-3 text-gray-600 text-lg">→</div>
-            <div className="text-center flex-1">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">DevCoins</p>
-              <p className="text-xl font-extrabold text-yellow-400" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
-                {coinsEarned.toLocaleString()} 🪙
-              </p>
-            </div>
-          </div>
-          {/* XP after */}
-          <div className="flex items-center justify-between pt-2.5 border-t border-white/5">
-            <span className="text-[10px] text-gray-500">XP remaining after</span>
-            <span className="text-xs font-bold text-gray-300">{xpAfter.toLocaleString()} XP</span>
-          </div>
-          {remainder > 0 && xpValue > 0 && (
-            <p className="text-[10px] text-gray-600 mt-1 text-right">{remainder} XP won{"'"}t convert (needs 10)</p>
-          )}
-        </div>
-
-        <button
-          onClick={() => { if (coinsEarned > 0) { onConvert(xpSpent, coinsEarned); onClose(); } }}
-          disabled={coinsEarned === 0}
-          className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
-        >
-          {coinsEarned > 0 ? `Convert — get ${coinsEarned.toLocaleString()} 🪙` : "Enter XP amount"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Receipt History ──────────────────────────────────────────────────────────
 
@@ -740,9 +654,7 @@ function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardProps) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function MarketPage() {
-  const [xp, setXp] = useState(12400); // raw XP balance (not DevCoins)
-  const [devCoins, setDevCoins] = useState(0); // converted DevCoins
-  const [xpPop, setXpPop] = useState<{ amount: number; key: number } | null>(null);
+  const [devCoins, setDevCoins] = useState(1240);
   const [activeFilter, setActiveFilter] = useState<Category | "all">("all");
   const [redeemedIds, setRedeemedIds] = useState<Set<number>>(new Set());
   const [confirmModal, setConfirmModal] = useState<{ product: Product; color: string; size: Size | null; quantity: number } | null>(null);
@@ -750,32 +662,10 @@ export default function MarketPage() {
   const [receiptHistory, setReceiptHistory] = useState<RedemptionReceipt[]>([]);
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showConverter, setShowConverter] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const filtered = activeFilter === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === activeFilter);
   const kaching = useKaching();
-
-  useEffect(() => {
-    const id = "xp-pop-keyframe";
-    if (document.getElementById(id)) return;
-    const style = document.createElement("style");
-    style.id = id;
-    style.textContent = `
-      @keyframes xpPopUp {
-        0%   { opacity: 1; transform: translateX(-50%) translateY(0px);   }
-        30%  { opacity: 1; transform: translateX(-50%) translateY(10px);  }
-        70%  { opacity: 0.8; transform: translateX(-50%) translateY(22px); }
-        100% { opacity: 0;   transform: translateX(-50%) translateY(36px); }
-      }
-    `;
-    document.head.appendChild(style);
-  }, []);
-
-  const handleConvert = (xpSpent: number, coins: number) => {
-    setXp((prev) => prev - xpSpent);
-    setDevCoins((prev) => prev + coins);
-  };
 
   const handleRedeem = (product: Product, size: Size | null) => {
     setConfirmModal({ product, color: product.colors[0], size, quantity: 1 });
@@ -801,8 +691,6 @@ export default function MarketPage() {
     };
 
     kaching();
-    setXpPop({ amount: totalCost, key: Date.now() });
-    setTimeout(() => setXpPop(null), 3500);
     setDevCoins(remainingXP);
     setRedeemedIds((prev) => new Set(Array.from(prev).concat(newReceipt.product.id)));
     setReceipt(newReceipt);
@@ -819,31 +707,11 @@ export default function MarketPage() {
       <header className="flex items-center justify-between px-6 py-4 border-b border-[#ffffff0a]">
         <h1 className="text-xl tracking-tight text-white" style={{ fontFamily: "var(--font-heading), sans-serif", fontWeight: 700 }}>Market</h1>
         <div className="flex items-center gap-3">
-          {/* XP bar */}
-          <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-gray-300">
-            <span className="text-[10px] text-gray-500">XP</span>
-            {xp.toLocaleString()}
-          </div>
           {/* DevCoins bar */}
           <div className="relative flex items-center gap-1.5 rounded-full border border-yellow-600/40 bg-yellow-950/30 px-3 py-1.5 text-sm font-bold text-yellow-400">
             {devCoins.toLocaleString()}
             <span className="text-[10px]">🪙</span>
-            {xpPop && (
-              <span key={xpPop.key} className="pointer-events-none whitespace-nowrap text-sm font-bold text-red-400"
-                style={{ animation: "xpPopUp 3.5s ease-out forwards", position: "absolute", top: "100%", left: "50%", marginTop: "4px" }}>
-                -{xpPop.amount.toLocaleString()} 🪙
-              </span>
-            )}
           </div>
-          {/* XP Converter button */}
-          <button
-            onClick={() => setShowConverter(true)}
-            className="flex h-9 items-center gap-1.5 rounded-full border border-[#ffffff0f] bg-white/5 px-3 text-xs font-semibold text-gray-400 hover:text-white transition"
-            title="Convert XP to DevCoins"
-          >
-            <span className="text-sm">⚡</span>
-            <span className="hidden sm:inline">Convert</span>
-          </button>
           {/* Receipt history button */}
           <button
             onClick={() => setShowHistory(true)}
@@ -874,10 +742,6 @@ export default function MarketPage() {
               <span className="text-2xl text-yellow-400" style={{ fontFamily: "var(--font-heading), sans-serif", fontWeight: 700 }}>{devCoins.toLocaleString()}</span>
               <span className="text-xs text-yellow-500">🪙 DevCoins</span>
             </div>
-            <div className="flex items-baseline gap-1.5 justify-end">
-              <span className="text-sm text-gray-400" style={{ fontFamily: "var(--font-heading), sans-serif", fontWeight: 600 }}>{xp.toLocaleString()}</span>
-              <span className="text-xs text-gray-600">XP</span>
-            </div>
           </div>
         </div>
         <div className="flex items-center justify-between mb-6">
@@ -907,11 +771,6 @@ export default function MarketPage() {
       )}
 
       {/* Receipt history */}
-      {/* XP Converter */}
-      {showConverter && (
-        <XpConverter xpBalance={xp} onClose={() => setShowConverter(false)} onConvert={handleConvert} />
-      )}
-
       {/* Receipt history — hidden while viewer is open */}
       {showHistory && !showReceiptViewer && (
         <ReceiptHistory
