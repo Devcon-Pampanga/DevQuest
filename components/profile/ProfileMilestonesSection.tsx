@@ -151,7 +151,7 @@ export function ProfileMilestonesSection({
   return (
     <div className="rounded-2xl bg-surface border border-border flex flex-col overflow-hidden">
       <div className="px-6 pt-5 pb-0">
-        <h3 className="font-heading text-lg text-text-primary mb-4">Team milestones</h3>
+        <h3 className="font-heading text-lg text-text-primary mb-4">Tier progression</h3>
       </div>
 
       {/* Tab navigation */}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { getXpLevelProgress, XP_LEVEL_STEP } from "@/lib/xpLevel";
 import { TEAM_META } from "@/lib/seed/quests";
 import { profileDisplayName } from "@/lib/profileDisplayName";
@@ -60,6 +61,29 @@ export function ProfileHeaderCard({
   const primaryTeamId = teams[0] ?? null;
   const teamColor = primaryTeamId && TEAM_META[primaryTeamId] ? TEAM_META[primaryTeamId].color : "#A855F7";
   const xpProgress = getXpLevelProgress(userData.xp ?? 0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!mobileMenuRef.current?.contains(event.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   return (
     <div
@@ -74,7 +98,7 @@ export function ProfileHeaderCard({
 
       <div className="p-5 relative z-10 flex flex-col gap-4">
         {/* Top-right icon actions */}
-        <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <div className="absolute top-4 right-4 z-20 hidden sm:flex gap-2">
           <button
             type="button"
             title={copied ? "Copied!" : "Share profile"}
@@ -111,8 +135,78 @@ export function ProfileHeaderCard({
           </Link>
         </div>
 
+        <div ref={mobileMenuRef} className="absolute top-4 right-4 z-20 sm:hidden">
+          <button
+            type="button"
+            title="More actions"
+            aria-label="More actions"
+            aria-haspopup="menu"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors border border-white/20 backdrop-blur-sm"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <circle cx="12" cy="5" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="12" cy="19" r="2" />
+            </svg>
+          </button>
+
+          {mobileMenuOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-48 rounded-2xl border border-white/15 bg-[#140f20]/95 p-2 shadow-2xl backdrop-blur-xl"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onCopyShare();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-heading text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+                {copied ? "Copied!" : "Share profile"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  void onGenerateResume();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={isGeneratingResume}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-heading text-white/85 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {isGeneratingResume ? "Generating..." : "Generate resume"}
+              </button>
+              <Link
+                href="/settings"
+                role="menuitem"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-heading text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                Settings
+              </Link>
+            </div>
+          ) : null}
+        </div>
+
         {/* Avatar + info */}
-        <div className="flex items-center gap-4 min-w-0 pr-32">
+        <div className="flex items-center gap-4 min-w-0 pr-16 sm:pr-32">
           <div
             className="relative shrink-0 size-[4.5rem] sm:size-20 rounded-xl overflow-hidden border-2"
             style={{ backgroundColor: "#100c1a", borderColor: teamColor }}
