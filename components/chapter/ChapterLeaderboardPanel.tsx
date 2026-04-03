@@ -10,12 +10,27 @@ export function ChapterLeaderboardPanel({
   viewingChapterId,
   leaderboard,
   currentUserId,
+  displayLimit = 10,
+  showCurrentUserOutsideLimit = false,
 }: {
   viewingChapterId: string;
   leaderboard: ChapterVolunteer[];
   currentUserId?: string;
+  displayLimit?: number;
+  showCurrentUserOutsideLimit?: boolean;
 }) {
   const [leaderboardTab, setLeaderboardTab] = useState<"chapter" | "all-time">("chapter");
+  const visibleLeaderboard = leaderboard.slice(0, displayLimit);
+  const currentUserRank =
+    currentUserId ? leaderboard.findIndex((v) => v.uid === currentUserId) + 1 : 0;
+  const currentUserOutsideLimit =
+    showCurrentUserOutsideLimit &&
+    currentUserRank > displayLimit &&
+    currentUserId !== undefined;
+  const currentUserVolunteer = currentUserOutsideLimit
+    ? leaderboard[currentUserRank - 1]
+    : undefined;
+  const remainingCount = Math.max(leaderboard.length - displayLimit, 0);
 
   return (
     <div
@@ -66,12 +81,16 @@ export function ChapterLeaderboardPanel({
             No volunteers yet.
           </div>
         ) : (
-          leaderboard.slice(0, 10).map((v, i) => (
+          visibleLeaderboard.map((v, i) => (
             <div
               key={v.uid}
-              className={
-                i >= 8 ? "hidden lg:block" : i >= 5 ? "hidden sm:block" : undefined
-              }
+              className={displayLimit === 10
+                ? i >= 8
+                  ? "hidden lg:block"
+                  : i >= 5
+                    ? "hidden sm:block"
+                    : undefined
+                : undefined}
             >
               <LeaderboardItem
                 volunteer={v}
@@ -84,7 +103,25 @@ export function ChapterLeaderboardPanel({
         )}
       </div>
 
-      {leaderboard.length > 8 && (
+      {currentUserOutsideLimit && currentUserVolunteer ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 pt-1">
+            <div className="flex-1 h-px bg-border/70" />
+            <span className="text-[10px] font-heading uppercase tracking-[0.24em] text-text-muted">
+              Your Rank
+            </span>
+            <div className="flex-1 h-px bg-border/70" />
+          </div>
+          <LeaderboardItem
+            volunteer={currentUserVolunteer}
+            rank={currentUserRank}
+            isCurrentUser
+            index={displayLimit}
+          />
+        </div>
+      ) : null}
+
+      {displayLimit === 10 && leaderboard.length > 8 && (
         <Link
           href={`/leaderboard?chapter=${encodeURIComponent(viewingChapterId)}`}
           className="hidden sm:block lg:hidden text-center text-xs text-text-muted hover:text-accent-highlight transition-colors"
@@ -92,7 +129,7 @@ export function ChapterLeaderboardPanel({
           +{leaderboard.length - 8} more volunteers
         </Link>
       )}
-      {leaderboard.length > 5 && (
+      {displayLimit === 10 && leaderboard.length > 5 && (
         <Link
           href={`/leaderboard?chapter=${encodeURIComponent(viewingChapterId)}`}
           className="sm:hidden text-center text-xs text-text-muted hover:text-accent-highlight transition-colors"
@@ -100,7 +137,7 @@ export function ChapterLeaderboardPanel({
           +{leaderboard.length - 5} more volunteers
         </Link>
       )}
-      {leaderboard.length > 10 && (
+      {displayLimit === 10 && leaderboard.length > 10 && (
         <Link
           href={`/leaderboard?chapter=${encodeURIComponent(viewingChapterId)}`}
           className="hidden lg:block text-center text-xs text-text-muted hover:text-accent-highlight transition-colors"
@@ -108,6 +145,14 @@ export function ChapterLeaderboardPanel({
           +{leaderboard.length - 10} more volunteers
         </Link>
       )}
+      {displayLimit !== 10 && remainingCount > 0 ? (
+        <Link
+          href={`/leaderboard?chapter=${encodeURIComponent(viewingChapterId)}`}
+          className="text-center text-xs text-text-muted hover:text-accent-highlight transition-colors"
+        >
+          +{remainingCount} more volunteers
+        </Link>
+      ) : null}
 
       <Link
         href={`/leaderboard?chapter=${encodeURIComponent(viewingChapterId)}`}
