@@ -197,7 +197,7 @@ export default function SettingsPage() {
 
   if (authLoading || !userData) {
     return (
-      <PageShell title="Settings" backHref="/profile" loading skeleton={<SettingsSkeleton />}>
+      <PageShell title="Settings" backHref="/dashboard" loading skeleton={<SettingsSkeleton />}>
         {null}
       </PageShell>
     );
@@ -210,7 +210,7 @@ export default function SettingsPage() {
     <PageShell
       title="Settings"
       avatarUrl={avatarUrl}
-      backHref="/profile"
+      backHref="/dashboard"
       loading={false}
       skeleton={<SettingsSkeleton />}
     >

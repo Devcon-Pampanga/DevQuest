@@ -95,7 +95,7 @@ export default function PageShell({
         <div className="flex items-center gap-3">
           {actions}
           {avatarUrl ? (
-            <Link href="/profile" className="shrink-0">
+            <Link href="/dashboard" className="shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={avatarUrl}

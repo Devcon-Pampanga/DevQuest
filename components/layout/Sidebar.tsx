@@ -5,20 +5,19 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
-  SquaresFour,
+  Star,
   Sword,
   CalendarBlank,
   MapPin,
   ShoppingBag,
-  User,
   Users,
 } from "@phosphor-icons/react";
 
 const NAV_ITEMS = [
   {
-    label: "Dashboard",
+    label: "Profile",
     href: "/dashboard",
-    icon: <SquaresFour size={20} weight="bold" />,
+    icon: <Star size={20} weight="fill" />,
   },
   {
     label: "Quests",
@@ -39,11 +38,6 @@ const NAV_ITEMS = [
     label: "Market",
     href: "/market",
     icon: <ShoppingBag size={20} weight="bold" />,
-  },
-  {
-    label: "Profile",
-    href: "/profile",
-    icon: <User size={20} weight="bold" />,
   },
 ];
 
