@@ -3,7 +3,7 @@
 interface CoordinatorStatsRowProps {
   volunteerCount: number;
   pendingApprovalsCount: number;
-  activeMissionCount: number;
+  activeSubquestCount: number;
 }
 
 interface StatCardProps {
@@ -55,7 +55,7 @@ function StatCard({ label, value, icon, accent = false, delay = "0ms" }: StatCar
 export function CoordinatorStatsRow({
   volunteerCount,
   pendingApprovalsCount,
-  activeMissionCount,
+  activeSubquestCount,
 }: CoordinatorStatsRowProps) {
   return (
     <div className="lg:col-span-3 flex flex-col sm:flex-row gap-3">
@@ -85,8 +85,8 @@ export function CoordinatorStatsRow({
         }
       />
       <StatCard
-        label="Active Missions"
-        value={activeMissionCount}
+        label="Active Subquests"
+        value={activeSubquestCount}
         delay="120ms"
         icon={
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">

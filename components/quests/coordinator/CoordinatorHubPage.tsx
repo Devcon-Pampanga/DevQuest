@@ -78,7 +78,7 @@ export function CoordinatorHubPage({ user }: CoordinatorHubPageProps) {
   const { volunteers, missions, pendingApprovalsCount, loading, refresh } =
     useCoordinatorHubData(user.chapterId);
 
-  const activeMissionCount = useMemo(
+  const activeSubquestCount = useMemo(
     () => missions.filter((m) => m.status === "active").length,
     [missions]
   );
@@ -97,7 +97,7 @@ export function CoordinatorHubPage({ user }: CoordinatorHubPageProps) {
           <CoordinatorStatsRow
             volunteerCount={volunteers.length}
             pendingApprovalsCount={pendingApprovalsCount}
-            activeMissionCount={activeMissionCount}
+            activeSubquestCount={activeSubquestCount}
           />
 
           {/* ── Left: Volunteers panel (2/3 width) ──────────────────────────── */}

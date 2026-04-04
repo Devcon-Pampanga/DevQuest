@@ -9,6 +9,7 @@ export interface ProfilePageUser {
   chapterId: string;
   teams: string[];
   xp: number;
+  devCoins?: number;
   contactNumber: string;
   linkedinUrl?: string;
   githubUrl?: string;

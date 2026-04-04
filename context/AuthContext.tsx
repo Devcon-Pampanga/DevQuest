@@ -34,12 +34,14 @@ function mapUserDoc(uid: string, data: Record<string, unknown>): SessionUser {
     chapterId: String(data.chapterId ?? ""),
     teams: Array.isArray(data.teams) ? (data.teams as string[]) : [],
     xp: typeof data.xp === "number" ? data.xp : 0,
+    devCoins: typeof data.devCoins === "number" ? data.devCoins : 0,
     onboardingComplete: data.onboardingComplete === true,
     linkedinUrl: data.linkedinUrl as string | undefined,
     githubUrl: data.githubUrl as string | undefined,
     resumeUrl: data.resumeUrl as string | undefined,
     createdAt: data.createdAt as Timestamp | undefined,
     avatarOptions: data.avatarOptions as SessionUser["avatarOptions"],
+    redeemedItems: (data.redeemedItems ?? undefined) as SessionUser["redeemedItems"],
   };
 }
 

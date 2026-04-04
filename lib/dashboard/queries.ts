@@ -124,7 +124,8 @@ export async function fetchDashboardData(
     query(
       collection(db, "users"),
       where("chapterId", "==", chapterId),
-      where("onboardingComplete", "==", true)
+      where("onboardingComplete", "==", true),
+      where("role", "==", "volunteer")
     )
   );
   const sorted = leaderSnap.docs

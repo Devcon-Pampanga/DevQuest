@@ -219,7 +219,10 @@ export function ProfileHeaderCard({
               {profileDisplayName(userData.username)}
             </h2>
             <p className="text-sm text-white/70 font-sans truncate leading-snug mt-0.5">
-              {userData.chapterId} &bull; {userData.role === "coordinator" ? "Coordinator" : "Volunteer"}
+              <span className="hidden sm:inline">{userData.chapterId}</span>
+              <span className="sm:hidden">{(userData.chapterId ?? "").replace(/^DEVCON Kids\s*/i, "")}</span>
+              {" "}&bull;{" "}
+              {userData.role === "coordinator" ? "Coordinator" : "Volunteer"}
             </p>
             {email ? (
               <a
@@ -260,33 +263,43 @@ export function ProfileHeaderCard({
           </p>
         </div>
 
-        {/* Social links */}
-        {hasSocialLinks ? (
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
-            {userData.linkedinUrl ? (
-              <a
-                href={userData.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-sans text-white/55 hover:text-white transition-colors min-w-0"
-              >
-                <HeaderLinkedInIcon />
-                <span className="truncate">{userData.linkedinUrl.replace(/^https?:\/\//, "")}</span>
-              </a>
-            ) : null}
-            {userData.githubUrl ? (
-              <a
-                href={userData.githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-sans text-white/55 hover:text-white transition-colors min-w-0"
-              >
-                <HeaderGitHubIcon />
-                <span className="truncate">{userData.githubUrl.replace(/^https?:\/\//, "")}</span>
-              </a>
-            ) : null}
+        {/* Footer row: DevCoins + social links */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/devcoin.png" alt="" width={14} height={14} className="object-contain" />
+            <span className="text-xs font-sans text-white/55 tabular-nums">
+              {(userData.devCoins ?? 0).toLocaleString()}
+            </span>
+            <span className="text-xs font-sans text-white/35">DevCoins</span>
           </div>
-        ) : null}
+          {hasSocialLinks ? (
+            <div className="flex flex-wrap justify-end gap-x-4 gap-y-2 min-w-0">
+              {userData.linkedinUrl ? (
+                <a
+                  href={userData.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-sans text-white/55 hover:text-white transition-colors min-w-0"
+                >
+                  <HeaderLinkedInIcon />
+                  <span className="truncate">{userData.linkedinUrl.replace(/^https?:\/\//, "")}</span>
+                </a>
+              ) : null}
+              {userData.githubUrl ? (
+                <a
+                  href={userData.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-sans text-white/55 hover:text-white transition-colors min-w-0"
+                >
+                  <HeaderGitHubIcon />
+                  <span className="truncate">{userData.githubUrl.replace(/^https?:\/\//, "")}</span>
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

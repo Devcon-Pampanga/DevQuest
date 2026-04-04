@@ -3,14 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import {
   Star,
   Sword,
   CalendarBlank,
   MapPin,
   ShoppingBag,
-  Users,
 } from "@phosphor-icons/react";
 
 const NAV_ITEMS = [
@@ -70,8 +68,6 @@ interface SidebarProps {
   onToggleCollapsed: () => void;
 }
 
-const ICON_VOLUNTEERS = <Users size={20} weight="bold" />;
-
 function NavContent({
   collapsed,
   onClose,
@@ -84,9 +80,6 @@ function NavContent({
   showToggle: boolean;
 }) {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const isCoordinator = user?.role === "coordinator";
-
   return (
     <div className="flex flex-col h-full">
       {/* Logo row */}
@@ -113,16 +106,13 @@ function NavContent({
       {/* Nav items */}
       <nav className="flex flex-col gap-0.5 flex-1 px-2">
         {NAV_ITEMS.map((item) => {
-          const href =
-            isCoordinator && item.href === "/quests" ? "/volunteers" : item.href;
+          const href = item.href;
           const isActive =
             pathname === href ||
             (href !== "/dashboard" && pathname.startsWith(href));
 
-          const label =
-            isCoordinator && item.href === "/quests" ? "Volunteers" : item.label;
-          const icon =
-            isCoordinator && item.href === "/quests" ? ICON_VOLUNTEERS : item.icon;
+          const label = item.label;
+          const icon = item.icon;
 
           return (
             <Link

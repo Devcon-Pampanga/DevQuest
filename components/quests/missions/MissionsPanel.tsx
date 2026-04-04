@@ -66,14 +66,14 @@ export function MissionsPanel({
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-2 mb-4">
           <div className="flex-1 min-w-0">
-            <p className="font-heading text-base font-bold text-text-primary leading-tight">MISSIONS</p>
+            <p className="font-heading text-base font-bold text-text-primary leading-tight">SUBQUESTS</p>
             <p className="text-xs text-text-muted mt-0.5">Coordinator-assigned tasks · Bonus XP</p>
           </div>
           {isCoordinator && (
             <Link
-              href="/missions/new"
+              href="/subquests/new"
               className="w-6 h-6 rounded-md flex items-center justify-center text-text-muted hover:text-white hover:bg-accent-primary transition-colors"
-              title="Create Mission"
+              title="Create Subquest"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -95,9 +95,9 @@ export function MissionsPanel({
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </div>
-            <p className="text-text-secondary text-xs font-heading">No active missions</p>
+            <p className="text-text-secondary text-xs font-heading">No active subquests</p>
             {isCoordinator && (
-              <Link href="/missions/new" className="text-accent-highlight text-xs hover:underline mt-1 inline-block">
+              <Link href="/subquests/new" className="text-accent-highlight text-xs hover:underline mt-1 inline-block">
                 Create one →
               </Link>
             )}

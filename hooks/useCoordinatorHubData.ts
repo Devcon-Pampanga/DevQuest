@@ -9,7 +9,14 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { ChapterVolunteer } from "@/types/chapter";
-import type { Mission } from "@/types/mission";
+import {
+  SUBQUESTS_COLLECTION,
+  SUBQUEST_COMPLETIONS_COLLECTION,
+  getMissionIdFromData,
+  getMissionTitleFromData,
+  type Mission,
+  type MissionApprovalItem,
+} from "@/types/mission";
 import { TIER_ORDER } from "@/lib/seed/quests";
 
 export type VolunteerTier = "team_member" | "associate" | "specialist" | "lead";
@@ -22,6 +29,7 @@ export interface VolunteerWithTier extends ChapterVolunteer {
 export interface CoordinatorHubData {
   volunteers: VolunteerWithTier[];
   missions: Mission[];
+  missionApprovals: MissionApprovalItem[];
   pendingApprovalsCount: number;
   loading: boolean;
   refresh: () => void;
@@ -36,6 +44,7 @@ export interface CoordinatorHubData {
 export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
   const [volunteers, setVolunteers] = useState<VolunteerWithTier[]>([]);
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -90,14 +99,21 @@ export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
 
       // ── 3. Load all chapter missions (both active + closed) ──────────────────
       const missionsSnap = await getDocs(
-        query(collection(db, "missions"), where("chapterId", "==", chapterId))
+        query(collection(db, SUBQUESTS_COLLECTION), where("chapterId", "==", chapterId))
       );
       setMissions(
-        missionsSnap.docs.map((d) => ({ ...d.data(), missionId: d.id } as Mission))
+        missionsSnap.docs.map(
+          (d) =>
+            ({
+              ...d.data(),
+              missionId: getMissionIdFromData(d.data() as Record<string, unknown>, d.id),
+            } as Mission)
+        )
       );
 
       // ── 4. Count pending approvals (quest + mission) ─────────────────────────
       let approvalCount = 0;
+      const nextMissionApprovals: MissionApprovalItem[] = [];
       await Promise.all(
         volunteerDocs.map(async (vDoc) => {
           const [questPending, missionPending] = await Promise.all([
@@ -109,15 +125,33 @@ export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
             ),
             getDocs(
               query(
-                collection(db, "users", vDoc.id, "missionCompletions"),
+                collection(db, "users", vDoc.id, SUBQUEST_COMPLETIONS_COLLECTION),
                 where("status", "==", "submitted")
               )
             ),
           ]);
           approvalCount += questPending.size + missionPending.size;
+
+          const volunteerData = vDoc.data();
+          missionPending.docs.forEach((pendingDoc) => {
+            const pendingData = pendingDoc.data() as Record<string, unknown>;
+            nextMissionApprovals.push({
+              userId: vDoc.id,
+              username: (volunteerData.username as string) ?? vDoc.id,
+              avatarOptions: volunteerData.avatarOptions as MissionApprovalItem["avatarOptions"],
+              missionId: getMissionIdFromData(pendingData, pendingDoc.id),
+              missionTitle: getMissionTitleFromData(pendingData),
+              difficulty: (pendingData.difficulty as MissionApprovalItem["difficulty"]) ?? "medium",
+              xpReward: (pendingData.xpGranted as number) ?? 0,
+              submissionNotes: pendingData.submissionNotes as string | undefined,
+              evidenceUrl: pendingData.evidenceUrl as string | undefined,
+              submittedAt: pendingData.updatedAt as MissionApprovalItem["submittedAt"],
+            });
+          });
         })
       );
       setPendingApprovalsCount(approvalCount);
+      setMissionApprovals(nextMissionApprovals);
     } finally {
       setLoading(false);
     }
@@ -127,5 +161,12 @@ export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
     load();
   }, [load]);
 
-  return { volunteers, missions, pendingApprovalsCount, loading, refresh: load };
+  return {
+    volunteers,
+    missions,
+    missionApprovals,
+    pendingApprovalsCount,
+    loading,
+    refresh: load,
+  };
 }
