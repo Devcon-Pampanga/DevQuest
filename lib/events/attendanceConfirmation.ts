@@ -31,6 +31,15 @@ export async function confirmVolunteerAttendance(
   const deadline = Timestamp.fromDate(new Date(Date.now() + 72 * 60 * 60 * 1000));
   const batch = writeBatch(firestore);
 
+  console.log("[Attendance] Confirm start", {
+    eventId,
+    coordinatorUid,
+    userId: reg.userId,
+    role: reg.role,
+    roleXP: reg.roleXP,
+    eventName: event?.name ?? null,
+  });
+
   batch.update(doc(firestore, "events", eventId, "registrations", reg.userId), {
     attended: true,
     confirmedAt: serverTimestamp(),
@@ -47,6 +56,12 @@ export async function confirmVolunteerAttendance(
     description: `Attended ${event?.name ?? "event"} as ${reg.role}`,
     batch,
   });
+  console.log("[Attendance] Reward queued", {
+    userId: reg.userId,
+    xp: reg.roleXP,
+    source: "event_attendance",
+    sourceId: eventId,
+  });
   const notificationRef = doc(collection(firestore, "users", reg.userId, "notifications"));
   batch.set(notificationRef, {
     type: "attendance_confirmed",
@@ -55,7 +70,24 @@ export async function confirmVolunteerAttendance(
     relatedId: eventId,
     createdAt: serverTimestamp(),
   });
-  await batch.commit();
+  console.log("[Attendance] Committing attendance batch", {
+    eventId,
+    userId: reg.userId,
+  });
+  try {
+    await batch.commit();
+    console.log("[Attendance] Attendance batch committed", {
+      eventId,
+      userId: reg.userId,
+    });
+  } catch (error) {
+    console.error("[Attendance] Attendance batch commit failed", {
+      eventId,
+      userId: reg.userId,
+      error,
+    });
+    throw error;
+  }
 
   try {
     await completeQrScanQuestsForAttendance(
@@ -65,6 +97,10 @@ export async function confirmVolunteerAttendance(
       event,
       eventQuests
     );
+    console.log("[Attendance] QR scan quest completion finished", {
+      eventId,
+      userId: reg.userId,
+    });
   } catch (questErr) {
     console.error("Quest auto-completion failed:", questErr);
   }
