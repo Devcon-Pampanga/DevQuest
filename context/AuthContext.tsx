@@ -41,6 +41,7 @@ function mapUserDoc(uid: string, data: Record<string, unknown>): SessionUser {
     resumeUrl: data.resumeUrl as string | undefined,
     createdAt: data.createdAt as Timestamp | undefined,
     avatarOptions: data.avatarOptions as SessionUser["avatarOptions"],
+    redeemedItems: (data.redeemedItems ?? undefined) as SessionUser["redeemedItems"],
   };
 }
 

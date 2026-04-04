@@ -21,4 +21,5 @@ export interface SessionUser {
   resumeUrl?: string;
   createdAt?: Timestamp;
   avatarOptions?: AvatarOptions;
+  redeemedItems?: Record<string, boolean>;
 }
