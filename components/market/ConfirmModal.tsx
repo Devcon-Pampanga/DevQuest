@@ -9,7 +9,9 @@ interface ConfirmModalProps {
   quantity: number;
   devCoins: number;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 export function ConfirmModal({
@@ -19,13 +21,15 @@ export function ConfirmModal({
   devCoins,
   onClose,
   onConfirm,
+  isLoading = false,
+  error = null,
 }: ConfirmModalProps) {
   const totalCost = product.price * quantity;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-elevated p-6 shadow-2xl shadow-black/40">
-        <button type="button" onClick={onClose} className="absolute right-4 top-4 text-text-muted transition hover:text-text-primary">
+        <button type="button" onClick={onClose} disabled={isLoading} className="absolute right-4 top-4 text-text-muted transition hover:text-text-primary disabled:pointer-events-none">
           x
         </button>
 
@@ -57,7 +61,7 @@ export function ConfirmModal({
               <div className="flex items-center gap-2">
                 <span className="text-xs font-heading font-medium text-text-primary">x{quantity}</span>
                 {quantity > 1 ? (
-                  <span className="flex items-center gap-1 text-[10px] text-text-muted">
+                  <span className="flex items-center gap-1 text-[10px] leading-none text-text-muted">
                     {product.price.toLocaleString()} <DevCoin size={8} /> each
                   </span>
                 ) : null}
@@ -65,7 +69,7 @@ export function ConfirmModal({
             </div>
             <div className="flex items-center justify-between bg-base/60 px-4 py-3">
               <span className="text-xs font-semibold text-text-secondary">Total</span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 leading-none">
                 <span className="text-lg font-heading font-bold text-text-primary">{totalCost.toLocaleString()}</span>
                 <DevCoin size={8} />
               </div>
@@ -75,13 +79,13 @@ export function ConfirmModal({
 
         <div className="mb-3 flex justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm">
           <span className="text-text-secondary">Your balance</span>
-          <span className="flex items-center gap-1 font-semibold text-text-primary">
+          <span className="flex items-center gap-1 font-semibold leading-none text-text-primary">
             {devCoins.toLocaleString()} <DevCoin size={8} />
           </span>
         </div>
         <div className="mb-5 flex justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm">
           <span className="text-text-secondary">After redemption</span>
-          <span className={`flex items-center gap-1 font-semibold ${devCoins - totalCost >= 0 ? "text-accent-highlight" : "text-rose-400"}`}>
+          <span className={`flex items-center gap-1 font-semibold leading-none ${devCoins - totalCost >= 0 ? "text-accent-highlight" : "text-rose-400"}`}>
             {(devCoins - totalCost).toLocaleString()} <DevCoin size={8} />
           </span>
         </div>
@@ -92,13 +96,19 @@ export function ConfirmModal({
           </p>
         ) : null}
 
+        {error ? (
+          <p className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm text-rose-300">
+            {error}
+          </p>
+        ) : null}
+
         <button
           type="button"
           onClick={onConfirm}
-          disabled={devCoins < totalCost}
+          disabled={devCoins < totalCost || isLoading}
           className="w-full rounded-xl bg-accent-highlight py-3 text-sm font-heading font-medium text-white transition hover:bg-accent-primary disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
         >
-          Confirm and Redeem
+          {isLoading ? "Processing..." : "Confirm and Redeem"}
         </button>
       </div>
     </div>

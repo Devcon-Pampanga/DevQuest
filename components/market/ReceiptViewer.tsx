@@ -97,7 +97,7 @@ export function ReceiptViewer({ receipt, onClose, fromHistory }: ReceiptViewerPr
               {receipt.product.image}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-heading font-bold leading-tight text-text-primary">
+              <p className="text-sm font-heading font-bold leading-tight text-text-primary">
                 {receipt.product.name}
               </p>
               <div className="mt-0.5 flex flex-wrap items-center gap-2">
@@ -110,7 +110,7 @@ export function ReceiptViewer({ receipt, onClose, fromHistory }: ReceiptViewerPr
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <span className="text-base font-heading font-bold text-accent-highlight">
+              <span className="text-base font-heading font-bold" style={{ color: "#A855F7" }}>
                 {receipt.totalCost}
               </span>
               <span className="ml-1 inline-flex"><DevCoin size={8} /></span>
@@ -119,7 +119,7 @@ export function ReceiptViewer({ receipt, onClose, fromHistory }: ReceiptViewerPr
 
           <div className="flex items-center justify-between px-4 py-3">
             <p className="text-[10px] text-text-secondary">Remaining DevCoins</p>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 leading-none">
               <span className="text-sm font-heading font-bold text-accent-highlight">{receipt.remainingDevCoins.toLocaleString()}</span>
               <DevCoin size={8} />
             </div>

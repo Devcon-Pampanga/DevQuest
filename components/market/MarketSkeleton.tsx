@@ -4,19 +4,15 @@ import { SkeletonBlock, SkeletonLine } from "@/components/layout/PageShell";
 
 function MarketCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-surface/80 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <SkeletonBlock className="h-14 w-14 rounded-2xl" />
-        <SkeletonLine className="h-5 w-16" />
-      </div>
-      <div className="mt-5 space-y-3">
-        <SkeletonLine className="h-5 w-2/3" />
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <SkeletonBlock className="h-52 rounded-none" />
+      <div className="flex flex-col gap-3 px-5 pb-5 pt-4">
+        <SkeletonLine className="h-5 w-3/4" />
         <SkeletonLine className="w-full" />
-        <SkeletonLine className="w-5/6" />
-      </div>
-      <div className="mt-6 flex items-center justify-between">
-        <SkeletonBlock className="h-8 w-20 rounded-full" />
-        <SkeletonBlock className="h-10 w-28 rounded-xl" />
+        <SkeletonLine className="w-4/5" />
+        <div className="h-px bg-border" />
+        <SkeletonLine className="h-7 w-24" />
+        <SkeletonBlock className="h-10 w-full rounded-xl" />
       </div>
     </div>
   );
@@ -24,25 +20,31 @@ function MarketCardSkeleton() {
 
 export function MarketSkeleton() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-10">
-      <SkeletonBlock className="h-56 rounded-[28px]" />
-      <div className="grid gap-4 md:grid-cols-3">
-        {[0, 1, 2].map((item) => (
-          <SkeletonBlock key={item} className="h-32 rounded-2xl" />
-        ))}
-      </div>
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-        <div className="space-y-6">
-          <SkeletonBlock className="h-24 rounded-2xl" />
-          <div className="grid gap-4 md:grid-cols-2">
-            {[0, 1, 2, 3].map((item) => (
-              <MarketCardSkeleton key={item} />
-            ))}
+    <div className="p-6">
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 lg:max-w-5xl">
+        <section className="rounded-2xl border border-border bg-surface px-6 py-5">
+          <div className="flex items-center justify-between gap-6">
+            <div className="space-y-2">
+              <SkeletonLine className="h-3 w-24" />
+              <SkeletonLine className="h-6 w-80" />
+              <SkeletonLine className="h-4 w-56" />
+            </div>
+            <div className="hidden shrink-0 space-y-2 rounded-2xl border border-border px-4 py-3 sm:block">
+              <SkeletonLine className="h-2.5 w-20" />
+              <SkeletonLine className="h-7 w-16" />
+            </div>
           </div>
+        </section>
+
+        <div className="flex items-center justify-between">
+          <SkeletonLine className="h-4 w-28" />
+          <SkeletonBlock className="h-9 w-32 rounded-xl" />
         </div>
-        <div className="space-y-6">
-          <SkeletonBlock className="h-72 rounded-[28px]" />
-          <SkeletonBlock className="h-56 rounded-2xl" />
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <MarketCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     </div>

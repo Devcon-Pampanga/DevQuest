@@ -94,7 +94,7 @@ export function ProductCard({ product, devCoins, onRedeem, isRedeemed }: Product
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="flex justify-end gap-1 text-[10px] text-text-muted">
+            <p className="flex justify-end gap-1 text-[10px] leading-none text-text-muted">
               <span className="font-semibold text-accent-highlight">{(product.price - devCoins).toLocaleString()}</span>
               <DevCoin size={7} />
               <span>more needed</span>

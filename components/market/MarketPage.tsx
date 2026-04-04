@@ -53,12 +53,10 @@ function useKaching() {
 }
 
 export function MarketPage() {
-  const { user, status } = useAuth();
+  const { user, firebaseUser, status } = useAuth();
   const { ready } = useRequireDashboardAuth();
   const [loading, setLoading] = useState(true);
-  const [devCoins, setDevCoins] = useState(0);
   const [activeFilter, setActiveFilter] = useState<MarketCategory>("all");
-  const [redeemedIds, setRedeemedIds] = useState<Set<number>>(new Set());
   const [confirmModal, setConfirmModal] = useState<{
     product: MarketProduct;
     color: string;
@@ -70,6 +68,9 @@ export function MarketPage() {
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [modalDevCoins, setModalDevCoins] = useState(0);
   const kaching = useKaching();
 
   useEffect(() => {
@@ -77,11 +78,11 @@ export function MarketPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      setDevCoins(user.devCoins ?? 0);
-    }
-  }, [user]);
+  const devCoins = user?.devCoins ?? 0;
+  const redeemedIds = useMemo(
+    () => new Set(Object.keys(user?.redeemedItems ?? {}).map(Number)),
+    [user?.redeemedItems],
+  );
 
   const authLoading = status === "loading" || !ready;
   const filtered = useMemo(() => {
@@ -94,46 +95,80 @@ export function MarketPage() {
     : undefined;
 
   function handleRedeem(product: MarketProduct, size: MarketSize | null) {
+    setModalDevCoins(devCoins);
     setConfirmModal({ product, color: product.colors[0], size, quantity: 1 });
   }
 
-  function handleConfirm() {
-    if (!confirmModal) return;
+  async function handleConfirm() {
+    if (!confirmModal || !firebaseUser) return;
+    setPurchasing(true);
+    setPurchaseError(null);
 
-    const totalCost = confirmModal.product.price * confirmModal.quantity;
-    const remainingDevCoins = devCoins - totalCost;
-    const orderId = `DK-${Date.now().toString(36).toUpperCase()}`;
-    const now = new Date();
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch("/api/market/purchase", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productId: confirmModal.product.id,
+          color: confirmModal.color,
+          size: confirmModal.size,
+          quantity: confirmModal.quantity,
+        }),
+      });
 
-    const newReceipt: RedemptionReceipt = {
-      orderId,
-      product: confirmModal.product,
-      color: confirmModal.color,
-      size: confirmModal.size,
-      quantity: confirmModal.quantity,
-      totalCost,
-      remainingDevCoins,
-      date: now.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      time: now.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        if (data.error === "insufficient_balance") {
+          setPurchaseError("Insufficient DevCoins.");
+        } else if (data.error === "already_redeemed") {
+          setPurchaseError("You've already redeemed this item.");
+        } else {
+          setPurchaseError("Purchase failed. Please try again.");
+        }
+        return;
+      }
 
-    kaching();
-    setDevCoins(remainingDevCoins);
-    setRedeemedIds((previous) => new Set(Array.from(previous).concat(newReceipt.product.id)));
-    setReceipt(newReceipt);
-    setReceiptHistory((previous) => [...previous, newReceipt]);
-    setConfirmModal(null);
-    setShowReceiptViewer(true);
-    setShowToast(true);
-    window.setTimeout(() => setShowToast(false), 6000);
+      const { orderId, remainingDevCoins } = (await res.json()) as {
+        orderId: string;
+        remainingDevCoins: number;
+      };
+      const now = new Date();
+      const newReceipt: RedemptionReceipt = {
+        orderId,
+        product: confirmModal.product,
+        color: confirmModal.color,
+        size: confirmModal.size,
+        quantity: confirmModal.quantity,
+        totalCost: confirmModal.product.price * confirmModal.quantity,
+        remainingDevCoins,
+        date: now.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        time: now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      kaching();
+      setReceipt(newReceipt);
+      setReceiptHistory((previous) => [...previous, newReceipt]);
+      setConfirmModal(null);
+      setShowToast(true);
+      window.setTimeout(() => setShowToast(false), 6000);
+    } catch (err) {
+      console.error("[MarketPage] purchase error:", err);
+      setPurchaseError("Purchase failed. Please try again.");
+    } finally {
+      setPurchasing(false);
+    }
   }
 
   return (
@@ -145,18 +180,17 @@ export function MarketPage() {
       actions={
         !authLoading && user ? (
           <>
-            <div className="hidden items-center gap-1.5 rounded-xl border border-accent-primary/40 bg-accent-primary/15 px-3 py-1.5 text-sm font-heading font-medium text-accent-highlight sm:flex">
+            <div className="flex h-9 items-center gap-1.5 rounded-xl border border-accent-primary/40 bg-accent-primary/15 px-3 text-sm font-heading font-medium leading-none text-accent-highlight">
               {devCoins.toLocaleString()}
               <DevCoin size={8} />
             </div>
             <button
               type="button"
               onClick={() => setShowHistory(true)}
-              className="relative flex h-9 min-w-9 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-heading font-medium text-text-secondary transition-colors hover:border-accent-highlight hover:text-text-primary"
+              className="relative flex h-9 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-heading font-medium text-text-secondary transition-colors hover:border-accent-highlight hover:text-text-primary"
               title="Receipt History"
             >
-              <span className="hidden sm:inline">Receipts</span>
-              <span className="sm:hidden">RC</span>
+              <span>Receipts</span>
               {receiptHistory.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-highlight text-[9px] font-bold text-white">
                   {receiptHistory.length}
@@ -183,7 +217,7 @@ export function MarketPage() {
               <div className="hidden rounded-2xl border border-accent-primary/30 bg-base/80 px-4 py-3 text-right sm:block">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">Current Balance</p>
                 <div className="mt-1 flex items-center justify-end gap-2">
-                  <span className="font-heading text-2xl text-text-primary">{devCoins.toLocaleString()}</span>
+                  <span className="font-heading text-2xl leading-none text-text-primary">{devCoins.toLocaleString()}</span>
                   <DevCoin size={10} />
                 </div>
               </div>
@@ -215,9 +249,11 @@ export function MarketPage() {
             product={confirmModal.product}
             selectedSize={confirmModal.size}
             quantity={confirmModal.quantity}
-            devCoins={devCoins}
-            onClose={() => setConfirmModal(null)}
+            devCoins={modalDevCoins}
+            onClose={() => { if (!purchasing) setConfirmModal(null); }}
             onConfirm={handleConfirm}
+            isLoading={purchasing}
+            error={purchaseError}
           />
         ) : null}
 
