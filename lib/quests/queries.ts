@@ -64,7 +64,7 @@ export async function fetchQuestPageData(
     const data = d.data() as Record<string, unknown>;
     const missionId = getMissionIdFromData(data, d.id);
     missionCompletions[d.id] = {
-      ...(data as MissionCompletion),
+      ...(data as unknown as MissionCompletion),
       missionId,
     };
   });
