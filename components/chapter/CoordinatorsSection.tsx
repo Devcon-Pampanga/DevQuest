@@ -122,7 +122,7 @@ export function CoordinatorsSection({ coordinators }: { coordinators: ChapterVol
 
           <div className="flex-1 min-w-0">
             <Link
-              href={`/profile/${active.username}`}
+              href={`/profile/${active.uid}`}
               className="font-heading text-base text-text-primary hover:text-accent-highlight transition-colors truncate block"
             >
               {active.username}

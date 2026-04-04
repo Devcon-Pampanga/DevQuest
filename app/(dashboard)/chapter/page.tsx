@@ -30,19 +30,6 @@ export default function ChapterPage() {
     regCounts,
   } = useChapterData(viewingChapterId);
 
-  const {
-    search,
-    setSearch,
-    teamFilter,
-    setTeamFilter,
-    volunteerPage,
-    setVolunteerPage,
-    VOLUNTEER_PAGE_SIZE,
-    filteredVolunteers,
-    pagedVolunteers,
-    volunteerTotalPages,
-  } = useChapterVolunteersUI(volunteers, viewingChapterId);
-
   const [showEditModal, setShowEditModal] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ uid: string; username: string } | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -61,6 +48,19 @@ export default function ChapterPage() {
     () => volunteers.filter((v) => v.role === "volunteer").sort((a, b) => b.xp - a.xp),
     [volunteers]
   );
+
+  const {
+    search,
+    setSearch,
+    teamFilter,
+    setTeamFilter,
+    volunteerPage,
+    setVolunteerPage,
+    VOLUNTEER_PAGE_SIZE,
+    filteredVolunteers,
+    pagedVolunteers,
+    volunteerTotalPages,
+  } = useChapterVolunteersUI(leaderboard, viewingChapterId);
 
   const isOwnChapter = currentUser?.chapterId === viewingChapterId;
   const canEdit = Boolean(isOwnChapter && currentUser?.role === "coordinator");
@@ -113,7 +113,7 @@ export default function ChapterPage() {
           <div className="lg:col-span-3">
             <ChapterStatsCards
               eventCount={events.length}
-              volunteerCount={volunteers.length}
+              volunteerCount={leaderboard.length}
               totalAttendees={totalAttendees}
             />
           </div>
@@ -129,7 +129,7 @@ export default function ChapterPage() {
             <ChapterRecentEventsSection events={events} regCounts={regCounts} />
 
             <ChapterVolunteersSection
-              volunteers={volunteers}
+              volunteers={leaderboard}
               filteredVolunteers={filteredVolunteers}
               pagedVolunteers={pagedVolunteers}
               volunteerPage={volunteerPage}
@@ -158,7 +158,7 @@ export default function ChapterPage() {
               currentUserId={currentUser?.uid}
             />
 
-            <ChapterTeamBreakdown volunteers={volunteers} />
+            <ChapterTeamBreakdown volunteers={leaderboard} />
 
           </div>
 

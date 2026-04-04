@@ -139,7 +139,7 @@ export function ProfileDashboardPage() {
 
   function handleCopyShare() {
     if (!userData || typeof window === "undefined") return;
-    copyUrl(`${window.location.origin}/profile/${userData.username}`);
+    copyUrl(`${window.location.origin}/profile/${userData.uid}`);
   }
 
   async function handleGenerateResume() {

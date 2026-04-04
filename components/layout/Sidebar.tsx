@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import {
   Star,
   Sword,
@@ -80,6 +81,12 @@ function NavContent({
   showToggle: boolean;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const navItems =
+    user?.role === "coordinator"
+      ? NAV_ITEMS.filter((item) => item.href !== "/quests")
+      : NAV_ITEMS;
+
   return (
     <div className="flex flex-col h-full">
       {/* Logo row */}
@@ -105,7 +112,7 @@ function NavContent({
 
       {/* Nav items */}
       <nav className="flex flex-col gap-0.5 flex-1 px-2">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const href = item.href;
           const isActive =
             pathname === href ||

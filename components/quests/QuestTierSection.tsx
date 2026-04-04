@@ -34,7 +34,7 @@ export function QuestTierSection({
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-3 mb-4">
           <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">
-            Milestones
+            Quests
           </p>
           <div className="flex-1 h-px bg-[#27272A]" />
           <p className="text-xs text-text-muted">

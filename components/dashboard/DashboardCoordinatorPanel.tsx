@@ -16,7 +16,7 @@ export function DashboardCoordinatorPanel({
     >
       <h2 className="font-heading text-sm text-text-primary uppercase tracking-widest">Coordinator</h2>
       <Link
-        href="/quests?tab=approvals"
+        href="/dashboard"
         className="rounded-2xl border p-4 hover:border-accent-primary/60 transition-colors"
         style={{
           borderColor: approvalsCount > 0 ? "#A855F755" : "#27272A",

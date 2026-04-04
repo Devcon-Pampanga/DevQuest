@@ -20,18 +20,25 @@ export function PodiumSlot({
   const color = MEDAL_COLORS[rank];
   const blockH = PODIUM_HEIGHTS[rank];
   const avatarSize = AVATAR_SIZES[rank];
+  const mobileAvatarSize = rank === 1 ? 64 : rank === 2 ? 50 : 44;
+  const avatarResponsiveClassName =
+    rank === 1
+      ? "sm:w-[72px] sm:h-[72px]"
+      : rank === 2
+        ? "sm:w-[56px] sm:h-[56px]"
+        : "sm:w-[48px] sm:h-[48px]";
   const delay = rank === 1 ? 120 : rank === 2 ? 60 : 0;
   const primaryTeamMeta = volunteer?.teams[0] ? TEAM_META[volunteer.teams[0]] : null;
 
   if (!volunteer) {
     return (
-      <div className="flex flex-col items-center gap-3 flex-1">
+      <div className="flex min-w-0 flex-col items-center gap-2 sm:flex-1 sm:gap-3">
         <div
           className="rounded-xl bg-border/20 animate-pulse"
-          style={{ width: avatarSize, height: avatarSize }}
+          style={{ width: mobileAvatarSize, height: mobileAvatarSize }}
         />
-        <div className="text-center">
-          <SkeletonLine className="w-20 mx-auto" />
+        <div className="w-full px-1 text-center">
+          <SkeletonLine className="mx-auto w-full max-w-[5rem]" />
         </div>
         <div
           className="w-full rounded-t-xl"
@@ -50,7 +57,7 @@ export function PodiumSlot({
 
   return (
     <div
-      className="flex flex-col items-center flex-1 animate-fade-up"
+      className="flex min-w-0 flex-col items-center animate-fade-up sm:flex-1"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="relative mb-3">
@@ -64,12 +71,12 @@ export function PodiumSlot({
           alt={volunteer.username}
           width={avatarSize}
           height={avatarSize}
-          className="relative rounded-xl object-cover border-2"
+          className={`relative rounded-xl object-cover border-2 ${avatarResponsiveClassName}`}
           style={{
             borderColor: color,
-            width: avatarSize,
-            height: avatarSize,
-            minWidth: avatarSize,
+            width: mobileAvatarSize,
+            height: mobileAvatarSize,
+            minWidth: mobileAvatarSize,
           }}
         />
         <div
@@ -86,33 +93,33 @@ export function PodiumSlot({
         </div>
       </div>
 
-      <div className="text-center mt-1 mb-3 px-1">
+      <div className="mt-1 mb-2 w-full px-1 text-center sm:mb-3">
         <Link
-          href={`/profile/${volunteer.username}`}
-          className="font-heading text-sm text-text-primary hover:text-accent-highlight transition-colors truncate block max-w-[96px]"
+          href={`/profile/${volunteer.uid}`}
+          className="block w-full truncate font-heading text-xs text-text-primary transition-colors hover:text-accent-highlight sm:mx-auto sm:max-w-[96px] sm:text-sm"
         >
           {volunteer.username}
         </Link>
         {isCurrentUser && (
-          <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-accent-primary/20 text-accent-highlight font-sans uppercase tracking-wide mt-0.5">
+          <span className="mt-0.5 inline-block rounded-full bg-accent-primary/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-accent-highlight font-sans sm:text-[9px]">
             you
           </span>
         )}
         <div
-          className="font-heading text-sm tabular-nums mt-0.5"
+          className="mt-0.5 font-heading text-xs tabular-nums sm:text-sm"
           style={{ color: primaryTeamMeta?.color ?? color }}
         >
           {volunteer.xp.toLocaleString()} XP
         </div>
         {volunteer.teams[0] && (
           <div
-            className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-heading font-semibold uppercase tracking-wide"
+            className="mt-1 inline-flex max-w-full items-center justify-center rounded-full px-1.5 py-0.5 text-[8px] font-heading font-semibold uppercase tracking-wide sm:px-2 sm:text-[9px]"
             style={{
               backgroundColor: (primaryTeamMeta?.color ?? color) + "20",
               color: primaryTeamMeta?.color ?? color,
             }}
           >
-            {primaryTeamMeta?.label ?? ""}
+            <span className="line-clamp-2 break-words text-center">{primaryTeamMeta?.label ?? ""}</span>
           </div>
         )}
       </div>
