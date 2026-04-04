@@ -219,7 +219,7 @@ export function ProfileDashboardPage() {
               <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} />
             </div>
 
-            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2">
+            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2 order-3 lg:order-none">
               {milestoneTeam ? (
                 <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                   <ProfileMilestonesSection
@@ -253,7 +253,7 @@ export function ProfileDashboardPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1">
+            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1 order-2 lg:order-none">
               <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
                 <ChapterLeaderboardPanel
                   viewingChapterId={chapterId}
