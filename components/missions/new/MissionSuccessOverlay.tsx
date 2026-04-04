@@ -15,7 +15,7 @@ export function MissionSuccessOverlay({
     successInfo.type === "open"
       ? "Your chapter can now claim a spot."
       : successInfo.count === 0
-        ? "Mission is live."
+        ? "Subquest is live."
         : `${successInfo.count} volunteer${successInfo.count !== 1 ? "s" : ""} ${successInfo.count !== 1 ? "have" : "has"} been assigned.`;
 
   return (
@@ -69,9 +69,9 @@ export function MissionSuccessOverlay({
         />
       </svg>
 
-      <h2 className="font-heading text-3xl text-text-primary mb-3 tracking-wide">Mission live.</h2>
+      <h2 className="font-heading text-3xl text-text-primary mb-3 tracking-wide">Subquest live.</h2>
       <p className="text-text-secondary text-sm text-center max-w-xs leading-relaxed">{msg}</p>
-      <p className="text-text-muted text-xs mt-10">Heading to missions…</p>
+      <p className="text-text-muted text-xs mt-10">Heading to subquests…</p>
     </div>
   );
 }

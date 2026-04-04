@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Mission } from "@/types/mission";
-import { DIFFICULTY_META } from "@/types/mission";
+import { DIFFICULTY_META, SUBQUESTS_COLLECTION, type Mission } from "@/types/mission";
 
 interface CoordinatorMissionsPanelProps {
   missions: Mission[];
@@ -129,7 +128,7 @@ export function CoordinatorMissionsPanel({
   async function handleArchive(missionId: string) {
     setArchiving(missionId);
     try {
-      await updateDoc(doc(db, "missions", missionId), { status: "closed" });
+      await updateDoc(doc(db, SUBQUESTS_COLLECTION, missionId), { status: "closed" });
       onMissionArchived();
     } finally {
       setArchiving(null);
@@ -146,11 +145,11 @@ export function CoordinatorMissionsPanel({
         {/* Header */}
         <div className="flex items-start gap-2 mb-3">
           <div className="flex-1 min-w-0">
-            <p className="font-heading text-base font-bold text-text-primary leading-tight">MISSIONS</p>
+            <p className="font-heading text-base font-bold text-text-primary leading-tight">SUBQUESTS</p>
             <p className="text-xs text-text-muted mt-0.5">Chapter-wide · Bonus XP tasks</p>
           </div>
           <Link
-            href="/missions/new"
+            href="/subquests/new"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white text-xs font-heading font-medium transition-colors shrink-0"
             style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}
           >
@@ -202,11 +201,11 @@ export function CoordinatorMissionsPanel({
               </svg>
             </div>
             <p className="text-text-secondary text-xs font-heading">
-              {view === "active" ? "No active missions" : "No archived missions"}
+              {view === "active" ? "No active subquests" : "No archived subquests"}
             </p>
             {view === "active" && (
               <Link
-                href="/missions/new"
+                href="/subquests/new"
                 className="text-accent-highlight text-xs hover:underline mt-1 inline-block"
               >
                 Create one →

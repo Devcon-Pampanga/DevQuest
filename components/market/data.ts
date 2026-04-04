@@ -15,6 +15,7 @@ export const PRODUCTS: MarketProduct[] = [
     price: 120,
     category: "accessories",
     image: "ID",
+    imgSrc: "/market/dk-lanyard.png",
     colors: ["Crimson"],
   },
   {
@@ -24,6 +25,7 @@ export const PRODUCTS: MarketProduct[] = [
     price: 150,
     category: "collectibles",
     image: "ST",
+    imgSrc: "/market/sticker-pack.png",
     colors: ["Scarlet"],
   },
   {
@@ -33,6 +35,7 @@ export const PRODUCTS: MarketProduct[] = [
     price: 320,
     category: "apparel",
     image: "TEE",
+    imgSrc: "/market/devquest-tee.png",
     sizes: ["XS", "S", "M", "L", "XL"],
     colors: ["Black", "Maroon"],
   },
@@ -43,6 +46,7 @@ export const PRODUCTS: MarketProduct[] = [
     price: 210,
     category: "accessories",
     image: "PIN",
+    imgSrc: "/market/team-pin-set.png",
     colors: ["Mixed"],
   },
   {
@@ -52,6 +56,7 @@ export const PRODUCTS: MarketProduct[] = [
     price: 640,
     category: "apparel",
     image: "ZIP",
+    imgSrc: "/market/volunteer-jacket.png",
     sizes: ["S", "M", "L", "XL"],
     colors: ["Black"],
   },
@@ -62,6 +67,7 @@ export const PRODUCTS: MarketProduct[] = [
     price: 260,
     category: "collectibles",
     image: "ARC",
+    imgSrc: "/market/badge-archive-case.png",
     colors: ["Smoke"],
   },
 ];

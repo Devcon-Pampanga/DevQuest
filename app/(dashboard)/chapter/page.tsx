@@ -58,7 +58,7 @@ export default function ChapterPage() {
   );
 
   const leaderboard = useMemo(
-    () => [...volunteers].sort((a, b) => b.xp - a.xp),
+    () => volunteers.filter((v) => v.role === "volunteer").sort((a, b) => b.xp - a.xp),
     [volunteers]
   );
 

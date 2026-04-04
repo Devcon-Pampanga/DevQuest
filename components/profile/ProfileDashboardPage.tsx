@@ -20,6 +20,7 @@ import { ProfileActivityFeed } from "@/components/profile/ProfileActivityFeed";
 import { ProfileBadgesGrid } from "@/components/profile/ProfileBadgesGrid";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { MissionsPanel } from "@/components/quests/missions/MissionsPanel";
+import { CoordinatorDashboardPage } from "@/components/profile/CoordinatorDashboardPage";
 import { useLeaderboardVolunteers } from "@/hooks/useLeaderboardVolunteers";
 import type { MissionApprovalItem } from "@/types/mission";
 import type { ApprovalsQueueItem } from "@/types/quest";
@@ -185,77 +186,88 @@ export function ProfileDashboardPage() {
 
   return (
     <PageShell
-      title="Profile"
+      title={userData.role === "coordinator" ? "Dashboard" : "Profile"}
       avatarUrl={avatarUrl}
       loading={loading}
       skeleton={<ProfileSkeleton />}
     >
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:gap-6 items-stretch lg:items-start pb-10">
-          <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "0ms" }}>
-            <ProfileHeaderCard
-              userData={userData}
-              avatarUrl={avatarUrl}
-              onGenerateResume={handleGenerateResume}
-              isGeneratingResume={isGeneratingResume}
-              onCopyShare={handleCopyShare}
-              copied={copied}
-            />
-          </div>
+        {userData.role === "coordinator" ? (
+          <CoordinatorDashboardPage
+            userData={userData}
+            avatarUrl={avatarUrl}
+            onGenerateResume={handleGenerateResume}
+            isGeneratingResume={isGeneratingResume}
+            onCopyShare={handleCopyShare}
+            copied={copied}
+          />
+        ) : (
+          <div className="max-w-3xl lg:max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-5 lg:gap-6 items-stretch lg:items-start pb-10">
+            <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "0ms" }}>
+              <ProfileHeaderCard
+                userData={userData}
+                avatarUrl={avatarUrl}
+                onGenerateResume={handleGenerateResume}
+                isGeneratingResume={isGeneratingResume}
+                onCopyShare={handleCopyShare}
+                copied={copied}
+              />
+            </div>
 
-          <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
-            <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} />
-          </div>
+            <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
+              <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} />
+            </div>
 
-          <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2">
-            {milestoneTeam ? (
-              <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
-                <ProfileMilestonesSection
+            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2">
+              {milestoneTeam ? (
+                <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
+                  <ProfileMilestonesSection
+                    userData={userData}
+                    completions={completions}
+                    allQuests={allQuests}
+                    activeTeam={milestoneTeam}
+                    onTeamChange={setActiveTeam}
+                  />
+                </div>
+              ) : null}
+              <div className="animate-fade-up" style={{ animationDelay: "150ms" }}>
+                <MissionsPanel
                   userData={userData}
-                  completions={completions}
-                  allQuests={allQuests}
-                  activeTeam={milestoneTeam}
-                  onTeamChange={setActiveTeam}
+                  missions={missions}
+                  missionCompletions={missionCompletions}
+                  missionApprovals={missionApprovals}
+                  loadingMissions={loadingMissions}
+                  loadingMissionApprovals={false}
+                  expandedMissionId={expandedMissionId}
+                  setExpandedMissionId={setExpandedMissionId}
+                  submitting={submitting}
+                  onJoin={handleJoinMission}
+                  onSubmit={handleSubmitMission}
+                  onApprove={handleApproveMission}
+                  onRevise={handleReviseMission}
                 />
               </div>
-            ) : null}
-            <div className="animate-fade-up" style={{ animationDelay: "150ms" }}>
-              <MissionsPanel
-                userData={userData}
-                missions={missions}
-                missionCompletions={missionCompletions}
-                missionApprovals={missionApprovals}
-                loadingMissions={loadingMissions}
-                loadingMissionApprovals={false}
-                expandedMissionId={expandedMissionId}
-                setExpandedMissionId={setExpandedMissionId}
-                submitting={submitting}
-                onJoin={handleJoinMission}
-                onSubmit={handleSubmitMission}
-                onApprove={handleApproveMission}
-                onRevise={handleReviseMission}
-              />
+              <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
+                <ProfileActivityFeed entries={activityEntries} hasMore={activityHasMore} />
+              </div>
             </div>
-            <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
-              <ProfileActivityFeed entries={activityEntries} hasMore={activityHasMore} />
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1">
-            <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
-              <ChapterLeaderboardPanel
-                viewingChapterId={chapterId}
-                leaderboard={leaderboard}
-                currentUserId={userData.uid}
-                displayLimit={3}
-                showCurrentUserOutsideLimit
-              />
-            </div>
-            <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
-              <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1">
+              <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
+                <ChapterLeaderboardPanel
+                  viewingChapterId={chapterId}
+                  leaderboard={leaderboard}
+                  currentUserId={userData.uid}
+                  displayLimit={3}
+                  showCurrentUserOutsideLimit
+                />
+              </div>
+              <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
+                <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </PageShell>
   );

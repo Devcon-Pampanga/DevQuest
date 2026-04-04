@@ -135,7 +135,7 @@ export function MissionTile({
               className="mt-3 w-full py-2.5 rounded-xl text-xs font-heading font-semibold text-white transition-all disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}
             >
-              {submitting ? "Joining…" : "Join Mission"}
+              {submitting ? "Joining…" : "Join Subquest"}
             </button>
           )}
 
