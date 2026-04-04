@@ -39,7 +39,7 @@ export function VolunteerRow({
       }}
     >
       <Link
-        href={`/profile/${volunteer.username}`}
+        href={`/profile/${volunteer.uid}`}
         className="flex items-center gap-3 flex-1 min-w-0"
       >
         <ChapterAvatar username={volunteer.username} opts={volunteer.avatarOptions} size={40} />

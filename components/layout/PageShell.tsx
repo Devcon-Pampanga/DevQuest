@@ -40,33 +40,36 @@ export default function PageShell({
   children,
 }: PageShellProps) {
   const { openSidebar } = useSidebar();
+  const showMobileSidebarButton = !backHref;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-base">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={openSidebar}
-            className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-            aria-label="Open sidebar"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {showMobileSidebarButton ? (
+            <button
+              type="button"
+              onClick={openSidebar}
+              className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+              aria-label="Open sidebar"
             >
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+          ) : null}
           {backHref ? (
             <Link
               href={backHref}

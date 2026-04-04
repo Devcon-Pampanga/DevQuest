@@ -54,7 +54,7 @@ export function LeaderboardItem({
         </div>
 
         <Link
-          href={`/profile/${volunteer.username}`}
+          href={`/profile/${volunteer.uid}`}
           className="flex items-center gap-2.5 flex-1 min-w-0"
         >
           <ChapterAvatar
@@ -105,7 +105,7 @@ export function LeaderboardItem({
         {rank}
       </span>
       <Link
-        href={`/profile/${volunteer.username}`}
+        href={`/profile/${volunteer.uid}`}
         className="flex items-center gap-2.5 flex-1 min-w-0"
       >
         <ChapterAvatar
