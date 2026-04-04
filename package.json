@@ -18,12 +18,14 @@
     "html5-qrcode": "^2.3.8",
     "jspdf": "^3.0.0",
     "next": "14.2.25",
+    "nodemailer": "^8.0.4",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.95.2",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",

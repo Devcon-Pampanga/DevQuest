@@ -9,12 +9,17 @@ import {
   updateDoc,
   writeBatch,
   serverTimestamp,
-  increment,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { addXpRewardToBatch } from "@/lib/devCoins";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
-import { Mission, MissionCompletion, MissionApprovalItem } from "@/types/mission";
+import {
+  SUBQUEST_COMPLETIONS_COLLECTION,
+  Mission,
+  MissionCompletion,
+  MissionApprovalItem,
+} from "@/types/mission";
 
 interface QuestActionsOptions {
   uid: string;
@@ -49,15 +54,17 @@ export function useQuestActions({
         xpGranted: quest.xpReward,
         completedAt: now,
       });
-      batch.update(doc(db, "users", uid), { xp: increment(quest.xpReward) });
-      await batch.commit();
-      await addDoc(collection(db, "users", uid, "xpLog"), {
+      addXpRewardToBatch({
+        firestore: db,
+        uid,
+        xp: quest.xpReward,
         source: "quest_completion",
         sourceId: quest.questId,
         description: `Completed: ${quest.name}`,
-        xp: quest.xpReward,
+        batch,
         createdAt: now,
       });
+      await batch.commit();
       setCompletions((prev) => ({
         ...prev,
         [quest.questId]: {
@@ -112,24 +119,25 @@ export function useQuestActions({
         completedAt: now,
         approvedBy: uid,
       });
-      batch.update(doc(db, "users", item.userId), { xp: increment(item.xpReward) });
+      addXpRewardToBatch({
+        firestore: db,
+        uid: item.userId,
+        xp: item.xpReward,
+        source: "quest_completion",
+        sourceId: item.questId,
+        description: `Quest approved: ${item.questName}`,
+        batch,
+        createdAt: now,
+      });
+      const notificationRef = doc(collection(db, "users", item.userId, "notifications"));
+      batch.set(notificationRef, {
+        type: "quest_approved",
+        message: `Your quest "${item.questName}" was approved! +${item.xpReward} XP`,
+        read: false,
+        relatedId: item.questId,
+        createdAt: now,
+      });
       await batch.commit();
-      await Promise.all([
-        addDoc(collection(db, "users", item.userId, "xpLog"), {
-          source: "quest_completion",
-          sourceId: item.questId,
-          description: `Quest approved: ${item.questName}`,
-          xp: item.xpReward,
-          createdAt: now,
-        }),
-        addDoc(collection(db, "users", item.userId, "notifications"), {
-          type: "quest_approved",
-          message: `Your quest "${item.questName}" was approved! +${item.xpReward} XP`,
-          read: false,
-          relatedId: item.questId,
-          createdAt: now,
-        }),
-      ]);
       setApprovals((prev) =>
         prev.filter((a) => !(a.userId === item.userId && a.questId === item.questId))
       );
@@ -169,8 +177,10 @@ export function useQuestActions({
     if (submitting) return;
     setSubmitting(true);
     try {
-      await setDoc(doc(db, "users", uid, "missionCompletions", mission.missionId), {
-        missionId: mission.missionId,
+      await setDoc(doc(db, "users", uid, SUBQUEST_COMPLETIONS_COLLECTION, mission.missionId), {
+        subquestId: mission.missionId,
+        subquestTitle: mission.title,
+        difficulty: mission.difficulty,
         status: "joined",
         xpGranted: mission.xpReward,
       });
@@ -191,8 +201,10 @@ export function useQuestActions({
     if (submitting) return;
     setSubmitting(true);
     try {
-      await setDoc(doc(db, "users", uid, "missionCompletions", mission.missionId), {
-        missionId: mission.missionId,
+      await setDoc(doc(db, "users", uid, SUBQUEST_COMPLETIONS_COLLECTION, mission.missionId), {
+        subquestId: mission.missionId,
+        subquestTitle: mission.title,
+        difficulty: mission.difficulty,
         status: "submitted",
         submissionNotes: notes,
         evidenceUrl: evidenceUrl || null,
@@ -221,29 +233,30 @@ export function useQuestActions({
     try {
       const now = serverTimestamp();
       const batch = writeBatch(db);
-      batch.update(doc(db, "users", item.userId, "missionCompletions", item.missionId), {
+      batch.update(doc(db, "users", item.userId, SUBQUEST_COMPLETIONS_COLLECTION, item.missionId), {
         status: "completed",
         completedAt: now,
         approvedBy: uid,
       });
-      batch.update(doc(db, "users", item.userId), { xp: increment(item.xpReward) });
+      addXpRewardToBatch({
+        firestore: db,
+        uid: item.userId,
+        xp: item.xpReward,
+        source: "quest_completion",
+        sourceId: item.missionId,
+        description: `Subquest approved: ${item.missionTitle}`,
+        batch,
+        createdAt: now,
+      });
+      const notificationRef = doc(collection(db, "users", item.userId, "notifications"));
+      batch.set(notificationRef, {
+        type: "quest_approved",
+        message: `Your subquest "${item.missionTitle}" was approved! +${item.xpReward} XP`,
+        read: false,
+        relatedId: item.missionId,
+        createdAt: now,
+      });
       await batch.commit();
-      await Promise.all([
-        addDoc(collection(db, "users", item.userId, "xpLog"), {
-          source: "quest_completion",
-          sourceId: item.missionId,
-          description: `Mission approved: ${item.missionTitle}`,
-          xp: item.xpReward,
-          createdAt: now,
-        }),
-        addDoc(collection(db, "users", item.userId, "notifications"), {
-          type: "quest_approved",
-          message: `Your mission "${item.missionTitle}" was approved! +${item.xpReward} XP`,
-          read: false,
-          relatedId: item.missionId,
-          createdAt: now,
-        }),
-      ]);
       setMissionApprovals((prev) =>
         prev.filter((a) => !(a.userId === item.userId && a.missionId === item.missionId))
       );
@@ -257,14 +270,14 @@ export function useQuestActions({
     setSubmitting(true);
     try {
       const now = serverTimestamp();
-      await updateDoc(doc(db, "users", item.userId, "missionCompletions", item.missionId), {
+      await updateDoc(doc(db, "users", item.userId, SUBQUEST_COMPLETIONS_COLLECTION, item.missionId), {
         status: "joined",
         revisionNote,
         updatedAt: now,
       });
       await addDoc(collection(db, "users", item.userId, "notifications"), {
         type: "quest_revision",
-        message: `Revision requested for mission "${item.missionTitle}": ${revisionNote}`,
+        message: `Revision requested for subquest "${item.missionTitle}": ${revisionNote}`,
         read: false,
         relatedId: item.missionId,
         createdAt: now,

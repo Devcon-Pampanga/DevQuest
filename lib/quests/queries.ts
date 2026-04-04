@@ -7,7 +7,13 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Quest, QuestCompletion } from "@/types/quest";
-import type { Mission, MissionCompletion } from "@/types/mission";
+import {
+  SUBQUESTS_COLLECTION,
+  SUBQUEST_COMPLETIONS_COLLECTION,
+  getMissionIdFromData,
+  type Mission,
+  type MissionCompletion,
+} from "@/types/mission";
 
 export interface QuestPageData {
   quests: Quest[];
@@ -37,12 +43,12 @@ export async function fetchQuestPageData(
     getDocs(collection(db, "users", uid, "questCompletions")),
     getDocs(
       query(
-        collection(db, "missions"),
+        collection(db, SUBQUESTS_COLLECTION),
         where("chapterId", "==", chapterId),
         where("status", "==", "active")
       )
     ),
-    getDocs(collection(db, "users", uid, "missionCompletions")),
+    getDocs(collection(db, "users", uid, SUBQUEST_COMPLETIONS_COLLECTION)),
     getCountFromServer(collection(db, "users", uid, "reflections")),
     getCountFromServer(query(xpCol, where("source", "==", "event_attendance"))),
     getCountFromServer(query(xpCol, where("source", "==", "profile_setup"))),
@@ -55,14 +61,19 @@ export async function fetchQuestPageData(
 
   const missionCompletions: Record<string, MissionCompletion> = {};
   missionCompletionsSnap.docs.forEach((d) => {
-    missionCompletions[d.id] = d.data() as MissionCompletion;
+    const data = d.data() as Record<string, unknown>;
+    const missionId = getMissionIdFromData(data, d.id);
+    missionCompletions[d.id] = {
+      ...(data as unknown as MissionCompletion),
+      missionId,
+    };
   });
 
   return {
     quests: questsSnap.docs.map((d) => d.data() as Quest),
     completions,
     missions: missionsSnap.docs.map(
-      (d) => ({ ...d.data(), missionId: d.id } as Mission)
+      (d) => ({ ...d.data(), missionId: getMissionIdFromData(d.data() as Record<string, unknown>, d.id) } as Mission)
     ),
     missionCompletions,
     reflectionCount: reflCountSnap.data().count,

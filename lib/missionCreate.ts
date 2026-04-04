@@ -10,7 +10,10 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { ChapterSessionUser } from "@/types/chapter";
-import type {
+import {
+  SUBQUESTS_COLLECTION,
+  SUBQUEST_COMPLETIONS_COLLECTION,
+  type
   MissionAssignmentType,
   MissionDifficulty,
   MissionVolunteerPickerRow,
@@ -42,7 +45,7 @@ export function validateMissionForm(params: {
     setErrors,
   } = params;
   const errs: Record<string, string> = {};
-  if (!title.trim()) errs.title = "Give this mission a name.";
+  if (!title.trim()) errs.title = "Give this subquest a name.";
   if (!description.trim()) errs.description = "Describe what needs to be done.";
   if (assignmentType === "specific" && selectedVolunteers.length === 0)
     errs.assignees = "Pick at least one volunteer.";
@@ -132,7 +135,7 @@ export async function createMissionAndAssignments(params: {
       missionData.submissionGuidance = submissionGuidance.trim();
     }
 
-    const missionRef = await addDoc(collection(db, "missions"), missionData);
+    const missionRef = await addDoc(collection(db, SUBQUESTS_COLLECTION), missionData);
     const missionId = missionRef.id;
 
     let notifiedCount = 0;
@@ -141,10 +144,12 @@ export async function createMissionAndAssignments(params: {
         notifiedCount = selectedVolunteers.length;
         const batch = writeBatch(db);
         for (const v of selectedVolunteers) {
-          batch.set(doc(db, "users", v.uid, "missionCompletions", missionId), {
-            missionId,
+          batch.set(doc(db, "users", v.uid, SUBQUEST_COMPLETIONS_COLLECTION, missionId), {
+            subquestId: missionId,
+            subquestTitle: title.trim(),
             status: "assigned",
             xpGranted: xpReward,
+            difficulty,
           });
         }
         await batch.commit();
@@ -167,20 +172,22 @@ export async function createMissionAndAssignments(params: {
         if (targetUids.size > 0) {
           const batch = writeBatch(db);
           targetUids.forEach((uid) => {
-            batch.set(doc(db, "users", uid, "missionCompletions", missionId), {
-              missionId,
+            batch.set(doc(db, "users", uid, SUBQUEST_COMPLETIONS_COLLECTION, missionId), {
+              subquestId: missionId,
+              subquestTitle: title.trim(),
               status: "assigned",
               xpGranted: xpReward,
+              difficulty,
             });
           });
           await batch.commit();
         }
       }
     } catch (batchErr) {
-      console.error("Assignment batch failed after mission write:", batchErr);
+      console.error("Assignment batch failed after subquest write:", batchErr);
       setErrors({
         submit:
-          "Mission was saved, but volunteer assignments couldn't be written. Find it in the missions list to assign manually.",
+          "Subquest was saved, but volunteer assignments couldn't be written. Find it in the subquests list to assign manually.",
       });
       setSubmitting(false);
       return;
@@ -189,7 +196,7 @@ export async function createMissionAndAssignments(params: {
     setSuccessInfo({ count: notifiedCount, type: assignmentType });
     setTimeout(() => router.push("/quests"), 2400);
   } catch (err) {
-    console.error("Failed to create mission:", err);
+    console.error("Failed to create subquest:", err);
     setErrors({ submit: "Something went wrong — give it another try." });
     setSubmitting(false);
   }

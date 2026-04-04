@@ -6,7 +6,11 @@ export async function fetchLeaderboardVolunteers(
   chapterId: string
 ): Promise<ChapterVolunteer[]> {
   const snap = await getDocs(
-    query(collection(db, "users"), where("chapterId", "==", chapterId))
+    query(
+      collection(db, "users"),
+      where("chapterId", "==", chapterId),
+      where("role", "==", "volunteer")
+    )
   );
   return snap.docs.map((d) => ({ ...d.data(), uid: d.id } as ChapterVolunteer));
 }

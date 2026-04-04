@@ -1,0 +1,73 @@
+import type { MarketCategory, MarketProduct } from "@/components/market/types";
+
+export const FILTER_OPTIONS: { label: string; value: MarketCategory }[] = [
+  { label: "All", value: "all" },
+  { label: "Accessories", value: "accessories" },
+  { label: "Apparel", value: "apparel" },
+  { label: "Collectibles", value: "collectibles" },
+];
+
+export const PRODUCTS: MarketProduct[] = [
+  {
+    id: 1,
+    name: "DEVCON Kids Sticker Pack",
+    description: "Exclusive holographic Stickers.",
+    price: 10,
+    category: "collectibles",
+    image: "ST",
+    imgSrc: "/market/sticker-pack.png",
+    colors: ["Default"],
+  },
+  {
+    id: 2,
+    name: "DEVCON Kids Lanyard",
+    description: "Keep your essentials secure.",
+    price: 20,
+    category: "accessories",
+    image: "LY",
+    imgSrc: "/market/lanyard.png",
+    colors: ["Black"],
+  },
+  {
+    id: 3,
+    name: "DEVCON Kids Tote Bag",
+    description: "Carry your gear in style.",
+    price: 40,
+    category: "accessories",
+    image: "TB",
+    imgSrc: "/market/tote-bag.png",
+    colors: ["Black"],
+  },
+  {
+    id: 4,
+    name: "DEVCON Kids T-Shirt",
+    description: "Sustainable, premium comfort.",
+    price: 50,
+    category: "apparel",
+    image: "TEE",
+    imgSrc: "/market/tshirt.png",
+    sizes: ["XS", "S", "M", "L", "XL"],
+    colors: ["Black"],
+  },
+  {
+    id: 5,
+    name: "DEVCON Kids Hoodie",
+    description: "Warm, functional, and stylish.",
+    price: 150,
+    category: "apparel",
+    image: "HD",
+    imgSrc: "/market/hoodie.png",
+    sizes: ["XS", "S", "M", "L", "XL"],
+    colors: ["Black"],
+  },
+  {
+    id: 6,
+    name: "DEVCON Kids Plushie",
+    description: "Your cuddly coding companion.",
+    price: 200,
+    category: "collectibles",
+    image: "PL",
+    imgSrc: "/market/plushie.png",
+    colors: ["Default"],
+  },
+];

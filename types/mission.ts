@@ -1,6 +1,9 @@
 import { Timestamp } from "firebase/firestore";
 import type { AvatarOptions } from "@/lib/avatar";
 
+export const SUBQUESTS_COLLECTION = "subquests";
+export const SUBQUEST_COMPLETIONS_COLLECTION = "subquestCompletions";
+
 /** Row in the “specific volunteers” picker on Add Mission (subset of Firestore `users`). */
 export interface MissionVolunteerPickerRow {
   uid: string;
@@ -64,6 +67,37 @@ export interface MissionApprovalItem {
   submissionNotes?: string;
   evidenceUrl?: string;
   submittedAt?: Timestamp;
+}
+
+export function getMissionIdFromData(
+  data: Record<string, unknown>,
+  fallbackId: string
+): string {
+  const subquestId = data.subquestId;
+  if (typeof subquestId === "string" && subquestId.trim()) {
+    return subquestId;
+  }
+
+  const missionId = data.missionId;
+  if (typeof missionId === "string" && missionId.trim()) {
+    return missionId;
+  }
+
+  return fallbackId;
+}
+
+export function getMissionTitleFromData(data: Record<string, unknown>): string {
+  const subquestTitle = data.subquestTitle;
+  if (typeof subquestTitle === "string" && subquestTitle.trim()) {
+    return subquestTitle;
+  }
+
+  const missionTitle = data.missionTitle;
+  if (typeof missionTitle === "string" && missionTitle.trim()) {
+    return missionTitle;
+  }
+
+  return "";
 }
 
 export const DIFFICULTY_META: Record<

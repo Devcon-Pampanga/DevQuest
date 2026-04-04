@@ -12,6 +12,7 @@ export interface User {
   chapterId: string;
   teams: string[];
   xp: number;
+  devCoins: number;
   onboardingComplete: boolean;
   createdAt: Timestamp;
 }
@@ -28,6 +29,7 @@ export interface InitialUserDocument {
   chapterId: string;
   teams: string[];
   xp: number;
+  devCoins: number;
   onboardingComplete: boolean;
   createdAt: FieldValue;
 }

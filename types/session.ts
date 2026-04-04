@@ -14,10 +14,12 @@ export interface SessionUser {
   chapterId: string;
   teams: string[];
   xp: number;
+  devCoins: number;
   onboardingComplete: boolean;
   linkedinUrl?: string;
   githubUrl?: string;
   resumeUrl?: string;
   createdAt?: Timestamp;
   avatarOptions?: AvatarOptions;
+  redeemedItems?: Record<string, boolean>;
 }

@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { randomAvatar } from "@/lib/avatar";
+import { addXpRewardToBatch } from "@/lib/devCoins";
 
 export function getFriendlyAuthError(code: string): string {
   switch (code) {
@@ -72,6 +73,7 @@ export async function signUp(email: string, password: string): Promise<void> {
     chapterId: "",
     teams: [],
     xp: 0,
+    devCoins: 0,
     onboardingComplete: false,
     createdAt: serverTimestamp(),
   });
@@ -120,19 +122,18 @@ export async function completeOnboarding(
     chapterId,
     teams,
     onboardingComplete: true,
-    xp: 10,
     avatarOptions,
   });
 
-  // b. XP log entry (+10 for profile setup)
-  const xpLogRef = doc(collection(db, "users", uid, "xpLog"));
-  batch.set(xpLogRef, {
-    logId: xpLogRef.id,
+  // b. XP reward (+10 for profile setup) plus matching DevCoins
+  addXpRewardToBatch({
+    firestore: db,
+    uid,
+    xp: 10,
     source: "profile_setup",
     sourceId: uid,
     description: "Completed profile setup",
-    xp: 10,
-    createdAt: serverTimestamp(),
+    batch,
   });
 
   // c. Initialize teamProgress for each selected team

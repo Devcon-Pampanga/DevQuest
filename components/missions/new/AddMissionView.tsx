@@ -144,7 +144,7 @@ export function AddMissionView({ userData }: { userData: ChapterSessionUser }) {
           >
             <IconBack />
           </Link>
-          <h1 className="font-heading text-2xl text-text-primary tracking-wide">Create Mission</h1>
+          <h1 className="font-heading text-2xl text-text-primary tracking-wide">Create Subquest</h1>
         </div>
 
         <Link href="/dashboard">
@@ -178,7 +178,7 @@ export function AddMissionView({ userData }: { userData: ChapterSessionUser }) {
           </div>
 
           <FormSectionCard animDelay={60} padding="p-6">
-            <h2 className="font-heading text-sm text-text-primary mb-5">Mission Details</h2>
+            <h2 className="font-heading text-sm text-text-primary mb-5">Subquest Details</h2>
 
             <div className="flex flex-col gap-5">
               <div>
@@ -229,7 +229,7 @@ export function AddMissionView({ userData }: { userData: ChapterSessionUser }) {
           <div className="mt-5">
             <FormSectionCard animDelay={120} stripe={difficultyStripe}>
               <h2 className="font-heading text-sm text-text-primary mb-1">Difficulty & XP</h2>
-              <p className="text-text-muted text-xs mb-4">The harder the mission, the more XP volunteers earn.</p>
+              <p className="text-text-muted text-xs mb-4">The harder the subquest, the more XP volunteers earn.</p>
 
               <div className="grid grid-cols-3 gap-3">
                 {diffOptions.map((d) => {
@@ -615,7 +615,7 @@ export function AddMissionView({ userData }: { userData: ChapterSessionUser }) {
               className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl font-heading text-base text-white transition-all duration-200 hover:brightness-110 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: "#A855F7" }}
             >
-              {submitting ? "Creating…" : "Create Mission"}
+              {submitting ? "Creating…" : "Create Subquest"}
             </button>
           </div>
         </div>

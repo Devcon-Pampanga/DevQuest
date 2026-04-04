@@ -33,7 +33,8 @@
       "Bash(wc -l \"C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\app\\\\\\(dashboard\\)\\\\quests\\\\page.tsx\")",
       "WebSearch",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(find C:UsersL-JOAQUINDocumentsProjectsWebDevQuest -type f -name AuthContext*)"
+      "Bash(find C:UsersL-JOAQUINDocumentsProjectsWebDevQuest -type f -name AuthContext*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
