@@ -1,16 +1,15 @@
 import {
   doc,
-  updateDoc,
   collection,
-  addDoc,
   serverTimestamp,
-  increment,
   Timestamp,
+  writeBatch,
 } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { EventDoc, EventRegistration } from "./types";
 import type { Quest } from "@/types/quest";
+import { addXpRewardToBatch } from "@/lib/devCoins";
 import { completeQrScanQuestsForAttendance } from "./completeQrScanQuests";
 
 export interface ConfirmAttendanceParams {
@@ -30,32 +29,33 @@ export async function confirmVolunteerAttendance(
 ): Promise<void> {
   const { eventId, coordinatorUid, reg, event, eventQuests } = params;
   const deadline = Timestamp.fromDate(new Date(Date.now() + 72 * 60 * 60 * 1000));
+  const batch = writeBatch(firestore);
 
-  await updateDoc(doc(firestore, "events", eventId, "registrations", reg.userId), {
+  batch.update(doc(firestore, "events", eventId, "registrations", reg.userId), {
     attended: true,
     confirmedAt: serverTimestamp(),
     confirmedBy: coordinatorUid,
     reflectionDeadline: deadline,
   });
 
-  await updateDoc(doc(firestore, "users", reg.userId), {
-    xp: increment(reg.roleXP),
-  });
-  await addDoc(collection(firestore, "users", reg.userId, "xpLog"), {
+  addXpRewardToBatch({
+    firestore,
+    uid: reg.userId,
+    xp: reg.roleXP,
     source: "event_attendance",
     sourceId: eventId,
     description: `Attended ${event?.name ?? "event"} as ${reg.role}`,
-    xp: reg.roleXP,
-    createdAt: serverTimestamp(),
+    batch,
   });
-
-  await addDoc(collection(firestore, "users", reg.userId, "notifications"), {
+  const notificationRef = doc(collection(firestore, "users", reg.userId, "notifications"));
+  batch.set(notificationRef, {
     type: "attendance_confirmed",
     message: `Your attendance at ${event?.name ?? "the event"} has been confirmed. +${reg.roleXP} XP!`,
     read: false,
     relatedId: eventId,
     createdAt: serverTimestamp(),
   });
+  await batch.commit();
 
   try {
     await completeQrScanQuestsForAttendance(

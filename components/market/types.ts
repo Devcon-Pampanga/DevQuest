@@ -21,7 +21,7 @@ export interface RedemptionReceipt {
   size: MarketSize | null;
   quantity: number;
   totalCost: number;
-  remainingXP: number;
+  remainingDevCoins: number;
   date: string;
   time: string;
 }

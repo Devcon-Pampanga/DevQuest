@@ -14,6 +14,7 @@ export interface SessionUser {
   chapterId: string;
   teams: string[];
   xp: number;
+  devCoins: number;
   onboardingComplete: boolean;
   linkedinUrl?: string;
   githubUrl?: string;

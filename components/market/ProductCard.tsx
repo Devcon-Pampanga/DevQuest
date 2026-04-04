@@ -6,29 +6,30 @@ import type { MarketProduct, MarketSize } from "@/components/market/types";
 
 interface ProductCardProps {
   product: MarketProduct;
-  xp: number;
+  devCoins: number;
   onRedeem: (product: MarketProduct, size: MarketSize | null) => void;
   isRedeemed: boolean;
 }
 
-export function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardProps) {
+export function ProductCard({ product, devCoins, onRedeem, isRedeemed }: ProductCardProps) {
   const [selectedSize, setSelectedSize] = useState<MarketSize | null>(product.sizes?.[2] ?? null);
-  const canAfford = xp >= product.price;
-  const progress = Math.min((xp / product.price) * 100, 100);
+  const canAfford = devCoins >= product.price;
+  const progress = Math.min((devCoins / product.price) * 100, 100);
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ffffff0f] bg-[#13131f] transition-all duration-300 hover:border-red-700/60 hover:shadow-lg hover:shadow-red-950/20">
-      <div className="absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r from-red-700/0 via-red-600 to-red-700/0 opacity-60 transition-opacity group-hover:opacity-100" />
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-accent-highlight/60 hover:shadow-xl hover:shadow-accent-primary/10">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-highlight/60 to-transparent opacity-70 transition-opacity group-hover:opacity-100" />
 
-      <div className="relative flex h-52 select-none items-center justify-center overflow-hidden bg-[#0d0d14]">
-        <span className="text-5xl font-black tracking-[0.2em] text-white/90 transition-all duration-300 group-hover:scale-105">
+      <div className="relative flex h-52 select-none items-center justify-center overflow-hidden bg-base">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.18),_transparent_55%)]" />
+        <span className="relative text-5xl font-heading font-bold tracking-[0.2em] text-text-primary transition-all duration-300 group-hover:scale-105">
           {product.image}
         </span>
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity: 0.13 }}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-10">
           {Array.from({ length: 12 }).map((_, index) => (
             <span
               key={index}
-              className="absolute whitespace-nowrap text-[11px] font-bold uppercase tracking-widest text-white"
+              className="absolute whitespace-nowrap text-[11px] font-heading font-medium uppercase tracking-widest text-accent-highlight"
               style={{
                 transform: "rotate(-35deg)",
                 left: `${(index % 4) * 38 - 20}%`,
@@ -42,13 +43,11 @@ export function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardPr
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-0 px-5 pb-5 pt-4">
-        <h3 className="text-base font-bold leading-snug text-white" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
-          {product.name}
-        </h3>
-        <p className="mt-0.5 text-xs text-gray-500">{product.description}</p>
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+        <h3 className="text-base font-heading font-bold leading-snug text-text-primary">{product.name}</h3>
+        <p className="mt-0.5 text-xs text-text-secondary">{product.description}</p>
 
-        <div className="my-3 h-px bg-white/5" />
+        <div className="my-3 h-px bg-border" />
 
         {product.sizes ? (
           <div className="mb-3 flex items-center justify-start">
@@ -60,8 +59,8 @@ export function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardPr
                   onClick={() => setSelectedSize(size)}
                   className={`h-6 w-7 rounded-md border text-[10px] font-bold transition-all ${
                     selectedSize === size
-                      ? "border-red-500 bg-red-600/25 text-red-400"
-                      : "border-white/8 bg-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300"
+                      ? "border-accent-highlight bg-accent-primary/20 text-accent-highlight"
+                      : "border-border bg-base text-text-muted hover:border-text-secondary hover:text-text-secondary"
                   }`}
                 >
                   {size}
@@ -72,7 +71,7 @@ export function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardPr
         ) : null}
 
         <div className="mt-1 flex items-baseline gap-1.5">
-          <span className="text-[1.6rem] font-bold leading-none text-white" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
+          <span className="text-[1.6rem] font-heading font-bold leading-none text-text-primary">
             {product.price.toLocaleString()}
           </span>
           <DevCoin size={8} />
@@ -80,14 +79,14 @@ export function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardPr
 
         {!canAfford ? (
           <div className="mt-3 space-y-1.5">
-            <div className="h-1 w-full overflow-hidden rounded-full bg-white/8">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-base">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-500"
+                className="h-full rounded-full bg-gradient-to-r from-accent-primary to-accent-highlight transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="flex justify-end gap-1 text-[10px] text-gray-600">
-              <span className="font-semibold text-red-400">{(product.price - xp).toLocaleString()}</span>
+            <p className="flex justify-end gap-1 text-[10px] text-text-muted">
+              <span className="font-semibold text-accent-highlight">{(product.price - devCoins).toLocaleString()}</span>
               <DevCoin size={7} />
               <span>more needed</span>
             </p>
@@ -100,15 +99,15 @@ export function ProductCard({ product, xp, onRedeem, isRedeemed }: ProductCardPr
           type="button"
           onClick={() => onRedeem(product, selectedSize)}
           disabled={isRedeemed || !canAfford || (!!product.sizes && !selectedSize)}
-          className={`w-full rounded-xl py-2.5 text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
+          className={`w-full rounded-xl border py-2.5 text-sm font-heading font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
             isRedeemed
-              ? "border border-green-600/40 bg-green-700/30 text-green-400"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
               : !canAfford
-                ? "bg-red-600 text-white opacity-30"
-                : "bg-red-600 text-white hover:bg-red-500"
+                ? "border-border bg-base text-text-muted opacity-60"
+                : "border-accent-highlight bg-accent-highlight text-white hover:bg-accent-primary hover:border-accent-primary"
           }`}
         >
-          {isRedeemed ? "Redeemed" : !canAfford ? "Not enough XP" : product.sizes && !selectedSize ? "Select a size" : "Redeem"}
+          {isRedeemed ? "Redeemed" : !canAfford ? "Not enough DevCoins" : product.sizes && !selectedSize ? "Select a size" : "Redeem"}
         </button>
       </div>
     </div>

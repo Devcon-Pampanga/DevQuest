@@ -9,10 +9,10 @@ import {
   updateDoc,
   writeBatch,
   serverTimestamp,
-  increment,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { addXpRewardToBatch } from "@/lib/devCoins";
 import { Quest, QuestCompletion, ApprovalsQueueItem } from "@/types/quest";
 import { Mission, MissionCompletion, MissionApprovalItem } from "@/types/mission";
 
@@ -49,15 +49,17 @@ export function useQuestActions({
         xpGranted: quest.xpReward,
         completedAt: now,
       });
-      batch.update(doc(db, "users", uid), { xp: increment(quest.xpReward) });
-      await batch.commit();
-      await addDoc(collection(db, "users", uid, "xpLog"), {
+      addXpRewardToBatch({
+        firestore: db,
+        uid,
+        xp: quest.xpReward,
         source: "quest_completion",
         sourceId: quest.questId,
         description: `Completed: ${quest.name}`,
-        xp: quest.xpReward,
+        batch,
         createdAt: now,
       });
+      await batch.commit();
       setCompletions((prev) => ({
         ...prev,
         [quest.questId]: {
@@ -112,24 +114,25 @@ export function useQuestActions({
         completedAt: now,
         approvedBy: uid,
       });
-      batch.update(doc(db, "users", item.userId), { xp: increment(item.xpReward) });
+      addXpRewardToBatch({
+        firestore: db,
+        uid: item.userId,
+        xp: item.xpReward,
+        source: "quest_completion",
+        sourceId: item.questId,
+        description: `Quest approved: ${item.questName}`,
+        batch,
+        createdAt: now,
+      });
+      const notificationRef = doc(collection(db, "users", item.userId, "notifications"));
+      batch.set(notificationRef, {
+        type: "quest_approved",
+        message: `Your quest "${item.questName}" was approved! +${item.xpReward} XP`,
+        read: false,
+        relatedId: item.questId,
+        createdAt: now,
+      });
       await batch.commit();
-      await Promise.all([
-        addDoc(collection(db, "users", item.userId, "xpLog"), {
-          source: "quest_completion",
-          sourceId: item.questId,
-          description: `Quest approved: ${item.questName}`,
-          xp: item.xpReward,
-          createdAt: now,
-        }),
-        addDoc(collection(db, "users", item.userId, "notifications"), {
-          type: "quest_approved",
-          message: `Your quest "${item.questName}" was approved! +${item.xpReward} XP`,
-          read: false,
-          relatedId: item.questId,
-          createdAt: now,
-        }),
-      ]);
       setApprovals((prev) =>
         prev.filter((a) => !(a.userId === item.userId && a.questId === item.questId))
       );
@@ -226,24 +229,25 @@ export function useQuestActions({
         completedAt: now,
         approvedBy: uid,
       });
-      batch.update(doc(db, "users", item.userId), { xp: increment(item.xpReward) });
+      addXpRewardToBatch({
+        firestore: db,
+        uid: item.userId,
+        xp: item.xpReward,
+        source: "quest_completion",
+        sourceId: item.missionId,
+        description: `Mission approved: ${item.missionTitle}`,
+        batch,
+        createdAt: now,
+      });
+      const notificationRef = doc(collection(db, "users", item.userId, "notifications"));
+      batch.set(notificationRef, {
+        type: "quest_approved",
+        message: `Your mission "${item.missionTitle}" was approved! +${item.xpReward} XP`,
+        read: false,
+        relatedId: item.missionId,
+        createdAt: now,
+      });
       await batch.commit();
-      await Promise.all([
-        addDoc(collection(db, "users", item.userId, "xpLog"), {
-          source: "quest_completion",
-          sourceId: item.missionId,
-          description: `Mission approved: ${item.missionTitle}`,
-          xp: item.xpReward,
-          createdAt: now,
-        }),
-        addDoc(collection(db, "users", item.userId, "notifications"), {
-          type: "quest_approved",
-          message: `Your mission "${item.missionTitle}" was approved! +${item.xpReward} XP`,
-          read: false,
-          relatedId: item.missionId,
-          createdAt: now,
-        }),
-      ]);
       setMissionApprovals((prev) =>
         prev.filter((a) => !(a.userId === item.userId && a.missionId === item.missionId))
       );

@@ -31,17 +31,17 @@ export function FilterDropdown({ active, onChange }: FilterDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-xl border border-[#ffffff10] bg-white/5 px-4 py-2 text-sm font-semibold text-white transition-all hover:border-red-700/40"
+        className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-heading font-medium text-text-primary transition-colors hover:border-accent-highlight hover:text-white"
       >
-        <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="h-4 w-4 text-accent-highlight" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2" />
         </svg>
         Filter
-        <span className="rounded-full bg-red-600/30 px-2 py-0.5 text-[10px] font-bold text-red-400">
+        <span className="rounded-full border border-accent-primary/40 bg-accent-primary/15 px-2 py-0.5 text-[10px] font-heading font-medium text-accent-highlight">
           {activeLabel}
         </span>
         <svg
-          className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -52,7 +52,7 @@ export function FilterDropdown({ active, onChange }: FilterDropdownProps) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-30 mt-2 w-48 overflow-hidden rounded-xl border border-[#ffffff10] bg-[#13131f] shadow-xl shadow-black/40">
+        <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-2xl border border-border bg-elevated shadow-2xl shadow-black/30">
           {FILTER_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -63,13 +63,13 @@ export function FilterDropdown({ active, onChange }: FilterDropdownProps) {
               }}
               className={`flex w-full items-center justify-between px-4 py-3 text-sm transition-colors ${
                 active === option.value
-                  ? "bg-red-600/20 font-semibold text-red-400"
-                  : "text-gray-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-accent-primary/20 font-heading font-medium text-accent-highlight"
+                  : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
               }`}
             >
               {option.label}
               {active === option.value ? (
-                <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="h-4 w-4 text-accent-highlight" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               ) : null}

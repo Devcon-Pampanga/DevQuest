@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import PageShell from "@/components/layout/PageShell";
 import { ConfirmModal } from "@/components/market/ConfirmModal";
 import { PRODUCTS } from "@/components/market/data";
 import { DevCoin } from "@/components/market/DevCoin";
@@ -78,7 +79,7 @@ export function MarketPage() {
 
   useEffect(() => {
     if (user) {
-      setDevCoins(user.xp ?? 0);
+      setDevCoins(user.devCoins ?? 0);
     }
   }, [user]);
 
@@ -100,7 +101,7 @@ export function MarketPage() {
     if (!confirmModal) return;
 
     const totalCost = confirmModal.product.price * confirmModal.quantity;
-    const remainingXP = devCoins - totalCost;
+    const remainingDevCoins = devCoins - totalCost;
     const orderId = `DK-${Date.now().toString(36).toUpperCase()}`;
     const now = new Date();
 
@@ -111,7 +112,7 @@ export function MarketPage() {
       size: confirmModal.size,
       quantity: confirmModal.quantity,
       totalCost,
-      remainingXP,
+      remainingDevCoins,
       date: now.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
@@ -125,7 +126,7 @@ export function MarketPage() {
     };
 
     kaching();
-    setDevCoins(remainingXP);
+    setDevCoins(remainingDevCoins);
     setRedeemedIds((previous) => new Set(Array.from(previous).concat(newReceipt.product.id)));
     setReceipt(newReceipt);
     setReceiptHistory((previous) => [...previous, newReceipt]);
@@ -135,103 +136,86 @@ export function MarketPage() {
     window.setTimeout(() => setShowToast(false), 6000);
   }
 
-  if (authLoading || !user) {
-    return <div className="px-4 py-6 sm:px-6"><MarketSkeleton /></div>;
-  }
-
   return (
-    <div className="flex-1">
-      {loading ? <div className="px-4 py-6 sm:px-6"><MarketSkeleton /></div> : null}
-      {!loading ? (
-        <div
-          className="min-h-screen bg-[#0d0d14] bg-gradient-to-br from-[#0d0d14] via-[#0f0e1a] to-[#0d0d14] text-white"
-          style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
-        >
-          <header className="flex items-center justify-between border-b border-[#ffffff0a] px-6 py-4">
-            <h1 className="text-xl tracking-tight text-white" style={{ fontFamily: "var(--font-heading), sans-serif", fontWeight: 700 }}>
-              Market
-            </h1>
-            <div className="flex items-center gap-3">
-              <div className="relative flex items-center gap-1.5 rounded-full border border-yellow-600/40 bg-yellow-950/30 px-3 py-1.5 text-sm font-bold text-yellow-400">
-                {devCoins.toLocaleString()}
-                <DevCoin size={8} />
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHistory(true)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#ffffff0f] bg-white/5 text-gray-400 transition hover:text-white"
-                title="Receipt History"
-              >
-                RC
-                {receiptHistory.length > 0 ? (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white">
-                    {receiptHistory.length}
-                  </span>
-                ) : null}
-              </button>
-              {avatarUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={avatarUrl}
-                    alt="Profile"
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 rounded-full border border-[#ffffff14] object-cover"
-                  />
-                </>
+    <PageShell
+      title="Market"
+      avatarUrl={avatarUrl}
+      loading={authLoading || !user || loading}
+      skeleton={<MarketSkeleton />}
+      actions={
+        !authLoading && user ? (
+          <>
+            <div className="hidden items-center gap-1.5 rounded-xl border border-accent-primary/40 bg-accent-primary/15 px-3 py-1.5 text-sm font-heading font-medium text-accent-highlight sm:flex">
+              {devCoins.toLocaleString()}
+              <DevCoin size={8} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHistory(true)}
+              className="relative flex h-9 min-w-9 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-heading font-medium text-text-secondary transition-colors hover:border-accent-highlight hover:text-text-primary"
+              title="Receipt History"
+            >
+              <span className="hidden sm:inline">Receipts</span>
+              <span className="sm:hidden">RC</span>
+              {receiptHistory.length > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-highlight text-[9px] font-bold text-white">
+                  {receiptHistory.length}
+                </span>
               ) : null}
-            </div>
-          </header>
-
-        <div className="mx-auto max-w-5xl px-6 pb-2 pt-8">
-          <div className="mb-6 flex items-center justify-between rounded-2xl border border-red-900/40 bg-[#ffffff08] px-6 py-5">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-500">MERCH STORE</p>
-              <p className="text-lg text-white" style={{ fontFamily: "var(--font-heading), sans-serif", fontWeight: 700 }}>
-                Redeem your DevCoins for exclusive <span className="text-red-400">DEVCON Kids</span> merch.
-              </p>
-            </div>
-            <div className="hidden space-y-0.5 text-right sm:block">
-              <div className="flex items-baseline justify-end gap-1.5">
-                <span className="text-2xl font-bold text-yellow-400" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
-                  {devCoins.toLocaleString()}
-                </span>
-                <span className="flex items-center gap-1 text-xs text-yellow-500">
-                  <DevCoin size={8} /> DevCoins
-                </span>
+            </button>
+          </>
+        ) : null
+      }
+    >
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="mx-auto flex max-w-3xl flex-col gap-6 lg:max-w-5xl">
+          <section className="rounded-2xl border border-border bg-surface px-6 py-5">
+            <div className="flex items-center justify-between gap-6">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-accent-highlight">Marketplace</p>
+                <h2 className="font-heading text-2xl text-text-primary">
+                  Redeem your DevCoins for exclusive DEVCON Kids merch.
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-text-secondary">
+                  Browse collectibles, apparel, and accessories earned through your volunteer progress.
+                </p>
+              </div>
+              <div className="hidden rounded-2xl border border-accent-primary/30 bg-base/80 px-4 py-3 text-right sm:block">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">Current Balance</p>
+                <div className="mt-1 flex items-center justify-end gap-2">
+                  <span className="font-heading text-2xl text-text-primary">{devCoins.toLocaleString()}</span>
+                  <DevCoin size={10} />
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <p className="text-sm text-gray-400">
-              Showing <span className="font-semibold text-white">{filtered.length}</span> item{filtered.length !== 1 ? "s" : ""}
+          <section className="flex items-center justify-between gap-4">
+            <p className="text-sm text-text-secondary">
+              Showing <span className="font-semibold text-text-primary">{filtered.length}</span> item{filtered.length !== 1 ? "s" : ""}
             </p>
             <FilterDropdown active={activeFilter} onChange={setActiveFilter} />
-          </div>
-        </div>
+          </section>
 
-        <main className="mx-auto max-w-5xl px-6 pb-20">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <main className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
-                xp={devCoins}
+                devCoins={devCoins}
                 onRedeem={handleRedeem}
                 isRedeemed={redeemedIds.has(product.id)}
               />
             ))}
-          </div>
-        </main>
+          </main>
+        </div>
 
         {confirmModal ? (
           <ConfirmModal
             product={confirmModal.product}
             selectedSize={confirmModal.size}
             quantity={confirmModal.quantity}
-            xp={devCoins}
+            devCoins={devCoins}
             onClose={() => setConfirmModal(null)}
             onConfirm={handleConfirm}
           />
@@ -265,8 +249,7 @@ export function MarketPage() {
             }}
           />
         ) : null}
-        </div>
-      ) : null}
-    </div>
+      </div>
+    </PageShell>
   );
 }
