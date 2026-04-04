@@ -47,6 +47,7 @@ export function ProfileDashboardPage() {
       createdAt: sessionUser.createdAt,
       avatarOptions: sessionUser.avatarOptions,
       onboardingComplete: sessionUser.onboardingComplete,
+      devCoins: sessionUser.devCoins,
     };
   }, [sessionUser]);
 
