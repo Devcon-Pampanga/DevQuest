@@ -27,31 +27,29 @@ export function ProductCard({ product, devCoins, onRedeem, isRedeemed }: Product
           <img
             src={product.imgSrc}
             alt={product.name}
-            className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="relative z-10 h-4/5 w-4/5 object-contain transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <>
-            <span className="relative text-5xl font-heading font-bold tracking-[0.2em] text-text-primary transition-all duration-300 group-hover:scale-105">
-              {product.image}
-            </span>
-            <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-10">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <span
-                  key={index}
-                  className="absolute whitespace-nowrap text-[11px] font-heading font-medium uppercase tracking-widest text-accent-highlight"
-                  style={{
-                    transform: "rotate(-35deg)",
-                    left: `${(index % 4) * 38 - 20}%`,
-                    top: `${Math.floor(index / 4) * 38 - 10}%`,
-                    letterSpacing: "0.15em",
-                  }}
-                >
-                  SAMPLE
-                </span>
-              ))}
-            </div>
-          </>
+          <span className="relative text-5xl font-heading font-bold tracking-[0.2em] text-text-primary transition-all duration-300 group-hover:scale-105">
+            {product.image}
+          </span>
         )}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-10">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <span
+              key={index}
+              className="absolute whitespace-nowrap text-[11px] font-heading font-medium uppercase tracking-widest text-accent-highlight"
+              style={{
+                transform: "rotate(-35deg)",
+                left: `${(index % 4) * 38 - 20}%`,
+                top: `${Math.floor(index / 4) * 38 - 10}%`,
+                letterSpacing: "0.15em",
+              }}
+            >
+              SAMPLE
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
