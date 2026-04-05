@@ -65,7 +65,7 @@ export function ReflectionCard({ eventId, registration }: ReflectionCardProps) {
 
       {reflectionData.insights ? (
         <p className="text-xs text-text-muted leading-relaxed line-clamp-2 italic">
-          "{reflectionData.insights}"
+          &ldquo;{reflectionData.insights}&rdquo;
         </p>
       ) : (
         <p className="text-xs text-text-muted italic">No additional insights</p>

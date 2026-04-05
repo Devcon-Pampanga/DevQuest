@@ -29,7 +29,6 @@ interface CoAttendee {
 }
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
 
-const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
 
 const TEAM_LABELS: Record<string, string> = {
   lead_learners: "Lead Learners",

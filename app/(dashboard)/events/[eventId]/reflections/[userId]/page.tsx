@@ -262,7 +262,7 @@ export default function ReflectionDetailPage() {
                 </div>
                 <div className="p-5">
                   <p className="text-sm text-text-secondary leading-relaxed italic">
-                    "{reflectionData.insights}"
+                    &ldquo;{reflectionData.insights}&rdquo;
                   </p>
                 </div>
               </div>

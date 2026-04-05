@@ -15,7 +15,7 @@ import {
   EVENT_SCALES,
   EVENT_TYPES,
   INTERNAL_EVENT_TYPES,
-  NEW_EVENT_WAVE_COLORS,
+
   buildRolesFromPreset,
   type EventScale,
   type RoleEntry,

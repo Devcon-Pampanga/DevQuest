@@ -10,7 +10,6 @@ import { EditEventModal, QrScannerModal } from "./EventDetailModals";
 import { EventHeaderCard } from "./EventHeaderCard";
 import { EventRolesSection } from "./EventRolesSection";
 import { ReflectionDataPreview } from "./ReflectionDataPreview";
-import { WAVE_COLORS } from "./constants";
 
 interface CoordinatorEventDetailProps {
   event: EventDoc;
