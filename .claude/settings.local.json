@@ -34,7 +34,11 @@
       "WebSearch",
       "Bash(echo \"EXIT:$?\")",
       "Bash(find C:UsersL-JOAQUINDocumentsProjectsWebDevQuest -type f -name AuthContext*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(git fetch:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(xargs grep:*)",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }

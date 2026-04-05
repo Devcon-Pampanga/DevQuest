@@ -9,6 +9,7 @@ import { IconBack, IconCheck, IconDownload, IconEdit, IconQr, IconTrash, IconX }
 import { EditEventModal, QrScannerModal } from "./EventDetailModals";
 import { EventHeaderCard } from "./EventHeaderCard";
 import { EventRolesSection } from "./EventRolesSection";
+import { ReflectionDataPreview } from "./ReflectionDataPreview";
 import { WAVE_COLORS } from "./constants";
 
 interface CoordinatorEventDetailProps {
@@ -114,7 +115,7 @@ export function CoordinatorEventDetail({
       </div>
 
       <div className="flex border-b border-border px-6">
-        {(["details", "volunteers"] as CoordTab[]).map((tab) => (
+        {(["details", "volunteers", "reflections"] as CoordTab[]).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -127,6 +128,8 @@ export function CoordinatorEventDetail({
           >
             {tab === "volunteers"
               ? `${event.isInternal ? "Attendees" : "Volunteers"} (${allRegs.length})`
+              : tab === "reflections"
+              ? `Reflections${reflections > 0 ? ` (${reflections})` : ""}`
               : "Details"}
           </button>
         ))}
@@ -169,11 +172,11 @@ export function CoordinatorEventDetail({
             </div>
 
             {event.roles.length > 1 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "140ms" }}>
                 <button
                   type="button"
                   onClick={() => setRoleFilter(null)}
-                  className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all duration-100 active:scale-95 ${
                     roleFilter === null ? "bg-accent-highlight text-white" : "border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50"
                   }`}
                 >
@@ -186,7 +189,7 @@ export function CoordinatorEventDetail({
                       key={r.roleName}
                       type="button"
                       onClick={() => setRoleFilter(r.roleName)}
-                      className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                      className={`text-xs px-3 py-1 rounded-full font-medium transition-all duration-100 active:scale-95 ${
                         roleFilter === r.roleName ? "bg-accent-highlight text-white" : "border border-border text-text-secondary hover:text-text-primary hover:border-accent-primary/50"
                       }`}
                     >
@@ -197,11 +200,11 @@ export function CoordinatorEventDetail({
               </div>
             )}
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap animate-fade-up" style={{ animationDelay: "180ms" }}>
               <button
                 type="button"
                 onClick={() => setShowQrScanner(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-all duration-100 active:scale-95"
               >
                 <IconQr />
                 Scan QR
@@ -210,7 +213,7 @@ export function CoordinatorEventDetail({
                 type="button"
                 onClick={onConfirmAll}
                 disabled={confirmingAll || allRegs.filter((r) => !r.attended).length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm text-text-secondary hover:text-text-primary transition-all duration-100 active:scale-95"
               >
                 {confirmingAll ? (
                   <span className="flex gap-1">
@@ -226,7 +229,7 @@ export function CoordinatorEventDetail({
               <button
                 type="button"
                 onClick={onExportCsv}
-                className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:border-accent-primary/50 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-all duration-100 active:scale-95"
               >
                 <IconDownload />
                 Export CSV
@@ -275,7 +278,7 @@ export function CoordinatorEventDetail({
                             type="button"
                             onClick={() => onConfirmAttendance(reg)}
                             disabled={confirmingId === reg.userId}
-                            className="text-sm px-4 py-2 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 rounded-xl text-white font-heading font-medium transition-colors flex items-center gap-1.5"
+                            className="text-sm px-4 py-2 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 rounded-xl text-white font-heading font-medium transition-all duration-100 active:scale-95 flex items-center gap-1.5"
                           >
                             {confirmingId === reg.userId ? (
                               <span className="flex gap-1">
@@ -295,14 +298,12 @@ export function CoordinatorEventDetail({
               );
             })()}
 
-            {!upcoming && reflections > 0 && (
-              <div className="bg-surface border border-border rounded-2xl p-5">
-                <h3 className="font-heading text-sm text-text-muted uppercase tracking-wider mb-3">Energy Report</h3>
-                <p className="text-xs text-text-muted">
-                  Anonymous energy data from {reflections} reflection{reflections !== 1 ? "s" : ""}. Full breakdown available once volunteer reflections are loaded.
-                </p>
-              </div>
-            )}
+          </div>
+        )}
+
+        {coordTab === "reflections" && (
+          <div key="reflections" className="max-w-2xl mx-auto flex flex-col gap-4">
+            <ReflectionDataPreview registrations={allRegs} />
           </div>
         )}
       </div>

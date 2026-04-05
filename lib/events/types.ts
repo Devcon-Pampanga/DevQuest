@@ -22,6 +22,20 @@ export interface EventDoc {
   bannerUrl?: string;
 }
 
+export type ReflectionRatingKey = "q1" | "q2" | "q3" | "q4" | "q5" | "q6" | "q7" | "q8";
+export type ReflectionMood = "drained" | "okay" | "good" | "energized";
+
+export interface ReflectionData {
+  firstName: string;
+  lastName: string;
+  rolePosition: string;
+  chapterId: string;
+  ratings: Record<ReflectionRatingKey, number>;
+  mood: ReflectionMood;
+  insights: string;
+  submittedAt: Timestamp;
+}
+
 /** Registration subdocument under events/{eventId}/registrations/{uid} */
 export interface EventRegistration {
   userId: string;
@@ -31,6 +45,7 @@ export interface EventRegistration {
   attended: boolean;
   reflectionSubmitted: boolean;
   reflectionDeadline?: Timestamp;
+  reflectionData?: ReflectionData;
   confirmedAt?: Timestamp;
   confirmedBy?: string;
   username?: string;
