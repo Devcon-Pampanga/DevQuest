@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import type { AvatarOptions } from "@/lib/avatar";
+import { buildAvatarUrl, DEFAULT_AVATAR } from "@/lib/avatar";
 
 export interface ReflectionEntry {
   userId: string;
@@ -15,6 +17,7 @@ export interface ReflectionEntry {
   mood: string;
   insights: string;
   submittedAt?: { toDate: () => Date };
+  avatarOptions?: AvatarOptions;
 }
 
 interface EventSummary {
@@ -284,7 +287,14 @@ export function EventsDataDashboard({ reflections, events }: EventsDataDashboard
                       onClick={() => setExpandedRow(isOpen ? null : key)}
                       className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-white/5 transition-colors text-left"
                     >
-                      <span className="text-xl shrink-0">{mood.emoji}</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={buildAvatarUrl(ref.username, ref.avatarOptions ?? DEFAULT_AVATAR)}
+                        alt={name}
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-lg shrink-0 border border-border"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="font-heading text-sm text-text-primary truncate">{name}</p>
                         <div className="flex items-center gap-1.5 flex-wrap mt-0.5">

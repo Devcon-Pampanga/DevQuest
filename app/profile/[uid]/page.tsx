@@ -1,17 +1,17 @@
 import { notFound } from "next/navigation";
-import { PublicProfilePage } from "@/components/profile/PublicProfilePage";
-import { getPublicProfilePayload } from "@/lib/profile/publicProfile";
+import { DashboardProfileDetailPage } from "@/components/profile/DashboardProfileDetailPage";
+import { getDashboardProfilePayload } from "@/lib/profile/dashboardProfile";
 
 export default async function PublicProfileRoute({
   params,
 }: {
   params: { uid: string };
 }) {
-  const payload = await getPublicProfilePayload(params.uid);
+  const payload = await getDashboardProfilePayload(params.uid);
 
   if (!payload) {
     notFound();
   }
 
-  return <PublicProfilePage payload={payload} />;
+  return <DashboardProfileDetailPage payload={payload} />;
 }

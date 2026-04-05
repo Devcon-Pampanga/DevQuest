@@ -133,9 +133,13 @@ export default function EventsPage() {
                 const rd = reg.reflectionData;
 
                 let username = reg.userId;
+                let avatarOptions;
                 try {
                   const u = await getDoc(doc(db, "users", reg.userId));
-                  if (u.exists()) username = u.data().username ?? reg.userId;
+                  if (u.exists()) {
+                    username = u.data().username ?? reg.userId;
+                    avatarOptions = u.data().avatarOptions;
+                  }
                 } catch {
                   /* ok */
                 }
@@ -143,6 +147,7 @@ export default function EventsPage() {
                 results.push({
                   userId: reg.userId,
                   username,
+                  avatarOptions,
                   firstName: rd.firstName ?? "",
                   lastName: rd.lastName ?? "",
                   eventId: evDoc.id,
