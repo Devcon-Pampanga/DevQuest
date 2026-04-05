@@ -139,7 +139,7 @@ export function ProfileDashboardPage() {
 
   function handleCopyShare() {
     if (!userData || typeof window === "undefined") return;
-    copyUrl(`${window.location.origin}/profile/${userData.username}`);
+    copyUrl(`${window.location.origin}/profile/${userData.uid}`);
   }
 
   async function handleGenerateResume() {
@@ -216,10 +216,10 @@ export function ProfileDashboardPage() {
             </div>
 
             <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
-              <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} />
+              <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} starsReceived={sessionUser?.starsReceived ?? 0} />
             </div>
 
-            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2">
+            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2 order-3 lg:order-none">
               {milestoneTeam ? (
                 <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
                   <ProfileMilestonesSection
@@ -253,7 +253,7 @@ export function ProfileDashboardPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1">
+            <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-1 order-2 lg:order-none">
               <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
                 <ChapterLeaderboardPanel
                   viewingChapterId={chapterId}

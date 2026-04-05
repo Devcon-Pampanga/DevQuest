@@ -36,9 +36,9 @@ export function ProfilePortfolioCard({
 
   return (
     <div className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-5">
-      <h3 className="font-heading text-lg text-text-primary">Volunteer milestones</h3>
+      <h3 className="font-heading text-lg text-text-primary">Volunteer quests</h3>
       <div>
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Verified milestones</p>
+        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Verified quests</p>
         {verified.length === 0 ? (
           <p className="text-sm text-text-muted font-sans">None yet — complete coordinator-approved quests.</p>
         ) : (

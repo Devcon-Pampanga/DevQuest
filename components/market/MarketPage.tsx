@@ -187,12 +187,12 @@ export function MarketPage() {
             <button
               type="button"
               onClick={() => setShowHistory(true)}
-              className="relative flex h-9 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-heading font-medium text-text-secondary transition-colors hover:border-accent-highlight hover:text-text-primary"
+              className="relative flex h-9 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-heading font-medium text-text-secondary transition-all duration-100 hover:border-accent-highlight hover:text-text-primary active:scale-95"
               title="Receipt History"
             >
               <span>Receipts</span>
               {receiptHistory.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-highlight text-[9px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-highlight text-[9px] font-bold text-white animate-modal-in">
                   {receiptHistory.length}
                 </span>
               ) : null}
@@ -203,7 +203,7 @@ export function MarketPage() {
     >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-6 lg:max-w-5xl">
-          <section className="rounded-2xl border border-border bg-surface px-6 py-5">
+          <section className="rounded-2xl border border-border bg-surface px-6 py-5 animate-fade-up" style={{ animationDelay: "0ms" }}>
             <div className="flex items-center justify-between gap-6">
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-accent-highlight">Marketplace</p>
@@ -224,7 +224,7 @@ export function MarketPage() {
             </div>
           </section>
 
-          <section className="flex items-center justify-between gap-4">
+          <section className="flex items-center justify-between gap-4 animate-fade-up" style={{ animationDelay: "80ms" }}>
             <p className="text-sm text-text-secondary">
               Showing <span className="font-semibold text-text-primary">{filtered.length}</span> item{filtered.length !== 1 ? "s" : ""}
             </p>
@@ -232,14 +232,15 @@ export function MarketPage() {
           </section>
 
           <main className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                devCoins={devCoins}
-                onRedeem={handleRedeem}
-                isRedeemed={redeemedIds.has(product.id)}
-              />
+            {filtered.map((product, idx) => (
+              <div key={product.id} className="animate-fade-up" style={{ animationDelay: `${140 + Math.min(idx, 8) * 60}ms` }}>
+                <ProductCard
+                  product={product}
+                  devCoins={devCoins}
+                  onRedeem={handleRedeem}
+                  isRedeemed={redeemedIds.has(product.id)}
+                />
+              </div>
             ))}
           </main>
         </div>

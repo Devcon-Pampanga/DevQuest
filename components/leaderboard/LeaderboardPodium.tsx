@@ -12,7 +12,7 @@ export function LeaderboardPodium({
 }) {
   return (
     <div
-      className="rounded-2xl bg-surface border border-border p-6 animate-fade-up"
+      className="relative overflow-hidden rounded-2xl bg-surface border border-border p-4 animate-fade-up sm:p-6"
       style={{ animationDelay: "80ms" }}
     >
       <div
@@ -23,7 +23,7 @@ export function LeaderboardPodium({
         }}
       />
 
-      <div className="relative flex items-end gap-3 sm:gap-6">
+      <div className="relative grid grid-cols-3 items-end gap-2 sm:flex sm:gap-6">
         <PodiumSlot
           volunteer={top3[1]}
           rank={2}

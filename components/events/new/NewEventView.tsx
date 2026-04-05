@@ -15,7 +15,7 @@ import {
   EVENT_SCALES,
   EVENT_TYPES,
   INTERNAL_EVENT_TYPES,
-  NEW_EVENT_WAVE_COLORS,
+
   buildRolesFromPreset,
   type EventScale,
   type RoleEntry,
@@ -256,13 +256,6 @@ export function NewEventView({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent-primary/50 text-accent-highlight hover:bg-accent-primary/10 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-heading transition-colors"
-          >
-            {submitting ? "Creating…" : "Create Event"}
-          </button>
           <Link href="/dashboard">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -764,7 +757,7 @@ export function NewEventView({
             ) : (
               /* ── Role table ─────────────────────────────────────────────────── */
               <>
-                <div className="grid grid-cols-[1fr_auto_auto_32px] gap-3 mb-2 px-1">
+                <div className="mb-2 grid grid-cols-[minmax(0,1fr)_auto_auto_24px] gap-2 px-1">
                   <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">Role</span>
                   <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted">XP</span>
                   <span className="text-[10px] font-sans uppercase tracking-widest text-text-muted text-center">Slots</span>
@@ -775,22 +768,22 @@ export function NewEventView({
                   {roles.map((role, i) => (
                     <div
                       key={role.id}
-                      className="grid grid-cols-[1fr_auto_auto_32px] gap-3 items-center rounded-xl border border-border px-3 py-2.5 animate-fade-up"
+                      className="grid grid-cols-[minmax(0,1fr)_auto_auto_24px] items-center gap-2 rounded-xl border border-border px-2.5 py-2.5 animate-fade-up"
                       style={{ backgroundColor: "#252038", animationDelay: `${i * 50}ms` }}
                     >
-                      <span className="text-sm text-text-primary font-sans truncate">{role.roleName}</span>
+                      <span className="truncate text-sm text-text-primary font-sans">{role.roleName}</span>
                       <span
-                        className="text-xs font-semibold px-2 py-0.5 rounded-md border shrink-0"
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0"
                         style={{ color: "#A855F7", borderColor: "#A855F760", backgroundColor: "#A855F718" }}
                       >
                         +{role.xpReward} XP
                       </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button onClick={() => adjustSlots(role.id, -1)} className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-base leading-none select-none">−</button>
-                        <span className="w-7 text-center text-sm text-text-primary tabular-nums select-none">{role.slots}</span>
-                        <button onClick={() => adjustSlots(role.id, +1)} className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-base leading-none select-none">+</button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => adjustSlots(role.id, -1)} className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-sm leading-none select-none">−</button>
+                        <span className="w-6 text-center text-xs text-text-primary tabular-nums select-none">{role.slots}</span>
+                        <button onClick={() => adjustSlots(role.id, +1)} className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-white/8 transition-colors text-sm leading-none select-none">+</button>
                       </div>
-                      <button onClick={() => removeRole(role.id)} className="flex items-center justify-center w-7 h-7 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                      <button onClick={() => removeRole(role.id)} className="flex items-center justify-center w-6 h-6 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors">
                         <IconX />
                       </button>
                     </div>
@@ -871,8 +864,8 @@ export function NewEventView({
           >
             {submitting ? (
               <span className="flex gap-1">
-                {NEW_EVENT_WAVE_COLORS.map((color, i) => (
-                  <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                {[0, 1, 2, 3].map((i) => (
+                  <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
                 ))}
               </span>
             ) : "Create Event"}

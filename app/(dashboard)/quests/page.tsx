@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { AvatarOptions, DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
@@ -30,6 +31,7 @@ interface UserData {
 }
 
 function QuestsPageContent() {
+  const router = useRouter();
   const { user: sessionUser } = useAuth();
   const { ready } = useRequireDashboardAuth();
 
@@ -104,6 +106,17 @@ function QuestsPageContent() {
 
   const metrics = useTeamQuestMetrics(activeTab, quests, completions);
 
+  useEffect(() => {
+    if (!ready || !userData) return;
+    if (userData.role === "coordinator") {
+      router.replace("/dashboard");
+    }
+  }, [ready, router, userData]);
+
+  if (ready && userData?.role === "coordinator") {
+    return null;
+  }
+
   return (
     <PageShell
       title="Quests"
@@ -126,6 +139,7 @@ function QuestsPageContent() {
 
           {!loadingCompletions && activeTab !== "approvals" && metrics && (
             <>
+              {/* Left column — desktop col 1-2 */}
               <div className="flex flex-col gap-5 lg:col-span-2">
 
                 <TeamQuestProgress
@@ -139,6 +153,23 @@ function QuestsPageContent() {
                   completions={completions}
                   isMaxTier={metrics.isMaxTier}
                 />
+
+                {/* Your Journey — mobile only (position 2) */}
+                <div
+                  className="rounded-2xl border border-border overflow-hidden lg:hidden"
+                  style={{ backgroundColor: "#1e1a2e" }}
+                >
+                  <div className="h-[3px] w-full" style={{ backgroundColor: metrics.activeMeta.color }} />
+                  <div className="p-4 sm:p-5">
+                    <PathJourneySidebar
+                      teamId={activeTab}
+                      teamColor={metrics.activeMeta.color}
+                      leadTitle={metrics.activeMeta.leadTitle}
+                      completions={completions}
+                      allQuests={quests}
+                    />
+                  </div>
+                </div>
 
                 <QuestTierSection
                   teamColor={metrics.activeMeta.color}
@@ -169,9 +200,24 @@ function QuestsPageContent() {
                   onRevise={handleReviseMission}
                 />
 
+                {/* Badges — mobile only (position 5) */}
+                <div className="lg:hidden [&_.animate-fade-up]:animate-none [&_.animate-fade-up]:opacity-100">
+                  <QuestBadgesCard
+                    teamColor={metrics.activeMeta.color}
+                    completions={completions}
+                    allQuests={quests}
+                    teams={userData!.teams ?? []}
+                    xp={userData!.xp ?? 0}
+                    eventCount={eventCount}
+                    reflectionCount={reflectionCount}
+                    profileSetupCount={profileSetupCount}
+                  />
+                </div>
+
               </div>
 
-              <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-5">
+              {/* Right sidebar — desktop only */}
+              <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 sm:gap-5">
                 <div
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
                   style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}

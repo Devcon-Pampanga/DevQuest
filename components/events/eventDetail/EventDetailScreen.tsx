@@ -11,7 +11,7 @@ import { useEventDetailPage } from "@/hooks/useEventDetailPage";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { CoordinatorEventDetail } from "./CoordinatorEventDetail";
 import { VolunteerEventDetail } from "./VolunteerEventDetail";
-import { EventDetailPageShellSkeleton, EventDetailLoadingBar } from "./EventDetailSkeleton";
+import { EventDetailPageShellSkeleton } from "./EventDetailSkeleton";
 
 export function EventDetailScreen({ eventId }: { eventId: string }) {
   const { ready, loading: authLoading } = useRequireDashboardAuth();
@@ -26,7 +26,7 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
   }
 
   if (p.dataLoading || !p.event) {
-    return <EventDetailLoadingBar />;
+    return <EventDetailPageShellSkeleton />;
   }
 
   const event = p.event;

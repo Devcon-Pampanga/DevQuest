@@ -7,7 +7,7 @@ interface SuccessToastProps {
 
 export function SuccessToast({ onClose, onViewReceipt }: SuccessToastProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-elevated px-5 py-4 shadow-xl shadow-black/40">
+    <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-elevated px-5 py-4 shadow-xl shadow-black/40 animate-fade-up">
       <div className="flex h-9 w-9 items-center justify-center rounded-full border border-accent-primary/40 bg-accent-primary/20 text-sm font-heading font-bold text-accent-highlight">
         OK
       </div>

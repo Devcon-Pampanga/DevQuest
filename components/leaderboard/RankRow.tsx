@@ -36,7 +36,7 @@ export function RankRow({
       </span>
 
       <Link
-        href={`/profile/${volunteer.username}`}
+        href={`/profile/${volunteer.uid}`}
         className="flex items-center gap-3 flex-1 min-w-0"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
