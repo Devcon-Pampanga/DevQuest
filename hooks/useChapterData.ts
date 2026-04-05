@@ -19,6 +19,13 @@ export function useChapterData(viewingChapterId: string) {
   // refetches from overwriting in-session mutations.
   const [volunteers, setVolunteers] = useState<ChapterVolunteer[]>([]);
   const seeded = useRef(false);
+
+  // Reset the seed gate when the chapter changes so new chapter data is loaded.
+  useEffect(() => {
+    seeded.current = false;
+    setVolunteers([]);
+  }, [viewingChapterId]);
+
   useEffect(() => {
     if (data && !seeded.current) {
       seeded.current = true;

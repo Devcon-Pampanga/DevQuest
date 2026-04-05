@@ -39,7 +39,9 @@
       "Bash(git ls-tree:*)",
       "Bash(xargs grep:*)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(find C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\components:*)"
+      "Bash(find C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\components:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 60 bash -c 'while [ ! -s \"C:/Users/L-JOAQ~1/AppData/Local/Temp/claude/C--Users-L-JOAQUIN-Documents-Projects-Web-DevQuest/05ffe3b8-2861-4377-ac57-a93ec881cc4f/tasks/b732qm10a.output\" ]; do sleep 2; done; cat \"C:/Users/L-JOAQ~1/AppData/Local/Temp/claude/C--Users-L-JOAQUIN-Documents-Projects-Web-DevQuest/05ffe3b8-2861-4377-ac57-a93ec881cc4f/tasks/b732qm10a.output\"')"
     ]
   }
 }
