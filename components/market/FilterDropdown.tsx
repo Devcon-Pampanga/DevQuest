@@ -31,7 +31,7 @@ export function FilterDropdown({ active, onChange }: FilterDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-heading font-medium text-text-primary transition-colors hover:border-accent-highlight hover:text-white"
+        className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-heading font-medium text-text-primary transition-all duration-100 hover:border-accent-highlight hover:text-white active:scale-[0.97]"
       >
         <svg className="h-4 w-4 text-accent-highlight" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2" />
@@ -52,7 +52,7 @@ export function FilterDropdown({ active, onChange }: FilterDropdownProps) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-2xl border border-border bg-elevated shadow-2xl shadow-black/30">
+        <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-2xl border border-border bg-elevated shadow-2xl shadow-black/30 animate-fade-up" style={{ animationDuration: "180ms" }}>
           {FILTER_OPTIONS.map((option) => (
             <button
               key={option.value}

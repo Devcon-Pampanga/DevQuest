@@ -22,7 +22,7 @@ import { confirmVolunteerAttendance } from "@/lib/events/attendanceConfirmation"
 import { parseAttendanceQrData, isDevQuestQr } from "@/lib/events/qrAttendance";
 import { exportVolunteersCsv } from "@/lib/events/exportVolunteerCsv";
 
-export type CoordTab = "details" | "volunteers";
+export type CoordTab = "details" | "volunteers" | "reflections";
 
 export function useEventDetailPage(eventId: string) {
   const router = useRouter();

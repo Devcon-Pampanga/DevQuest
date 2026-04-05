@@ -136,7 +136,7 @@ export function PublicProfilePage({ payload }: { payload: PublicProfilePayload }
           </div>
 
           <div className="lg:col-span-3">
-            <ProfileStatCards eventCount={payload.eventCount} badgesEarned={badgesEarned} />
+            <ProfileStatCards eventCount={payload.eventCount} badgesEarned={badgesEarned} starsReceived={payload.user.starsReceived ?? 0} />
           </div>
 
           <div className="order-3 flex flex-col gap-5 lg:order-none lg:col-span-2 lg:gap-6">

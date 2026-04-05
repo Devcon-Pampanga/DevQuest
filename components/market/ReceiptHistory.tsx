@@ -12,7 +12,7 @@ interface ReceiptHistoryProps {
 export function ReceiptHistory({ receipts, onSelect, onClose }: ReceiptHistoryProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm">
+      <div className="relative w-full max-w-sm animate-modal-in">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-heading font-medium text-text-primary">Receipt History</p>
           <button

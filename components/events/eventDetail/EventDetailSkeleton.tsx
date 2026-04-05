@@ -1,5 +1,4 @@
 import PageShell, { SkeletonLine, SkeletonBlock } from "@/components/layout/PageShell";
-import { WAVE_COLORS } from "./constants";
 
 export function EventDetailPageShellSkeleton() {
   return (
@@ -37,22 +36,3 @@ export function EventDetailSkeletonInner() {
   );
 }
 
-export function EventDetailLoadingBar() {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-surface animate-pulse" />
-          <div className="h-6 w-40 rounded-lg bg-surface animate-pulse" />
-        </div>
-      </div>
-      <div className="flex items-center justify-center flex-1">
-        <div className="flex gap-2">
-          {WAVE_COLORS.map((color, i) => (
-            <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
