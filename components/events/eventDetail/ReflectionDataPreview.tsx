@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { EventRegistration, ReflectionRatingKey } from "@/lib/events/types";
+import { buildAvatarUrl, DEFAULT_AVATAR } from "@/lib/avatar";
 
 const PRE_Qs: { key: ReflectionRatingKey; short: string; full: string }[] = [
   { key: "q1", short: "Role Clarity",       full: "My volunteer role(s) and responsibilities were clearly stated" },
@@ -257,7 +258,14 @@ export function ReflectionDataPreview({ registrations }: ReflectionDataPreviewPr
                   onClick={() => setExpandedRow(isOpen ? null : reg.userId)}
                   className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-white/5 transition-colors text-left group"
                 >
-                  <span className="text-xl shrink-0 transition-transform duration-200 group-hover:scale-110">{mood.emoji}</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={buildAvatarUrl(reg.username ?? reg.userId, reg.avatarOptions ?? DEFAULT_AVATAR)}
+                    alt={name}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-lg shrink-0 border border-border"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-heading text-sm text-text-primary truncate">{name}</p>
