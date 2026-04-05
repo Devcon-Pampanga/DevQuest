@@ -27,15 +27,17 @@ const iconStar = (
 export function ProfileStatCards({
   eventCount,
   badgesEarned,
+  starsReceived,
 }: {
   eventCount: number;
   badgesEarned: number;
+  starsReceived: number;
 }) {
   return (
     <div className="grid grid-cols-3 gap-3 lg:gap-6">
       <ChapterStatCard label="Events Attended" value={eventCount} color="#06B6D4" icon={iconCalendar} delay={60} />
       <ChapterStatCard label="Badges Earned" value={badgesEarned} color="#A855F7" icon={iconBadge} delay={100} />
-      <ChapterStatCard label="Stars Earned" value="0" color="#F5C518" icon={iconStar} delay={140} />
+      <ChapterStatCard label="Stars Received" value={starsReceived} color="#F5C518" icon={iconStar} delay={140} />
     </div>
   );
 }

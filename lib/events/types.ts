@@ -50,6 +50,7 @@ export interface EventRegistration {
   confirmedBy?: string;
   username?: string;
   avatarOptions?: AvatarOptions;
+  starsGiven?: string[];
 }
 
 export interface PublicRegistrationRow {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { EventRegistration, ReflectionRatingKey } from "@/lib/events/types";
 
 const PRE_Qs: { key: ReflectionRatingKey; short: string; full: string }[] = [
@@ -63,6 +63,16 @@ export function ReflectionDataPreview({ registrations }: ReflectionDataPreviewPr
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const reflectedRegs = registrations.filter((r) => r.reflectionSubmitted && r.reflectionData);
+
+  const starCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const reg of registrations) {
+      for (const uid of reg.starsGiven ?? []) {
+        counts[uid] = (counts[uid] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [registrations]);
 
   if (reflectedRegs.length === 0) {
     return (
@@ -249,7 +259,14 @@ export function ReflectionDataPreview({ registrations }: ReflectionDataPreviewPr
                 >
                   <span className="text-xl shrink-0 transition-transform duration-200 group-hover:scale-110">{mood.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-heading text-sm text-text-primary truncate">{name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-heading text-sm text-text-primary truncate">{name}</p>
+                      {(starCounts[reg.userId] ?? 0) > 0 && (
+                        <span className="shrink-0 text-xs px-1.5 py-0.5 rounded-md bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 font-medium tabular-nums">
+                          ⭐ {starCounts[reg.userId]}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                       <span className="text-xs text-text-muted">{role}</span>
                       {rd.chapterId && (

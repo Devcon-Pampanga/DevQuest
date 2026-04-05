@@ -6,17 +6,27 @@ import Link from "next/link";
 import {
   doc,
   getDoc,
+  getDocs,
   setDoc,
   addDoc,
   collection,
   serverTimestamp,
   increment,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { useAuth } from "@/context/AuthContext";
 import type { EventDoc, EventRegistration, ReflectionRatingKey, ReflectionMood } from "@/lib/events/types";
+import type { AvatarOptions } from "@/lib/avatar";
+
+interface CoAttendee {
+  userId: string;
+  username: string;
+  role: string;
+  avatarOptions?: AvatarOptions;
+}
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
 
 const WAVE_COLORS = ["#F5C518", "#F97316", "#22C55E", "#9333EA", "#06B6D4"];
@@ -53,7 +63,7 @@ function LikertScale({
         {required && <span className="text-red-400 ml-1">*</span>}
       </p>
       <div className="flex items-center gap-2 sm:gap-4">
-        <span className="text-xs text-text-muted w-24 text-right shrink-0">{leftLabel}</span>
+        <span className="text-xs text-text-muted w-14 leading-tight text-right shrink-0">{leftLabel}</span>
         <div className="flex items-center gap-3 flex-1 justify-center">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
@@ -73,7 +83,7 @@ function LikertScale({
             </button>
           ))}
         </div>
-        <span className="text-xs text-text-muted w-24 shrink-0">{rightLabel}</span>
+        <span className="text-xs text-text-muted w-14 leading-tight shrink-0">{rightLabel}</span>
       </div>
     </div>
   );
@@ -116,6 +126,60 @@ function AutoFilledField({
   );
 }
 
+// ─── Reflection success overlay (mobile-only) ─────────────────────────────────
+
+function ReflectionSuccessOverlay() {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-base"
+      style={{ animation: "successFadeIn 0.35s ease-out forwards" }}
+    >
+      <style>{`
+        @keyframes successFadeIn {
+          from { opacity: 0; transform: scale(0.97); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes circleDraw {
+          from { stroke-dashoffset: 166; }
+          to   { stroke-dashoffset: 0; }
+        }
+        @keyframes checkDraw {
+          from { stroke-dashoffset: 48; }
+          to   { stroke-dashoffset: 0; }
+        }
+        .draw-circle {
+          stroke-dasharray: 166;
+          stroke-dashoffset: 166;
+          animation: circleDraw 0.55s ease-out 0.15s forwards;
+        }
+        .draw-check {
+          stroke-dasharray: 48;
+          stroke-dashoffset: 48;
+          animation: checkDraw 0.3s ease-out 0.65s forwards;
+        }
+      `}</style>
+
+      <svg viewBox="0 0 52 52" className="w-20 h-20 mb-8" style={{ overflow: "visible" }}>
+        <circle
+          cx="26" cy="26" r="25"
+          fill="none" stroke="#A855F7" strokeWidth="1.5"
+          className="draw-circle"
+        />
+        <path
+          fill="none" stroke="#A855F7" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round"
+          d="M14 27l8 8 16-16"
+          className="draw-check"
+        />
+      </svg>
+
+      <h2 className="font-heading text-3xl text-text-primary mb-3 tracking-wide">Reflection submitted.</h2>
+      <p className="text-text-secondary text-sm text-center max-w-xs leading-relaxed">+25 XP earned</p>
+      <p className="text-text-muted text-xs mt-10">Taking you back to the event…</p>
+    </div>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ReflectPage() {
@@ -127,8 +191,6 @@ export default function ReflectPage() {
 
   const [event, setEvent] = useState<EventDoc | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
-  const [done, setDone] = useState(false);
 
   // Auto-filled fields
   const [firstName, setFirstName] = useState("");
@@ -151,6 +213,13 @@ export default function ReflectPage() {
   const [mood, setMood] = useState<ReflectionMood | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState("");
+
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+
+  // Star-giving state
+  const [coAttendees, setCoAttendees] = useState<CoAttendee[]>([]);
+  const [starBudget, setStarBudget] = useState(1);
+  const [starsGiven, setStarsGiven] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!ready || !user) return;
@@ -194,12 +263,47 @@ export default function ReflectPage() {
       if (!regSnap.exists()) { router.replace(`/events/${eventId}`); return; }
       const reg = regSnap.data() as EventRegistration;
 
-      if (reg.reflectionSubmitted) { setAlreadySubmitted(true); setDone(true); setAuthReady(true); return; }
+      if (reg.reflectionSubmitted) { setAuthReady(true); setShowSuccessOverlay(true); setTimeout(() => router.replace(`/events/${eventId}`), 2400); return; }
       if (!reg.attended) { router.replace(`/events/${eventId}`); return; }
       if (reg.reflectionDeadline && new Date() > reg.reflectionDeadline.toDate()) {
         router.replace(`/events/${eventId}`); return;
       }
       if (reg.role) setRolePosition(reg.role);
+
+      // Load co-attendees for star-giving
+      const allRegsSnap = await getDocs(collection(db, "events", eventId, "registrations"));
+      const attendedDocs = allRegsSnap.docs.filter((d) => {
+        const r = d.data() as EventRegistration;
+        return r.attended && d.id !== user!.uid;
+      });
+
+      // Fetch user docs for all co-attendees to get accurate username + avatarOptions
+      const userDocMap: Record<string, { username: string; avatarOptions?: AvatarOptions }> = {};
+      await Promise.all(
+        attendedDocs.map(async (d) => {
+          const uSnap = await getDoc(doc(db, "users", d.id));
+          if (uSnap.exists()) {
+            const uData = uSnap.data();
+            userDocMap[d.id] = {
+              username: typeof uData.username === "string" ? uData.username : d.id,
+              avatarOptions: uData.avatarOptions as AvatarOptions | undefined,
+            };
+          }
+        })
+      );
+
+      const others: CoAttendee[] = attendedDocs.map((d) => {
+        const r = d.data() as EventRegistration;
+        const fromUser = userDocMap[d.id];
+        return {
+          userId: d.id,
+          username: fromUser?.username ?? r.username ?? d.id,
+          role: r.role,
+          avatarOptions: fromUser?.avatarOptions ?? r.avatarOptions,
+        };
+      });
+      setCoAttendees(others);
+      setStarBudget(Math.min(3, Math.max(1, Math.floor(others.length / 4))));
 
       setAuthReady(true);
     }
@@ -238,6 +342,7 @@ export default function ReflectPage() {
         {
           userId: user.uid,
           reflectionSubmitted: true,
+          starsGiven: Array.from(starsGiven),
           reflectionData: {
             firstName,
             lastName,
@@ -262,7 +367,20 @@ export default function ReflectPage() {
         createdAt: serverTimestamp(),
       });
 
-      router.replace(`/events/${eventId}?reflected=1`);
+      if (starsGiven.size > 0) {
+        const batch = writeBatch(db);
+        Array.from(starsGiven).forEach((starredUid) => {
+          batch.update(doc(db, "users", starredUid), { starsReceived: increment(1) });
+        });
+        await batch.commit();
+      }
+
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setShowSuccessOverlay(true);
+        setTimeout(() => router.replace(`/events/${eventId}?reflected=1`), 2400);
+      } else {
+        router.replace(`/events/${eventId}?reflected=1`);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       showToast(`Failed to submit: ${msg}`);
@@ -274,15 +392,40 @@ export default function ReflectPage() {
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (!ready || !authReady) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex gap-2">
-          {WAVE_COLORS.map((color, i) => (
-            <span
-              key={i}
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
-            />
+      <div className="flex flex-col min-h-screen animate-pulse">
+        {/* Top bar skeleton */}
+        <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#1a1a2e]" />
+            <div className="w-40 h-5 rounded-full bg-[#1a1a2e]" />
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-[#1a1a2e]" />
+        </div>
+        {/* Content skeleton */}
+        <div className="flex-1 p-6 max-w-2xl mx-auto w-full flex flex-col gap-6">
+          {/* Header card */}
+          <div className="bg-surface border border-border rounded-xl p-5 flex flex-col gap-3">
+            <div className="w-48 h-5 rounded-full bg-[#1a1a2e]" />
+            <div className="w-full h-3 rounded-full bg-[#1a1a2e]" />
+            <div className="w-3/4 h-3 rounded-full bg-[#1a1a2e]" />
+          </div>
+          {/* XP strip */}
+          <div className="h-12 rounded-xl bg-[#1a1a2e]" />
+          {/* Form section cards */}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-surface border border-border rounded-xl p-5 flex flex-col gap-4">
+              <div className="w-32 h-4 rounded-full bg-[#1a1a2e]" />
+              <div className="w-full h-3 rounded-full bg-[#1a1a2e]" />
+              <div className="w-5/6 h-3 rounded-full bg-[#1a1a2e]" />
+              <div className="flex gap-2 mt-1">
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className="flex-1 h-10 rounded-lg bg-[#1a1a2e]" />
+                ))}
+              </div>
+            </div>
           ))}
+          {/* Submit button */}
+          <div className="w-full h-14 rounded-xl bg-[#1a1a2e]" />
         </div>
       </div>
     );
@@ -290,47 +433,9 @@ export default function ReflectPage() {
 
   const avatarUrl = buildAvatarUrl(user!.username, user!.avatarOptions ?? DEFAULT_AVATAR);
 
-  // ── Already submitted ────────────────────────────────────────────────────────
-  if (done) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link href={`/events/${eventId}`} className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 5l-7 7 7 7" />
-              </svg>
-            </Link>
-            <h1 className="font-heading text-xl text-text-primary tracking-wide truncate min-w-0">Post-Event Reflection</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarUrl} alt="Profile" width={36} height={36} className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors" />
-            </Link>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center flex-1 px-4 text-center">
-          <div className="text-6xl mb-5">🎉</div>
-          <h2 className="font-heading text-2xl text-text-primary mb-2">
-            {alreadySubmitted ? "Already Submitted!" : "Reflection Submitted!"}
-          </h2>
-          <div className="text-3xl font-bold text-yellow-400 mb-4 font-mono">+25 XP</div>
-          <p className="text-sm text-text-secondary max-w-xs leading-relaxed mb-8">
-            Your reflection for <strong className="text-text-primary">{event?.name}</strong> has been recorded.
-          </p>
-          <Link
-            href={`/events/${eventId}`}
-            className="px-6 py-3 bg-accent-highlight hover:bg-accent-primary rounded-xl text-white font-heading font-medium transition-colors"
-          >
-            Back to Event
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // ── Form ─────────────────────────────────────────────────────────────────────
+  if (showSuccessOverlay) return <ReflectionSuccessOverlay />;
+
   return (
     <div className="flex flex-col min-h-screen pb-10">
       {/* Top bar */}
@@ -477,31 +582,94 @@ export default function ReflectPage() {
             How are you feeling after today&apos;s event?
             <span className="text-red-400 ml-1">*</span>
           </label>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {(
               [
-                { key: "drained" as ReflectionMood, emoji: "🥱", label: "Drained" },
-                { key: "okay" as ReflectionMood, emoji: "🙂", label: "Okay" },
-                { key: "good" as ReflectionMood, emoji: "😊", label: "Good" },
-                { key: "energized" as ReflectionMood, emoji: "🔥", label: "Energized" },
+                { key: "drained" as ReflectionMood, emoji: "🥱", label: "Drained", color: "#EF4444" },
+                { key: "okay" as ReflectionMood, emoji: "🙂", label: "Okay", color: "#A1A1AA" },
+                { key: "good" as ReflectionMood, emoji: "😊", label: "Good", color: "#22C55E" },
+                { key: "energized" as ReflectionMood, emoji: "🔥", label: "Energized", color: "#F97316" },
               ] as const
             ).map((m) => (
               <button
                 key={m.key}
                 type="button"
                 onClick={() => setMood(m.key)}
-                className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl border text-xs font-heading font-semibold uppercase tracking-wide transition-all ${
+                className="flex flex-col items-center gap-2 py-4 px-2 rounded-xl border text-xs font-heading font-semibold uppercase tracking-wide transition-all"
+                style={
                   mood === m.key
-                    ? "border-accent-highlight bg-accent-highlight/10 text-accent-highlight scale-[1.02]"
-                    : "border-border bg-white/5 text-text-muted hover:border-accent-primary/50 hover:text-text-secondary"
-                }`}
+                    ? { borderColor: m.color, backgroundColor: `${m.color}18`, color: m.color, transform: "scale(1.02)" }
+                    : { borderColor: "#27272A", backgroundColor: "rgba(255,255,255,0.03)", color: "#71717A" }
+                }
               >
-                <span className="text-2xl">{m.emoji}</span>
+                <span className="text-3xl">{m.emoji}</span>
                 {m.label}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Star giving */}
+        {coAttendees.length > 0 && (
+          <div className="bg-surface border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-heading text-text-primary">
+                Who made it better? ⭐
+              </label>
+              <span className={`text-xs font-medium tabular-nums px-2 py-0.5 rounded-full ${starsGiven.size >= starBudget ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30" : "bg-white/5 text-text-muted"}`}>
+                {starBudget - starsGiven.size} / {starBudget} left
+              </span>
+            </div>
+            <p className="text-xs text-text-muted mb-4">
+              Give a star to a fellow volunteer who stood out. You have {starBudget} star{starBudget !== 1 ? "s" : ""} to give.
+            </p>
+            <div className="flex flex-col gap-2">
+              {coAttendees.map((person) => {
+                const isStarred = starsGiven.has(person.userId);
+                const budgetFull = starsGiven.size >= starBudget;
+                const disabled = !isStarred && budgetFull;
+                return (
+                  <button
+                    key={person.userId}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => {
+                      setStarsGiven((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(person.userId)) next.delete(person.userId);
+                        else if (next.size < starBudget) next.add(person.userId);
+                        return next;
+                      });
+                    }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
+                      isStarred
+                        ? "border-yellow-500/60 bg-yellow-500/10 ring-1 ring-yellow-500/30"
+                        : disabled
+                        ? "border-border bg-white/2 opacity-40 cursor-not-allowed"
+                        : "border-border bg-white/5 hover:border-accent-primary/50"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={buildAvatarUrl(person.username, person.avatarOptions ?? DEFAULT_AVATAR)}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className={`rounded-lg border shrink-0 ${isStarred ? "border-yellow-500/50" : "border-border"}`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate">{person.username}</p>
+                      <p className="text-xs text-text-muted truncate">{person.role}</p>
+                    </div>
+                    <span className={`text-lg shrink-0 transition-transform ${isStarred ? "scale-125" : "opacity-30"}`}>
+                      {isStarred ? "⭐" : "☆"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Submit */}
         <button
@@ -511,15 +679,7 @@ export default function ReflectPage() {
           className="w-full py-4 bg-accent-highlight hover:bg-accent-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-heading font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-accent-primary/20"
         >
           {submitting ? (
-            <span className="flex gap-1.5">
-              {WAVE_COLORS.map((color, i) => (
-                <span
-                  key={i}
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }}
-                />
-              ))}
-            </span>
+            <span className="w-36 h-4 rounded-full bg-white/30 animate-pulse" />
           ) : (
             <>SUBMIT REFLECTION →</>
           )}

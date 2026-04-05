@@ -22,4 +22,5 @@ export interface SessionUser {
   createdAt?: Timestamp;
   avatarOptions?: AvatarOptions;
   redeemedItems?: Record<string, boolean>;
+  starsReceived?: number;
 }

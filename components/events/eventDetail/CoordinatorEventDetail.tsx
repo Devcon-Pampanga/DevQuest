@@ -282,8 +282,8 @@ export function CoordinatorEventDetail({
                           >
                             {confirmingId === reg.userId ? (
                               <span className="flex gap-1">
-                                {WAVE_COLORS.map((color, i) => (
-                                  <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+                                {[0, 1, 2, 3].map((i) => (
+                                  <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
                                 ))}
                               </span>
                             ) : (

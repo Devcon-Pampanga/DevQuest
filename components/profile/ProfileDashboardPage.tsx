@@ -216,7 +216,7 @@ export function ProfileDashboardPage() {
             </div>
 
             <div className="lg:col-span-3 animate-fade-up" style={{ animationDelay: "60ms" }}>
-              <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} />
+              <ProfileStatCards eventCount={eventCount} badgesEarned={badgesEarned} starsReceived={sessionUser?.starsReceived ?? 0} />
             </div>
 
             <div className="flex flex-col gap-5 lg:gap-6 lg:col-span-2 order-3 lg:order-none">

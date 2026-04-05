@@ -28,7 +28,7 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md rounded-2xl border border-border bg-elevated p-6 shadow-2xl shadow-black/40">
+      <div className="relative w-full max-w-md rounded-2xl border border-border bg-elevated p-6 shadow-2xl shadow-black/40 animate-modal-in">
         <button type="button" onClick={onClose} disabled={isLoading} className="absolute right-4 top-4 text-text-muted transition hover:text-text-primary disabled:pointer-events-none">
           x
         </button>

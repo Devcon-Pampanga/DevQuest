@@ -13,6 +13,7 @@ export interface PublicProfileUser {
   chapterId: string;
   teams: string[];
   xp: number;
+  starsReceived?: number;
   linkedinUrl?: string;
   githubUrl?: string;
   createdAtMs?: number;
@@ -136,6 +137,7 @@ export async function getPublicProfilePayload(uid: string): Promise<PublicProfil
       githubUrl: typeof rawUser.githubUrl === "string" ? rawUser.githubUrl : undefined,
       createdAtMs: toMillis(rawUser.createdAt),
       avatarOptions: rawUser.avatarOptions as AvatarOptions | undefined,
+      starsReceived: typeof rawUser.starsReceived === "number" ? rawUser.starsReceived : 0,
     },
     quests: questsSnap.docs.map((doc) => ({ questId: doc.id, ...(doc.data() as Omit<Quest, "questId">) })),
     completions,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { useAuth } from "@/context/AuthContext";
@@ -45,6 +45,7 @@ export default function ReflectionDetailPage() {
 
   const [event, setEvent] = useState<EventDoc | null>(null);
   const [reg, setReg] = useState<EventRegistration | null>(null);
+  const [starsReceived, setStarsReceived] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,9 +58,10 @@ export default function ReflectionDetailPage() {
 
     async function load() {
       try {
-        const [eventSnap, regSnap] = await Promise.all([
+        const [eventSnap, regSnap, allRegsSnap] = await Promise.all([
           getDoc(doc(db, "events", eventId)),
           getDoc(doc(db, "events", eventId, "registrations", targetUserId)),
+          getDocs(collection(db, "events", eventId, "registrations")),
         ]);
 
         if (!eventSnap.exists() || !regSnap.exists()) {
@@ -69,6 +71,11 @@ export default function ReflectionDetailPage() {
 
         setEvent({ eventId, ...eventSnap.data() } as EventDoc);
         setReg(regSnap.data() as EventRegistration);
+
+        const stars = allRegsSnap.docs.filter((d) =>
+          (d.data() as EventRegistration).starsGiven?.includes(targetUserId)
+        ).length;
+        setStarsReceived(stars);
       } finally {
         setLoading(false);
       }
@@ -147,12 +154,20 @@ export default function ReflectionDetailPage() {
             </p>
             <p className="text-sm text-text-secondary truncate">{reg.role}</p>
           </div>
-          {reflectionData && (
-            <div className={`shrink-0 px-3 py-1.5 rounded-full border text-sm font-medium flex items-center gap-1.5 ${MOOD_COLOR[reflectionData.mood] ?? "bg-surface text-text-muted border-border"}`}>
-              <span>{MOOD_EMOJI[reflectionData.mood] ?? "—"}</span>
-              <span className="capitalize">{reflectionData.mood}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {starsReceived > 0 && (
+              <div className="px-3 py-1.5 rounded-full border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-sm font-medium flex items-center gap-1.5">
+                <span>⭐</span>
+                <span>{starsReceived}</span>
+              </div>
+            )}
+            {reflectionData && (
+              <div className={`px-3 py-1.5 rounded-full border text-sm font-medium flex items-center gap-1.5 ${MOOD_COLOR[reflectionData.mood] ?? "bg-surface text-text-muted border-border"}`}>
+                <span>{MOOD_EMOJI[reflectionData.mood] ?? "—"}</span>
+                <span className="capitalize">{reflectionData.mood}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {!reflectionData ? (

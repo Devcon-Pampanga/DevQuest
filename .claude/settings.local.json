@@ -38,7 +38,8 @@
       "Bash(git fetch:*)",
       "Bash(git ls-tree:*)",
       "Bash(xargs grep:*)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(find C:\\\\Users\\\\L-JOAQUIN\\\\Documents\\\\Projects\\\\Web\\\\DevQuest\\\\components:*)"
     ]
   }
 }
