@@ -186,7 +186,7 @@ function DashboardProfileDetailContent({ payload }: { payload: DashboardProfileP
   }, [userData.teams]);
 
   const chapterId = userData.chapterId ?? "";
-  const { rawEntries: xpLogRaw, loading: xpLogLoading, hasMore: activityHasMore } = useXpActivityLog(userData.uid);
+  const { rawEntries: xpLogRaw, hasMore: activityHasMore } = useXpActivityLog(userData.uid);
   const { volunteers: leaderboardVolunteers } = useLeaderboardVolunteers(chapterId);
 
   const leaderboard = useMemo(
