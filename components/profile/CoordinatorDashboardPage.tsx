@@ -119,9 +119,7 @@ export function CoordinatorDashboardPage({
             setSearch={setSearch}
             teamFilter={teamFilter}
             setTeamFilter={setTeamFilter}
-            canEdit={false}
             currentUserId={userData.uid}
-            onRequestRemoveVolunteer={() => {}}
           />
         </div>
 

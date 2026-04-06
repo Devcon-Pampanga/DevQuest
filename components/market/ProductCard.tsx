@@ -17,7 +17,7 @@ export function ProductCard({ product, devCoins, onRedeem, isRedeemed }: Product
   const progress = Math.min((devCoins / product.price) * 100, 100);
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-accent-highlight/60 hover:shadow-xl hover:shadow-accent-primary/10">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-accent-highlight/60 hover:shadow-xl hover:shadow-accent-primary/10">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-highlight/60 to-transparent opacity-70 transition-opacity group-hover:opacity-100" />
 
       <div className="relative flex h-52 select-none items-center justify-center overflow-hidden bg-base">
