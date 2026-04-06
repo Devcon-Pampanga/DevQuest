@@ -1,8 +1,8 @@
 "use client";
 
 import PageShell from "@/components/layout/PageShell";
-import { AddMissionSkeleton } from "@/components/missions/new/AddMissionSkeleton";
-import { AddMissionView } from "@/components/missions/new/AddMissionView";
+import { AddSubquestSkeleton } from "@/components/subquests/new/AddSubquestSkeleton";
+import { AddSubquestView } from "@/components/subquests/new/AddSubquestView";
 import { useCoordinatorMissionAuth } from "@/hooks/useCoordinatorMissionAuth";
 
 export default function AddSubquestPage() {
@@ -10,7 +10,7 @@ export default function AddSubquestPage() {
 
   if (loadingAuth) {
     return (
-      <PageShell title="Create Subquest" loading={true} skeleton={<AddMissionSkeleton />}>
+      <PageShell title="Create Subquest" loading={true} skeleton={<AddSubquestSkeleton />}>
         {null}
       </PageShell>
     );
@@ -18,5 +18,5 @@ export default function AddSubquestPage() {
 
   if (!userData) return null;
 
-  return <AddMissionView userData={userData} />;
+  return <AddSubquestView userData={userData} />;
 }

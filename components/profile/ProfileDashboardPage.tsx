@@ -19,10 +19,10 @@ import { ProfileMilestonesSection } from "@/components/profile/ProfileMilestones
 import { ProfileActivityFeed } from "@/components/profile/ProfileActivityFeed";
 import { ProfileBadgesGrid } from "@/components/profile/ProfileBadgesGrid";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
-import { MissionsPanel } from "@/components/quests/missions/MissionsPanel";
+import { SubquestsPanel } from "@/components/quests/subquests/SubquestsPanel";
 import { CoordinatorDashboardPage } from "@/components/profile/CoordinatorDashboardPage";
 import { useLeaderboardVolunteers } from "@/hooks/useLeaderboardVolunteers";
-import type { MissionApprovalItem } from "@/types/mission";
+import type { SubquestApprovalItem } from "@/types/subquest";
 import type { ApprovalsQueueItem } from "@/types/quest";
 import type { ProfilePageUser } from "@/components/profile/types";
 
@@ -55,7 +55,7 @@ export function ProfileDashboardPage() {
   const [activeTeam, setActiveTeam] = useState("");
   const [isGeneratingResume, setIsGeneratingResume] = useState(false);
   const [, setApprovals] = useState<ApprovalsQueueItem[]>([]);
-  const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
+  const [missionApprovals, setMissionApprovals] = useState<SubquestApprovalItem[]>([]);
   const [, setExpandedQuestId] = useState<string | null>(null);
   const [expandedMissionId, setExpandedMissionId] = useState<string | null>(null);
   const { copied, copyUrl } = useShareLinkCopy();
@@ -232,11 +232,11 @@ export function ProfileDashboardPage() {
                 </div>
               ) : null}
               <div className="animate-fade-up" style={{ animationDelay: "150ms" }}>
-                <MissionsPanel
+                <SubquestsPanel
                   userData={userData}
-                  missions={missions}
-                  missionCompletions={missionCompletions}
-                  missionApprovals={missionApprovals}
+                  subquests={missions}
+                  subquestCompletions={missionCompletions}
+                  subquestApprovals={missionApprovals}
                   loadingMissions={loadingMissions}
                   loadingMissionApprovals={false}
                   expandedMissionId={expandedMissionId}

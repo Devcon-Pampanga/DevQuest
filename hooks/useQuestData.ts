@@ -5,16 +5,16 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchQuestPageData } from "@/lib/quests/queries";
 import { queryKeys } from "@/lib/queryKeys";
 import { Quest, QuestCompletion } from "@/types/quest";
-import { Mission, MissionCompletion } from "@/types/mission";
+import { Subquest, SubquestCompletion } from "@/types/subquest";
 
 export interface QuestDataResult {
   quests: Quest[];
   completions: Record<string, QuestCompletion>;
   setCompletions: React.Dispatch<React.SetStateAction<Record<string, QuestCompletion>>>;
-  missions: Mission[];
-  setMissions: React.Dispatch<React.SetStateAction<Mission[]>>;
-  missionCompletions: Record<string, MissionCompletion>;
-  setMissionCompletions: React.Dispatch<React.SetStateAction<Record<string, MissionCompletion>>>;
+  missions: Subquest[];
+  setMissions: React.Dispatch<React.SetStateAction<Subquest[]>>;
+  missionCompletions: Record<string, SubquestCompletion>;
+  setMissionCompletions: React.Dispatch<React.SetStateAction<Record<string, SubquestCompletion>>>;
   reflectionCount: number;
   eventCount: number;
   profileSetupCount: number;
@@ -38,8 +38,8 @@ export function useQuestData(uid: string, chapterId: string): QuestDataResult {
 
   // Mutable overlays — updated optimistically by useQuestActions
   const [completions, setCompletions] = useState<Record<string, QuestCompletion>>({});
-  const [missions, setMissions] = useState<Mission[]>([]);
-  const [missionCompletions, setMissionCompletions] = useState<Record<string, MissionCompletion>>({});
+  const [missions, setMissions] = useState<Subquest[]>([]);
+  const [missionCompletions, setMissionCompletions] = useState<Record<string, SubquestCompletion>>({});
 
   // Seed local state from query data once per mount.
   // Using a ref ensures optimistic updates from actions aren't overwritten
