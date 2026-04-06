@@ -12,11 +12,11 @@ import type { ChapterVolunteer } from "@/types/chapter";
 import {
   SUBQUESTS_COLLECTION,
   SUBQUEST_COMPLETIONS_COLLECTION,
-  getMissionIdFromData,
-  getMissionTitleFromData,
-  type Mission,
-  type MissionApprovalItem,
-} from "@/types/mission";
+  getSubquestIdFromData,
+  getSubquestTitleFromData,
+  type Subquest,
+  type SubquestApprovalItem,
+} from "@/types/subquest";
 import { TIER_ORDER } from "@/lib/seed/quests";
 
 export type VolunteerTier = "team_member" | "associate" | "specialist" | "lead";
@@ -28,8 +28,8 @@ export interface VolunteerWithTier extends ChapterVolunteer {
 
 export interface CoordinatorHubData {
   volunteers: VolunteerWithTier[];
-  missions: Mission[];
-  missionApprovals: MissionApprovalItem[];
+  subquests: Subquest[];
+  subquestApprovals: SubquestApprovalItem[];
   pendingApprovalsCount: number;
   loading: boolean;
   refresh: () => void;
@@ -38,13 +38,13 @@ export interface CoordinatorHubData {
 /**
  * Loads all data needed for the Coordinator Hub page:
  *  - chapter volunteers (role === "volunteer") with their highest team tier
- *  - chapter missions (all statuses — UI filters active/closed)
- *  - count of pending quest + mission approvals across all volunteers
+ *  - chapter subquests (all statuses — UI filters active/closed)
+ *  - count of pending quest + subquest approvals across all volunteers
  */
 export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
   const [volunteers, setVolunteers] = useState<VolunteerWithTier[]>([]);
-  const [missions, setMissions] = useState<Mission[]>([]);
-  const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
+  const [subquests, setSubquests] = useState<Subquest[]>([]);
+  const [subquestApprovals, setSubquestApprovals] = useState<SubquestApprovalItem[]>([]);
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -97,26 +97,26 @@ export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
 
       setVolunteers(volunteerList);
 
-      // ── 3. Load all chapter missions (both active + closed) ──────────────────
-      const missionsSnap = await getDocs(
+      // ── 3. Load all chapter subquests (both active + closed) ─────────────────
+      const subquestsSnap = await getDocs(
         query(collection(db, SUBQUESTS_COLLECTION), where("chapterId", "==", chapterId))
       );
-      setMissions(
-        missionsSnap.docs.map(
+      setSubquests(
+        subquestsSnap.docs.map(
           (d) =>
             ({
               ...d.data(),
-              missionId: getMissionIdFromData(d.data() as Record<string, unknown>, d.id),
-            } as Mission)
+              subquestId: getSubquestIdFromData(d.data() as Record<string, unknown>, d.id),
+            } as Subquest)
         )
       );
 
-      // ── 4. Count pending approvals (quest + mission) ─────────────────────────
+      // ── 4. Count pending approvals (quest + subquest) ────────────────────────
       let approvalCount = 0;
-      const nextMissionApprovals: MissionApprovalItem[] = [];
+      const nextSubquestApprovals: SubquestApprovalItem[] = [];
       await Promise.all(
         volunteerDocs.map(async (vDoc) => {
-          const [questPending, missionPending] = await Promise.all([
+          const [questPending, subquestPending] = await Promise.all([
             getDocs(
               query(
                 collection(db, "users", vDoc.id, "questCompletions"),
@@ -130,28 +130,28 @@ export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
               )
             ),
           ]);
-          approvalCount += questPending.size + missionPending.size;
+          approvalCount += questPending.size + subquestPending.size;
 
           const volunteerData = vDoc.data();
-          missionPending.docs.forEach((pendingDoc) => {
+          subquestPending.docs.forEach((pendingDoc) => {
             const pendingData = pendingDoc.data() as Record<string, unknown>;
-            nextMissionApprovals.push({
+            nextSubquestApprovals.push({
               userId: vDoc.id,
               username: (volunteerData.username as string) ?? vDoc.id,
-              avatarOptions: volunteerData.avatarOptions as MissionApprovalItem["avatarOptions"],
-              missionId: getMissionIdFromData(pendingData, pendingDoc.id),
-              missionTitle: getMissionTitleFromData(pendingData),
-              difficulty: (pendingData.difficulty as MissionApprovalItem["difficulty"]) ?? "medium",
+              avatarOptions: volunteerData.avatarOptions as SubquestApprovalItem["avatarOptions"],
+              subquestId: getSubquestIdFromData(pendingData, pendingDoc.id),
+              subquestTitle: getSubquestTitleFromData(pendingData),
+              difficulty: (pendingData.difficulty as SubquestApprovalItem["difficulty"]) ?? "medium",
               xpReward: (pendingData.xpGranted as number) ?? 0,
               submissionNotes: pendingData.submissionNotes as string | undefined,
               evidenceUrl: pendingData.evidenceUrl as string | undefined,
-              submittedAt: pendingData.updatedAt as MissionApprovalItem["submittedAt"],
+              submittedAt: pendingData.updatedAt as SubquestApprovalItem["submittedAt"],
             });
           });
         })
       );
       setPendingApprovalsCount(approvalCount);
-      setMissionApprovals(nextMissionApprovals);
+      setSubquestApprovals(nextSubquestApprovals);
     } finally {
       setLoading(false);
     }
@@ -163,8 +163,8 @@ export function useCoordinatorHubData(chapterId: string): CoordinatorHubData {
 
   return {
     volunteers,
-    missions,
-    missionApprovals,
+    subquests,
+    subquestApprovals,
     pendingApprovalsCount,
     loading,
     refresh: load,

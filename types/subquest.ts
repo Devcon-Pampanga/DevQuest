@@ -4,30 +4,30 @@ import type { AvatarOptions } from "@/lib/avatar";
 export const SUBQUESTS_COLLECTION = "subquests";
 export const SUBQUEST_COMPLETIONS_COLLECTION = "subquestCompletions";
 
-/** Row in the “specific volunteers” picker on Add Mission (subset of Firestore `users`). */
-export interface MissionVolunteerPickerRow {
+/** Row in the "specific volunteers" picker on Add Subquest (subset of Firestore `users`). */
+export interface SubquestVolunteerPickerRow {
   uid: string;
   username: string;
   teams: string[];
   avatarOptions?: AvatarOptions;
 }
 
-export type MissionDifficulty = "easy" | "medium" | "hard";
-export type MissionAssignmentType = "specific" | "team" | "open";
-export type MissionStatus = "active" | "closed";
-export type MissionCompletionStatus =
+export type SubquestDifficulty = "easy" | "medium" | "hard";
+export type SubquestAssignmentType = "specific" | "team" | "open";
+export type SubquestStatus = "active" | "closed";
+export type SubquestCompletionStatus =
   | "assigned"
   | "joined"
   | "submitted"
   | "completed";
 
-export interface Mission {
-  missionId: string;
+export interface Subquest {
+  subquestId: string;
   title: string;
   description: string;
-  difficulty: MissionDifficulty;
+  difficulty: SubquestDifficulty;
   xpReward: number; // 25 / 75 / 150
-  assignmentType: MissionAssignmentType;
+  assignmentType: SubquestAssignmentType;
   assignedTo?: string[]; // UIDs — specific assignments only
   assignedTeams?: string[]; // teamIds — team assignments only
   slots?: number; // open enrollment only
@@ -36,13 +36,13 @@ export interface Mission {
   chapterId: string;
   createdBy: string; // coordinator UID
   createdByUsername: string;
-  status: MissionStatus;
+  status: SubquestStatus;
   createdAt: Timestamp;
 }
 
-export interface MissionCompletion {
-  missionId: string;
-  status: MissionCompletionStatus;
+export interface SubquestCompletion {
+  subquestId: string;
+  status: SubquestCompletionStatus;
   submissionNotes?: string;
   evidenceUrl?: string;
   approvedBy?: string;
@@ -51,7 +51,7 @@ export interface MissionCompletion {
   revisionNote?: string;
 }
 
-export interface MissionApprovalItem {
+export interface SubquestApprovalItem {
   userId: string;
   username: string;
   avatarOptions?: {
@@ -60,16 +60,16 @@ export interface MissionApprovalItem {
     eyes: string;
     mouth: string;
   };
-  missionId: string;
-  missionTitle: string;
-  difficulty: MissionDifficulty;
+  subquestId: string;
+  subquestTitle: string;
+  difficulty: SubquestDifficulty;
   xpReward: number;
   submissionNotes?: string;
   evidenceUrl?: string;
   submittedAt?: Timestamp;
 }
 
-export function getMissionIdFromData(
+export function getSubquestIdFromData(
   data: Record<string, unknown>,
   fallbackId: string
 ): string {
@@ -86,7 +86,7 @@ export function getMissionIdFromData(
   return fallbackId;
 }
 
-export function getMissionTitleFromData(data: Record<string, unknown>): string {
+export function getSubquestTitleFromData(data: Record<string, unknown>): string {
   const subquestTitle = data.subquestTitle;
   if (typeof subquestTitle === "string" && subquestTitle.trim()) {
     return subquestTitle;
@@ -101,7 +101,7 @@ export function getMissionTitleFromData(data: Record<string, unknown>): string {
 }
 
 export const DIFFICULTY_META: Record<
-  MissionDifficulty,
+  SubquestDifficulty,
   { label: string; color: string; xp: number }
 > = {
   easy: { label: "Easy", color: "#22C55E", xp: 25 },

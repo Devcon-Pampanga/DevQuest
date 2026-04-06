@@ -6,13 +6,13 @@ import { ChapterTeamBreakdown } from "@/components/chapter/ChapterTeamBreakdown"
 import { ChapterVolunteersSection } from "@/components/chapter/ChapterVolunteersSection";
 import { ProfileHeaderCard } from "@/components/profile/ProfileHeaderCard";
 import { CoordinatorStatsRow } from "@/components/quests/coordinator/CoordinatorStatsRow";
-import { MissionsPanel } from "@/components/quests/missions/MissionsPanel";
+import { SubquestsPanel } from "@/components/quests/subquests/SubquestsPanel";
 import { useChapterVolunteersUI } from "@/hooks/useChapterVolunteersUI";
 import { useCoordinatorHubData } from "@/hooks/useCoordinatorHubData";
 import { useLeaderboardVolunteers } from "@/hooks/useLeaderboardVolunteers";
 import { useQuestActions } from "@/hooks/useQuestActions";
 import { useQuestData } from "@/hooks/useQuestData";
-import type { MissionApprovalItem } from "@/types/mission";
+import type { SubquestApprovalItem } from "@/types/subquest";
 import type { ProfilePageUser } from "@/components/profile/types";
 import type { ApprovalsQueueItem, QuestCompletion } from "@/types/quest";
 
@@ -35,14 +35,14 @@ export function CoordinatorDashboardPage({
 }: CoordinatorDashboardPageProps) {
   const {
     volunteers,
-    missions,
-    missionApprovals: initialMissionApprovals,
+    subquests,
+    subquestApprovals: initialSubquestApprovals,
     pendingApprovalsCount,
   } = useCoordinatorHubData(userData.chapterId);
   const {
-    missions: activeMissions,
-    missionCompletions,
-    setMissionCompletions,
+    missions: activeSubquests,
+    missionCompletions: subquestCompletions,
+    setMissionCompletions: setSubquestCompletions,
     loadingMissions,
   } = useQuestData(userData.uid, userData.chapterId);
   const { volunteers: leaderboardVolunteers } = useLeaderboardVolunteers(userData.chapterId);
@@ -62,21 +62,21 @@ export function CoordinatorDashboardPage({
 
   const [, setApprovals] = useState<ApprovalsQueueItem[]>([]);
   const [, setCompletions] = useState<Record<string, QuestCompletion>>({});
-  const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
-  const [expandedMissionId, setExpandedMissionId] = useState<string | null>(null);
+  const [subquestApprovals, setSubquestApprovals] = useState<SubquestApprovalItem[]>([]);
+  const [expandedSubquestId, setExpandedSubquestId] = useState<string | null>(null);
 
   useEffect(() => {
-    setMissionApprovals(initialMissionApprovals);
-  }, [initialMissionApprovals]);
+    setSubquestApprovals(initialSubquestApprovals);
+  }, [initialSubquestApprovals]);
 
   const { submitting, handleApproveMission, handleReviseMission } = useQuestActions({
     uid: userData.uid,
     setCompletions,
-    setMissionCompletions,
+    setMissionCompletions: setSubquestCompletions,
     setApprovals,
-    setMissionApprovals,
+    setMissionApprovals: setSubquestApprovals,
     setExpandedQuestId: () => undefined,
-    setExpandedMissionId,
+    setExpandedMissionId: setExpandedSubquestId,
   });
 
   const leaderboard = useMemo(
@@ -101,7 +101,7 @@ export function CoordinatorDashboardPage({
         <CoordinatorStatsRow
           volunteerCount={volunteers.length}
           pendingApprovalsCount={pendingApprovalsCount}
-          activeSubquestCount={missions.filter((mission) => mission.status === "active").length}
+          activeSubquestCount={subquests.filter((subquest) => subquest.status === "active").length}
         />
       </div>
 
@@ -124,20 +124,20 @@ export function CoordinatorDashboardPage({
         </div>
 
         <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
-          <MissionsPanel
+          <SubquestsPanel
             userData={{
               uid: userData.uid,
               username: userData.username,
               role: userData.role,
               teams: userData.teams,
             }}
-            missions={activeMissions}
-            missionCompletions={missionCompletions}
-            missionApprovals={missionApprovals}
+            subquests={activeSubquests}
+            subquestCompletions={subquestCompletions}
+            subquestApprovals={subquestApprovals}
             loadingMissions={loadingMissions}
             loadingMissionApprovals={false}
-            expandedMissionId={expandedMissionId}
-            setExpandedMissionId={setExpandedMissionId}
+            expandedMissionId={expandedSubquestId}
+            setExpandedMissionId={setExpandedSubquestId}
             submitting={submitting}
             onJoin={() => undefined}
             onSubmit={() => undefined}
