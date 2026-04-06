@@ -18,13 +18,15 @@
   <p align="center">
     <a target="_blank" href="https://dev-quest-lilac.vercel.app/">View Demo</a>
     ·
+    <a target="_blank" href="https://github.com/Devcon-Pampanga/DevQuest/wiki/Project-Overview">Project Overview</a>
+    ·
     <a href="https://github.com/Devcon-Pampanga/DevQuest/issues/new?labels=bug">Report Bug</a>
     ·
     <a href="https://github.com/Devcon-Pampanga/DevQuest/issues/new?labels=enhancement">Request Feature</a>
     ·
-    <a href="https://github.com/Devcon-Pampanga/DevQuest/discussions">FAQ</a>
+    <a href="https://github.com/Devcon-Pampanga/DevQuest/wiki/FAQ">FAQ</a>
     ·
-    <a href="https://github.com/Devcon-Pampanga/DevQuest/discussions/new">Ask Question</a>
+    <a href="https://github.com/Devcon-Pampanga/DevQuest/discussions/categories/q-a">Ask Question</a>
   </p>
 
 ## About the Project
