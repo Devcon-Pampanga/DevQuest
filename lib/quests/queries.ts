@@ -10,16 +10,16 @@ import type { Quest, QuestCompletion } from "@/types/quest";
 import {
   SUBQUESTS_COLLECTION,
   SUBQUEST_COMPLETIONS_COLLECTION,
-  getMissionIdFromData,
-  type Mission,
-  type MissionCompletion,
-} from "@/types/mission";
+  getSubquestIdFromData,
+  type Subquest,
+  type SubquestCompletion,
+} from "@/types/subquest";
 
 export interface QuestPageData {
   quests: Quest[];
   completions: Record<string, QuestCompletion>;
-  missions: Mission[];
-  missionCompletions: Record<string, MissionCompletion>;
+  missions: Subquest[];
+  missionCompletions: Record<string, SubquestCompletion>;
   reflectionCount: number;
   eventCount: number;
   profileSetupCount: number;
@@ -59,13 +59,13 @@ export async function fetchQuestPageData(
     completions[d.id] = d.data() as QuestCompletion;
   });
 
-  const missionCompletions: Record<string, MissionCompletion> = {};
+  const missionCompletions: Record<string, SubquestCompletion> = {};
   missionCompletionsSnap.docs.forEach((d) => {
     const data = d.data() as Record<string, unknown>;
-    const missionId = getMissionIdFromData(data, d.id);
+    const subquestId = getSubquestIdFromData(data, d.id);
     missionCompletions[d.id] = {
-      ...(data as unknown as MissionCompletion),
-      missionId,
+      ...(data as unknown as SubquestCompletion),
+      subquestId,
     };
   });
 
@@ -73,7 +73,7 @@ export async function fetchQuestPageData(
     quests: questsSnap.docs.map((d) => d.data() as Quest),
     completions,
     missions: missionsSnap.docs.map(
-      (d) => ({ ...d.data(), missionId: getMissionIdFromData(d.data() as Record<string, unknown>, d.id) } as Mission)
+      (d) => ({ ...d.data(), subquestId: getSubquestIdFromData(d.data() as Record<string, unknown>, d.id) } as Subquest)
     ),
     missionCompletions,
     reflectionCount: reflCountSnap.data().count,

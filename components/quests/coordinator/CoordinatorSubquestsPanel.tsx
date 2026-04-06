@@ -4,16 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { DIFFICULTY_META, SUBQUESTS_COLLECTION, type Mission } from "@/types/mission";
+import { DIFFICULTY_META, SUBQUESTS_COLLECTION, type Subquest } from "@/types/subquest";
 
-interface CoordinatorMissionsPanelProps {
-  missions: Mission[];
-  onMissionArchived: () => void;
+interface CoordinatorSubquestsPanelProps {
+  subquests: Subquest[];
+  onSubquestArchived: () => void;
 }
 
-type MissionView = "active" | "closed";
+type SubquestView = "active" | "closed";
 
-function DifficultyPill({ difficulty }: { difficulty: Mission["difficulty"] }) {
+function DifficultyPill({ difficulty }: { difficulty: Subquest["difficulty"] }) {
   const meta = DIFFICULTY_META[difficulty];
   return (
     <span
@@ -25,8 +25,8 @@ function DifficultyPill({ difficulty }: { difficulty: Mission["difficulty"] }) {
   );
 }
 
-function AssignmentBadge({ type }: { type: Mission["assignmentType"] }) {
-  const labels: Record<Mission["assignmentType"], string> = {
+function AssignmentBadge({ type }: { type: Subquest["assignmentType"] }) {
+  const labels: Record<Subquest["assignmentType"], string> = {
     open: "Open",
     team: "Team",
     specific: "Specific",
@@ -38,25 +38,25 @@ function AssignmentBadge({ type }: { type: Mission["assignmentType"] }) {
   );
 }
 
-function MissionRow({
-  mission,
+function SubquestRow({
+  subquest,
   onArchive,
   archiving,
 }: {
-  mission: Mission;
+  subquest: Subquest;
   onArchive: (id: string) => void;
   archiving: string | null;
 }) {
-  const deadlineStr = mission.deadline
-    ? mission.deadline.toDate().toLocaleDateString("en-US", {
+  const deadlineStr = subquest.deadline
+    ? subquest.deadline.toDate().toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       })
     : null;
 
-  const isArchiving = archiving === mission.missionId;
-  const isClosed = mission.status === "closed";
-  const diffMeta = DIFFICULTY_META[mission.difficulty];
+  const isArchiving = archiving === subquest.subquestId;
+  const isClosed = subquest.status === "closed";
+  const diffMeta = DIFFICULTY_META[subquest.difficulty];
 
   return (
     <div
@@ -76,25 +76,25 @@ function MissionRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-heading text-text-primary leading-tight truncate">
-          {mission.title}
+          {subquest.title}
         </p>
         <div className="flex items-center gap-2 flex-wrap mt-1">
-          <DifficultyPill difficulty={mission.difficulty} />
-          <AssignmentBadge type={mission.assignmentType} />
-          <span className="text-[10px] text-text-muted">+{mission.xpReward} XP</span>
+          <DifficultyPill difficulty={subquest.difficulty} />
+          <AssignmentBadge type={subquest.assignmentType} />
+          <span className="text-[10px] text-text-muted">+{subquest.xpReward} XP</span>
           {deadlineStr && (
             <span className="text-[10px] text-text-muted">Due {deadlineStr}</span>
           )}
         </div>
       </div>
 
-      {/* Archive / restore button — only for active missions */}
+      {/* Archive / restore button — only for active subquests */}
       {!isClosed && (
         <button
           type="button"
-          onClick={() => onArchive(mission.missionId)}
+          onClick={() => onArchive(subquest.subquestId)}
           disabled={isArchiving}
-          title="Archive mission"
+          title="Archive subquest"
           className="shrink-0 p-1 rounded-md text-text-muted hover:text-orange-400 hover:bg-orange-400/10 transition-colors disabled:opacity-40"
         >
           {isArchiving ? (
@@ -114,22 +114,22 @@ function MissionRow({
   );
 }
 
-export function CoordinatorMissionsPanel({
-  missions,
-  onMissionArchived,
-}: CoordinatorMissionsPanelProps) {
-  const [view, setView] = useState<MissionView>("active");
+export function CoordinatorSubquestsPanel({
+  subquests,
+  onSubquestArchived,
+}: CoordinatorSubquestsPanelProps) {
+  const [view, setView] = useState<SubquestView>("active");
   const [archiving, setArchiving] = useState<string | null>(null);
 
-  const visibleMissions = missions.filter((m) => m.status === view);
-  const activeCount = missions.filter((m) => m.status === "active").length;
-  const closedCount = missions.filter((m) => m.status === "closed").length;
+  const visibleSubquests = subquests.filter((m) => m.status === view);
+  const activeCount = subquests.filter((m) => m.status === "active").length;
+  const closedCount = subquests.filter((m) => m.status === "closed").length;
 
-  async function handleArchive(missionId: string) {
-    setArchiving(missionId);
+  async function handleArchive(subquestId: string) {
+    setArchiving(subquestId);
     try {
-      await updateDoc(doc(db, SUBQUESTS_COLLECTION, missionId), { status: "closed" });
-      onMissionArchived();
+      await updateDoc(doc(db, SUBQUESTS_COLLECTION, subquestId), { status: "closed" });
+      onSubquestArchived();
     } finally {
       setArchiving(null);
     }
@@ -163,7 +163,7 @@ export function CoordinatorMissionsPanel({
 
         {/* Toggle: Active / Closed */}
         <div className="flex rounded-xl overflow-hidden border border-border mb-3">
-          {(["active", "closed"] as MissionView[]).map((v) => {
+          {(["active", "closed"] as SubquestView[]).map((v) => {
             const count = v === "active" ? activeCount : closedCount;
             const isActive = view === v;
             return (
@@ -192,8 +192,8 @@ export function CoordinatorMissionsPanel({
           })}
         </div>
 
-        {/* Mission list */}
-        {visibleMissions.length === 0 ? (
+        {/* Subquest list */}
+        {visibleSubquests.length === 0 ? (
           <div className="text-center py-6">
             <div className="w-9 h-9 rounded-xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -214,10 +214,10 @@ export function CoordinatorMissionsPanel({
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {visibleMissions.map((m) => (
-              <MissionRow
-                key={m.missionId}
-                mission={m}
+            {visibleSubquests.map((subquest) => (
+              <SubquestRow
+                key={subquest.subquestId}
+                subquest={subquest}
                 onArchive={handleArchive}
                 archiving={archiving}
               />

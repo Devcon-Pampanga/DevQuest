@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -17,11 +17,14 @@ const agrandirBold = localFont({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0a0a0f",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://dev-quest-lilac.vercel.app"),
   title: "DevQuest",
   description: "Turn your volunteer work into your career.",
-  themeColor: "#0a0a0f",
   appleWebApp: {
     capable: true,
     title: "DevQuest",
