@@ -12,6 +12,7 @@ export interface ChapterData {
   volunteers: ChapterVolunteer[];
   events: ChapterEventDoc[];
   regCounts: Record<string, number>;
+  totalVolunteerXP: number;
 }
 
 export async function fetchChapterData(
@@ -44,9 +45,14 @@ export async function fetchChapterData(
     })
   );
 
+  const totalVolunteerXP = volunteers
+    .filter((v) => v.role === "volunteer")
+    .reduce((sum, v) => sum + (v.xp ?? 0), 0);
+
   return {
     volunteers,
     events,
     regCounts: Object.fromEntries(counts) as Record<string, number>,
+    totalVolunteerXP,
   };
 }

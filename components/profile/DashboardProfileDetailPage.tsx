@@ -6,7 +6,6 @@ import { Timestamp } from "firebase/firestore";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
 import DashboardLayout from "@/app/(dashboard)/layout";
 import { useAuth } from "@/context/AuthContext";
-import { useSidebar } from "@/context/SidebarContext";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { useXpActivityLog } from "@/hooks/useXpActivityLog";
 import { useLeaderboardVolunteers } from "@/hooks/useLeaderboardVolunteers";
@@ -39,25 +38,6 @@ function deserializeCompletions(serialized: Record<string, SerializedQuestComple
   return next;
 }
 
-function MobileSidebarButton() {
-  const { openSidebar } = useSidebar();
-
-  return (
-    <button
-      type="button"
-      onClick={openSidebar}
-      className="lg:hidden rounded-xl p-2 text-text-secondary transition-colors hover:bg-white/5 hover:text-text-primary"
-      aria-label="Open sidebar"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <line x1="3" y1="12" x2="21" y2="12" />
-        <line x1="3" y1="18" x2="21" y2="18" />
-      </svg>
-    </button>
-  );
-}
-
 function BackButton() {
   return (
     <button
@@ -83,7 +63,6 @@ function TopBar({ username, avatarUrl }: { username: string; avatarUrl?: string 
   return (
     <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-base/95 px-4 py-4 backdrop-blur sm:px-6">
       <div className="flex items-center gap-2">
-        <MobileSidebarButton />
         <BackButton />
         <div className="min-w-0">
           <h1 className="font-heading text-xl text-text-primary sm:text-2xl truncate">{username}</h1>
