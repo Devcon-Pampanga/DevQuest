@@ -1,6 +1,8 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
 } from "firebase/auth";
 import {
   doc,
@@ -145,4 +147,13 @@ export async function completeOnboarding(
   }
 
   await batch.commit();
+
+  // Sync username to Firebase Auth display name so email templates can use %DISPLAY_NAME%
+  if (auth.currentUser) {
+    await updateProfile(auth.currentUser, { displayName: username.trim() });
+  }
+}
+
+export async function sendPasswordReset(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email);
 }

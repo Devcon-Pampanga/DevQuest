@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { User, Gear, Info } from "@phosphor-icons/react";
 import { useSidebar } from "@/context/SidebarContext";
 
 // ─── Skeleton primitives ──────────────────────────────────────────────────────
@@ -30,6 +31,12 @@ interface PageShellProps {
   children: React.ReactNode;
 }
 
+const AVATAR_MENU = [
+  { label: "Profile", href: "/dashboard", Icon: User },
+  { label: "Settings", href: "/settings", Icon: Gear },
+  { label: "About", href: "/about", Icon: Info },
+] as const;
+
 export default function PageShell({
   title,
   avatarUrl,
@@ -41,6 +48,26 @@ export default function PageShell({
 }: PageShellProps) {
   const { openSidebar } = useSidebar();
   const showMobileSidebarButton = !backHref;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [menuOpen]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -97,20 +124,44 @@ export default function PageShell({
 
         <div className="flex items-center gap-3">
           {actions}
-          {avatarUrl ? (
-            <Link href="/dashboard" className="shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={avatarUrl}
-                alt="Profile"
-                width={36}
-                height={36}
-                className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
-              />
-            </Link>
-          ) : (
-            <div className="w-9 h-9 rounded-xl bg-[#1a1a2e] animate-pulse" />
-          )}
+          <div ref={menuRef} className="relative shrink-0">
+            {avatarUrl ? (
+              <button
+                type="button"
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-label="Open account menu"
+                aria-expanded={menuOpen}
+                className="block"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  width={36}
+                  height={36}
+                  className="rounded-xl border-2 border-border hover:border-accent-highlight transition-colors"
+                />
+              </button>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-[#1a1a2e] animate-pulse" />
+            )}
+
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border bg-[#0d0d14] shadow-xl z-50 overflow-hidden">
+                {AVATAR_MENU.map(({ label, href, Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                  >
+                    <Icon size={16} weight="bold" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
