@@ -224,7 +224,7 @@ export function MarketPage() {
             </div>
           </section>
 
-          <section className="flex items-center justify-between gap-4 animate-fade-up" style={{ animationDelay: "80ms" }}>
+          <section className="relative z-10 flex items-center justify-between gap-4 animate-fade-up" style={{ animationDelay: "80ms" }}>
             <p className="text-sm text-text-secondary">
               Showing <span className="font-semibold text-text-primary">{filtered.length}</span> item{filtered.length !== 1 ? "s" : ""}
             </p>
@@ -233,7 +233,7 @@ export function MarketPage() {
 
           <main className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((product, idx) => (
-              <div key={product.id} className="animate-fade-up" style={{ animationDelay: `${140 + Math.min(idx, 8) * 60}ms` }}>
+              <div key={product.id} className="animate-fade-up h-full" style={{ animationDelay: `${140 + Math.min(idx, 8) * 60}ms` }}>
                 <ProductCard
                   product={product}
                   devCoins={devCoins}
