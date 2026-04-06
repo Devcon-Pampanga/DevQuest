@@ -38,7 +38,7 @@ const iconVolunteers = (
   </svg>
 );
 
-const iconActivity = (
+const iconXP = (
   <svg
     width="15"
     height="15"
@@ -49,29 +49,35 @@ const iconActivity = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
   </svg>
 );
+
+function compactXP(n: number): string {
+  if (n < 1000) return String(n);
+  const k = Math.floor(n / 1000);
+  return n % 1000 === 0 ? `${k}K` : `${k}K+`;
+}
 
 const STATS = [
   { label: "Events Hosted", color: "#F5C518", delay: 60, icon: iconCalendar, valueKey: "events" as const },
   { label: "Active Volunteers", color: "#A855F7", delay: 100, icon: iconVolunteers, valueKey: "volunteers" as const },
-  { label: "Total Attendees", color: "#22C55E", delay: 140, icon: iconActivity, valueKey: "attendees" as const },
+  { label: "Total XP", color: "#22C55E", delay: 140, icon: iconXP, valueKey: "xp" as const },
 ];
 
 export function ChapterStatsCards({
   eventCount,
   volunteerCount,
-  totalAttendees,
+  totalXP,
 }: {
   eventCount: number;
   volunteerCount: number;
-  totalAttendees: number;
+  totalXP: number;
 }) {
   const values = {
     events: eventCount,
     volunteers: volunteerCount,
-    attendees: totalAttendees,
+    xp: totalXP,
   };
 
   return (
@@ -81,7 +87,7 @@ export function ChapterStatsCards({
           <ChapterStatCard
             key={s.valueKey}
             label={s.label}
-            value={values[s.valueKey]}
+            value={s.valueKey === "xp" ? compactXP(values[s.valueKey]) : values[s.valueKey]}
             color={s.color}
             delay={s.delay}
             icon={s.icon}

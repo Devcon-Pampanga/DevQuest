@@ -39,5 +39,6 @@ export function useChapterData(viewingChapterId: string) {
     setVolunteers,
     events: (data?.events ?? []) as ChapterEventDoc[],
     regCounts: data?.regCounts ?? {},
+    totalVolunteerXP: data?.totalVolunteerXP ?? 0,
   };
 }

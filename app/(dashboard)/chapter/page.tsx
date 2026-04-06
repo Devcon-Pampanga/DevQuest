@@ -24,6 +24,7 @@ export default function ChapterPage() {
     volunteers,
     events,
     regCounts,
+    totalVolunteerXP,
   } = useChapterData(viewingChapterId);
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -31,11 +32,6 @@ export default function ChapterPage() {
   const coordinators = useMemo(
     () => volunteers.filter((v) => v.role === "coordinator"),
     [volunteers]
-  );
-
-  const totalAttendees = useMemo(
-    () => Object.values(regCounts).reduce((s, c) => s + c, 0),
-    [regCounts]
   );
 
   const leaderboard = useMemo(
@@ -94,7 +90,7 @@ export default function ChapterPage() {
             <ChapterStatsCards
               eventCount={events.length}
               volunteerCount={leaderboard.length}
-              totalAttendees={totalAttendees}
+              totalXP={totalVolunteerXP}
             />
           </div>
 
