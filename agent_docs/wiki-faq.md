@@ -20,9 +20,9 @@
    - **XP** is your cumulative progress score. It feeds your level, your leaderboard rank, and your public portfolio. It never resets.
    - **DevCoins** are a spendable currency. You redeem them in the market for DEVCON Kids merchandise. Spending DevCoins does not reduce your XP.
 
-4. **What's the difference between quests and missions?**
+4. **What's the difference between quests and subquests?**
    - **Quests** are the fixed milestone ladder for your volunteer team — pre-defined by DEVCON Kids and seeded into the platform. Completing them in order is how you advance your tier (e.g., Associate → Specialist).
-   - **Missions** are ad hoc tasks created by coordinators for specific needs — a project, an event, a one-off assignment. They don't affect your tier but reward XP and DevCoins.
+   - **Subquests** are ad hoc tasks created by coordinators for specific needs — a project, an event, a one-off assignment. They don't affect your tier but reward XP and DevCoins.
 
 5. **How do tiers work? What does XP have to do with it?**
    Nothing — tier progression and XP are fully independent systems. Your tier in a team advances only when you complete all the required quests for that tier. Having a high XP total does not unlock the next tier. Think of XP as a measure of activity and tiers as credentials.
@@ -63,16 +63,16 @@
 
    Both methods grant the volunteer their role-weighted XP, open their 72-hour reflection window, and auto-complete any matching QR-scan quests.
 
-3. **How do I approve a quest or mission submission?**
-   Quest approvals appear in the **Approvals** tab on the Quests page. Mission approvals appear in the **Coordinator Dashboard**. Each item shows the volunteer's name, the quest/mission, any submitted notes or evidence link, and the submission date. You can **Approve** (grants XP immediately) or **Request Revision** (returns it to the volunteer with a note).
+3. **How do I approve a quest or subquest submission?**
+   Quest approvals appear in the **Approvals** tab on the Quests page. Subquest approvals appear in the **Coordinator Dashboard**. Each item shows the volunteer's name, the quest/subquest, any submitted notes or evidence link, and the submission date. You can **Approve** (grants XP immediately) or **Request Revision** (returns it to the volunteer with a note).
 
-4. **How do I create a mission?**
-   Go to `/missions/new`. Set a title, description, difficulty (Easy / Medium / Hard), and choose how it's assigned:
+4. **How do I create a subquest?**
+   Go to `/subquests/new`. Set a title, description, difficulty (Easy / Medium / Hard), and choose how it's assigned:
    - **Specific** — pick individual volunteers by username
    - **Team** — assign to one or more volunteer teams
    - **Open** — any volunteer can join (optionally cap with a slot limit)
 
-   You can also set a deadline and submission guidance. Once created, the mission is immediately visible to the target volunteers in their Missions Panel.
+   You can also set a deadline and submission guidance. Once created, the subquest is immediately visible to the target volunteers in their Subquests Panel.
 
 5. **Can I remove a volunteer from the chapter?**
    Yes. On the Chapter page, coordinators can remove a volunteer via the ⋯ menu on their volunteer row.
@@ -106,7 +106,7 @@
    TypeScript interfaces live in the `types/` directory at the repo root:
    - `types/user.ts` — User, InitialUserDocument
    - `types/quest.ts` — Quest, QuestCompletion, QuestStatus, QuestTier
-   - `types/mission.ts` — Mission, MissionCompletion, MissionDifficulty
+   - `types/subquest.ts` — Subquest, SubquestCompletion, SubquestDifficulty
    - `types/xp.ts` — XPLogEntry, XPLogSource
    - `types/chapter.ts` — Chapter, ChapterEventDoc
 
@@ -133,3 +133,9 @@
    - Query keys: `lib/queryKeys.ts` — always use this, never hardcode TanStack Query key strings
    - Auth helpers: `lib/auth-helpers.ts`
    - Event attendance: `lib/events/attendanceConfirmation.ts`
+   - Quest actions (volunteer side): `hooks/useQuestSubmission.ts`
+   - Subquest actions (join, submit, approve): `hooks/useSubquestActions.ts`
+   - Reflection form logic: `hooks/useReflectionForm.ts`
+   - Onboarding form logic: `hooks/useOnboardingForm.ts`
+   - New event form logic: `hooks/useNewEventForm.ts`
+   - New subquest form logic: `hooks/useAddSubquestForm.ts`

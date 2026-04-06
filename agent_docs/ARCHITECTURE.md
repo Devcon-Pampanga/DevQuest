@@ -31,7 +31,7 @@ Two roles: `volunteer` (default) and `coordinator`. Role is set at registration 
 |---|---|
 | Unauthenticated | `/` |
 | `onboardingComplete: false` | `/onboarding` |
-| `/events/new`, `/missions/new` | Coordinator only |
+| `/events/new`, `/subquests/new` | Coordinator only |
 | `/events/[eventId]/reflect` | Auth + attended + not submitted + within 72h deadline |
 | `/profile/[uid]` | Public — no auth required |
 
@@ -54,7 +54,6 @@ Two roles: `volunteer` (default) and `coordinator`. Role is set at registration 
 | `/chapter` | Auth |
 | `/leaderboard` | Auth |
 | `/market` | Auth |
-| `/missions/new` | Coordinator only |
 | `/subquests/new` | Coordinator only |
 | `/profile` | Auth (own profile) |
 | `/profile/[uid]` | Public portfolio |

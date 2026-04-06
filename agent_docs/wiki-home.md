@@ -33,7 +33,7 @@ DevQuest fixes that. Every contribution a volunteer makes is mapped to a real DE
 | DevCoins & market | [Project Overview → DevCoins & Marketplace](Project-Overview#7-devcoins--marketplace) |
 | Quest verification types | [Project Overview → Quest Verification](Project-Overview#5-quest-verification-system) |
 | Volunteer teams & milestones | [Project Overview → Volunteer Teams](Project-Overview#4-volunteer-teams--milestones) |
-| Missions system | [Project Overview → Missions](Project-Overview#8-missions-system) |
+| Subquests system | [Project Overview → Subquests](Project-Overview#8-subquests-system) |
 | Reflection forms | [Project Overview → Reflection Form](Project-Overview#9-reflection-form-system) |
 | Data models (Firestore) | [Project Overview → Data Models](Project-Overview#13-data-models) |
 | Design system & tokens | [Project Overview → Design System](Project-Overview#3-design-system) |
@@ -43,12 +43,12 @@ DevQuest fixes that. Every contribution a volunteer makes is mapped to a real DE
 
 ### Two User Roles
 - **Volunteer** — joins events, completes quests, earns XP and DevCoins, exports portfolio
-- **Coordinator** — all volunteer capabilities + creates events and missions, confirms attendance via QR scan, approves quest and mission completions
+- **Coordinator** — all volunteer capabilities + creates events and subquests, confirms attendance via QR scan, approves quest and subquest completions
 
 ### How Progression Works
 Volunteers belong to one or more of five teams (Lead Learners, Creatives, People & Culture, Community Engagement, Sustainability). Each team has its own tier ladder: **Team Member → Associate → Specialist → Team Lead**. Advancing through tiers requires completing team-specific quests — not XP thresholds.
 
-XP is a separate global score that accumulates from all activity (events, quests, missions, reflections) and feeds the leaderboard, DevCoin balance, and public portfolio.
+XP is a separate global score that accumulates from all activity (events, quests, subquests, reflections) and feeds the leaderboard, DevCoin balance, and public portfolio.
 
 ### How Quests Are Verified
 | Type | Used for |

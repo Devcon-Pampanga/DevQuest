@@ -58,7 +58,6 @@ app/
 │   ├── chapter/              # /chapter
 │   ├── leaderboard/          # /leaderboard
 │   ├── market/               # /market
-│   ├── missions/new/         # /missions/new  (coordinator: add mission/quest)
 │   ├── subquests/new/        # /subquests/new (coordinator: add subquest)
 │   ├── notifications/        # /notifications
 │   ├── profile/              # /profile (own profile)
@@ -77,12 +76,14 @@ components/
 ├── layout/                   # PageShell, Sidebar
 ├── dashboard/                # Dashboard section components
 ├── events/                   # Events list + event detail (modular: eventDetail/)
+│   └── reflect/              # ReflectionView + LikertScale (reflect page components)
+├── onboarding/               # OnboardingView, OnboardingIcons
 ├── quests/                   # Quest map, tier sections, missions panel, coordinator hub
 ├── chapter/                  # Chapter page components
 ├── leaderboard/              # Leaderboard components
 ├── market/                   # Market page, product cards, receipt system
 ├── profile/                  # Profile page components (own + public)
-├── missions/new/             # Add mission view
+├── subquests/new/            # Add subquest view + VolunteerPicker
 └── forms/                    # FormSectionCard, FormIcons
 
 context/
@@ -90,6 +91,9 @@ context/
 └── SidebarContext.tsx        # Mobile sidebar open state
 
 hooks/                        # Feature hooks — all data-fetching hooks use TanStack Query
+                              # Form/action hooks: useReflectionForm, useOnboardingForm,
+                              #   useNewEventForm, useAddSubquestForm,
+                              #   useQuestSubmission, useSubquestActions
 lib/
 ├── firebase.ts               # Firebase app, auth, db, storage (client)
 ├── firebase-admin.ts         # Firebase Admin SDK (server/API routes only)

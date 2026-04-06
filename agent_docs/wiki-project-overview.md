@@ -15,7 +15,7 @@
 5. [Quest Verification System](#5-quest-verification-system)
 6. [XP & Progression System](#6-xp--progression-system)
 7. [DevCoins & Marketplace](#7-devcoins--marketplace)
-8. [Missions System](#8-missions-system)
+8. [Subquests System](#8-subquests-system)
 9. [Reflection Form System](#9-reflection-form-system)
 10. [Page Inventory & Content](#10-page-inventory--content)
 11. [User Flow Diagrams](#11-user-flow-diagrams)
@@ -37,7 +37,7 @@ DEVCON Kids Pampanga student volunteers face high churn and a confidence gap —
 
 ### Solution
 
-DevQuest maps every volunteer contribution to a real DEVCON Kids career milestone through structured Quest Lines, coordinator-verified attendance, role-weighted XP, post-event reflections, coordinator-assigned missions, and an exportable professional portfolio. Volunteers also earn DevCoins — a redeemable currency that lets their effort translate into tangible rewards from the DEVCON Kids merch market.
+DevQuest maps every volunteer contribution to a real DEVCON Kids career milestone through structured Quest Lines, coordinator-verified attendance, role-weighted XP, post-event reflections, coordinator-assigned subquests, and an exportable professional portfolio. Volunteers also earn DevCoins — a redeemable currency that lets their effort translate into tangible rewards from the DEVCON Kids merch market.
 
 ---
 
@@ -55,8 +55,8 @@ DevQuest maps every volunteer contribution to a real DEVCON Kids career mileston
 - Has all volunteer capabilities PLUS:
   - Add / manage events
   - Confirm volunteer attendance via QR scan
-  - Approve quest and mission completions
-  - Create and assign missions to volunteers
+  - Approve quest and subquest completions
+  - Create and assign subquests to volunteers
   - Access volunteer management on the Chapter Page
   - View aggregate reflection energy reports per event
 
@@ -286,7 +286,7 @@ There are three types of quest completion. Each quest is assigned exactly one ty
 XP and team tier progression are two **fully independent systems.**
 
 ### Global XP
-XP is a single cumulative number representing everything a volunteer has contributed — across all teams, all events, all quests, and all missions. It feeds the leaderboard, DevCoin balance, and the portfolio's total XP display. It never resets (leaderboards are season-scoped, XP is not).
+XP is a single cumulative number representing everything a volunteer has contributed — across all teams, all events, all quests, and all subquests. It feeds the leaderboard, DevCoin balance, and the portfolio's total XP display. It never resets (leaderboards are season-scoped, XP is not).
 
 ### XP Levels
 Every 500 XP = 1 level. This is a display value shown on the dashboard and public portfolio.
@@ -326,9 +326,9 @@ Facilitation and hosting carry the most responsibility and preparation, so they 
 | Coordinator-approved (standard) | +75 |
 | Coordinator-approved (major milestone, e.g., teaching demo, portfolio presentation) | +150 |
 
-**Mission Completion:**
+**Subquest Completion:**
 
-| Mission Difficulty | XP Granted |
+| Subquest Difficulty | XP Granted |
 |---|---|
 | Easy | +25 |
 | Medium | +75 |
@@ -365,7 +365,7 @@ The hero section on the Dashboard shows the volunteer's profile, XP, tier, and q
 
 - **Stat cards:** Events attended, badges earned, stars received from coattendees
 - **Milestones section:** Per-team tier progress (quests completed / quests needed for next tier)
-- **Missions panel:** Active coordinator-assigned missions
+- **Subquests panel:** Active coordinator-assigned subquests
 - **Activity feed:** Last 20 XP log entries with source, description, and XP/DevCoin amounts
 - **Leaderboard widget:** Top 3 volunteers in the chapter + current user's position
 - **Badges grid:** All earned and locked achievement badges
@@ -428,9 +428,9 @@ Volunteers can view all past orders from the market page, including order ID, pr
 
 ---
 
-## 8. Missions System
+## 8. Subquests System
 
-Missions are coordinator-created tasks that supplement the static quest tree. Unlike quests (which are seeded team milestones), missions are ad hoc assignments created for specific events, projects, or volunteer needs.
+Subquests are coordinator-created tasks that supplement the static quest tree. Unlike quests (which are seeded team milestones), subquests are ad hoc assignments created for specific events, projects, or volunteer needs.
 
 ### Assignment Types
 
@@ -448,7 +448,7 @@ Missions are coordinator-created tasks that supplement the static quest tree. Un
 | Medium | +75 |
 | Hard | +150 |
 
-### Mission Lifecycle
+### Subquest Lifecycle
 
 ```
 Created (Coordinator) → Active
@@ -464,7 +464,7 @@ Created (Coordinator) → Active
     └── Closed (Coordinator closes enrollment)
 ```
 
-### Mission Fields
+### Subquest Fields
 
 - Title, description, difficulty, XP reward
 - Assignment type + assigned volunteers/teams
@@ -473,10 +473,9 @@ Created (Coordinator) → Active
 
 ### Where It Lives
 
-- **Dashboard / Missions Panel:** Volunteers see their active, submitted, and completed missions
-- **`/missions/new`:** Coordinator creates a new mission
-- **`/subquests/new`:** Coordinator creates a subquest variant (same flow, alternate labeling)
-- **Coordinator Dashboard:** Approval queue for pending mission submissions
+- **Dashboard / Subquests Panel:** Volunteers see their active, submitted, and completed subquests
+- **`/subquests/new`:** Coordinator creates a new subquest
+- **Coordinator Dashboard:** Approval queue for pending subquest submissions
 
 ---
 
@@ -547,8 +546,7 @@ Volunteers can give stars to coattendees as part of the reflection flow. Stars r
 | 10.10 | Chapter | `/chapter` | Auth |
 | 10.11 | Leaderboard | `/leaderboard` | Auth |
 | 10.12 | Market | `/market` | Auth |
-| 10.13 | Add Mission | `/missions/new` | Coordinator only |
-| 10.14 | Add Subquest | `/subquests/new` | Coordinator only |
+| 10.13 | Add Subquest | `/subquests/new` | Coordinator only |
 | 10.15 | Public Portfolio | `/profile/[uid]` | Public |
 | 10.16 | Notifications | `/notifications` | Auth |
 | 10.17 | Settings | `/settings` | Auth |
@@ -646,9 +644,9 @@ Volunteers can give stars to coattendees as part of the reflection flow. Stars r
 - Per enrolled team: quest progress bar toward next tier
 - "X of Y quests to [next tier]"
 
-*Missions Panel:*
-- Active, submitted, and completed coordinator-assigned missions
-- Join / submit / view status per mission
+*Subquests Panel:*
+- Active, submitted, and completed coordinator-assigned subquests
+- Join / submit / view status per subquest
 
 *Activity Feed:*
 - Last 20 XP log entries: icon, description, XP earned, DevCoins earned, date
@@ -661,7 +659,7 @@ Volunteers can give stars to coattendees as part of the reflection flow. Stars r
 
 **Coordinator View:**
 - Different layout via `CoordinatorDashboardPage`
-- Shows: volunteer roster, pending mission approvals, chapter stats, team breakdowns
+- Shows: volunteer roster, pending subquest approvals, chapter stats, team breakdowns
 
 ---
 
@@ -830,27 +828,19 @@ Volunteers can give stars to coattendees as part of the reflection flow. Stars r
 
 ---
 
-### 10.13 Add Mission Page
-**Route:** `/missions/new`
+### 10.13 Add Subquest Page
+**Route:** `/subquests/new`
 **Access:** Coordinator only
 
 **Content:**
-- "Create Mission" heading
+- "Create Subquest" heading
 - Title, description, difficulty (Easy / Medium / Hard), XP reward (auto-set by difficulty)
 - Assignment type: Specific Volunteers / Team / Open
   - Specific: volunteer picker by username
   - Team: team selector (one or more)
   - Open: optional slot limit
 - Optional: deadline, submission guidance
-- "Create Mission" primary button
-
----
-
-### 10.14 Add Subquest Page
-**Route:** `/subquests/new`
-**Access:** Coordinator only
-
-Same form and logic as `/missions/new`, under an alternate coordinator-facing label.
+- "Create Subquest" primary button
 
 ---
 
@@ -878,8 +868,8 @@ Same form and logic as `/missions/new`, under an alternate coordinator-facing la
 - Chronological list:
   - Quest approved: "[Coordinator] approved [Quest]. +[XP] XP"
   - Quest revision: "[Coordinator] requested a revision on [Quest]"
-  - Mission approved: "[Coordinator] approved [Mission]. +[XP] XP"
-  - Mission revision: "[Coordinator] requested a revision on [Mission]"
+  - Subquest approved: "[Coordinator] approved [Subquest]. +[XP] XP"
+  - Subquest revision: "[Coordinator] requested a revision on [Subquest]"
   - Attendance confirmed: "Attendance at [Event] confirmed. +[XP] XP"
   - Reflection due: "Reflection for [Event] due in [X hours]"
   - Tier promoted: "Promoted to [Tier] in [Team]! +100 XP 🎉"
@@ -987,21 +977,21 @@ Auto-completes on coordinator attendance confirmation
     └── Matches by eventType + volunteer role → quest auto-completes + XP + DevCoins
 ```
 
-### 11.6 Mission Flow
+### 11.6 Subquest Flow
 ```
 [COORDINATOR]
-/missions/new → fill form → "Create Mission"
-    └── Mission active in Firestore → visible to target volunteers
+/subquests/new → fill form → "Create Subquest"
+    └── Subquest active in Firestore → visible to target volunteers
 
 [VOLUNTEER]
-Dashboard → Missions Panel
-    └── View assigned/open missions
+Dashboard → Subquests Panel
+    └── View assigned/open subquests
               └── Join (if open) → status: joined
                       └── Submit for Approval (notes/evidence)
                                 └── Pending Approval
 
 [COORDINATOR]
-Dashboard → Mission Approvals Queue
+Dashboard → Subquest Approvals Queue
     ├── Approve → +25/75/150 XP + DevCoins → Completed ✓ → volunteer notified
     └── Request Revision → back to Submitted with revision note
 ```
@@ -1086,7 +1076,7 @@ Profile setup:          +10 XP  (+1 DevCoin)     (once)
 Event attendance:       +30–60 XP  (+3–6 DevCoins)  (role-weighted, per event)
 Quest self-mark:        +20 XP  (+2 DevCoins)     (per quest)
 Quest approved:         +75 or +150 XP            (per quest, standard or major)
-Mission approved:       +25, +75, or +150 XP      (per mission, by difficulty)
+Subquest approved:      +25, +75, or +150 XP      (per subquest, by difficulty)
 Reflection submitted:   +25 XP  (+2 DevCoins)     (per event, within 72hr window)
 Tier promotion bonus:   +100 XP (+10 DevCoins)    (per tier, per team)
 ```
@@ -1096,7 +1086,7 @@ Tier promotion bonus:   +100 XP (+10 DevCoins)    (per tier, per team)
 - All app pages → redirect to `/` if unauthenticated
 - `/events/[eventId]/reflect` → blocked if not attended, already submitted, or deadline passed
 - `/events/[eventId]/reflections/[userId]` → blocked if `role !== "coordinator"`
-- `/missions/new`, `/subquests/new` → blocked if `role !== "coordinator"`
+- `/subquests/new` → blocked if `role !== "coordinator"`
 - Coordinator UI elements → conditionally rendered, never CSS-hidden
 - Public profile → no email, contact, or DevCoin balance exposed
 
@@ -1204,10 +1194,10 @@ users/{uid}/questCompletions/{questId}
   └── revisionNote: string (optional)
 ```
 
-### Mission
+### Subquest
 ```
-missions/{missionId}
-  ├── missionId: string
+subquests/{subquestId}
+  ├── subquestId: string
   ├── title: string
   ├── description: string
   ├── difficulty: "easy" | "medium" | "hard"
@@ -1224,10 +1214,10 @@ missions/{missionId}
   └── status: "active" | "closed"
 ```
 
-### Mission Completion
+### Subquest Completion
 ```
-users/{uid}/subquestCompletions/{missionId}
-  ├── missionId: string
+users/{uid}/subquestCompletions/{subquestId}
+  ├── subquestId: string
   ├── status: "assigned" | "joined" | "submitted" | "completed"
   ├── submissionNotes: string (optional)
   ├── evidenceUrl: string (optional)
