@@ -6,7 +6,7 @@ import { useCoordinatorHubData } from "@/hooks/useCoordinatorHubData";
 import { CoordinatorStatsRow } from "@/components/quests/coordinator/CoordinatorStatsRow";
 import { CoordinatorVolunteersPanel } from "@/components/quests/coordinator/CoordinatorVolunteersPanel";
 import { CoordinatorTeamsPanel } from "@/components/quests/coordinator/CoordinatorTeamsPanel";
-import { CoordinatorMissionsPanel } from "@/components/quests/coordinator/CoordinatorMissionsPanel";
+import { CoordinatorSubquestsPanel } from "@/components/quests/coordinator/CoordinatorSubquestsPanel";
 import PageShell from "@/components/layout/PageShell";
 import { SkeletonBlock, SkeletonLine } from "@/components/layout/PageShell";
 
@@ -75,12 +75,12 @@ function CoordinatorHubSkeleton() {
 export function CoordinatorHubPage({ user }: CoordinatorHubPageProps) {
   const avatarUrl = buildAvatarUrl(user.username, user.avatarOptions ?? DEFAULT_AVATAR);
 
-  const { volunteers, missions, pendingApprovalsCount, loading, refresh } =
+  const { volunteers, subquests, pendingApprovalsCount, loading, refresh } =
     useCoordinatorHubData(user.chapterId);
 
   const activeSubquestCount = useMemo(
-    () => missions.filter((m) => m.status === "active").length,
-    [missions]
+    () => subquests.filter((m) => m.status === "active").length,
+    [subquests]
   );
 
   return (
@@ -106,9 +106,9 @@ export function CoordinatorHubPage({ user }: CoordinatorHubPageProps) {
           {/* ── Right: Teams + Missions (1/3 width sidebar) ─────────────────── */}
           <div className="contents lg:flex lg:flex-col gap-4 lg:col-start-3 lg:col-span-1">
             <CoordinatorTeamsPanel volunteers={volunteers} />
-            <CoordinatorMissionsPanel
-              missions={missions}
-              onMissionArchived={refresh}
+            <CoordinatorSubquestsPanel
+              subquests={subquests}
+              onSubquestArchived={refresh}
             />
           </div>
 

@@ -12,13 +12,13 @@ import { QuestTierSection } from "@/components/quests/QuestTierSection";
 import { QuestFilterBar } from "@/components/quests/QuestFilterBar";
 import { TeamQuestProgress } from "@/components/quests/TeamQuestProgress";
 import { PathJourneySidebar } from "@/components/quests/PathJourneySidebar";
-import { MissionsPanel } from "@/components/quests/missions/MissionsPanel";
+import { SubquestsPanel } from "@/components/quests/subquests/SubquestsPanel";
 import { QuestsSkeleton } from "@/components/quests/QuestsSkeleton";
 import { QuestBadgesCard } from "@/components/quests/QuestBadgesCard";
 import PageShell from "@/components/layout/PageShell";
 import { TEAM_META } from "@/lib/seed/quests";
 import { ApprovalsQueueItem } from "@/types/quest";
-import { MissionApprovalItem } from "@/types/mission";
+import { SubquestApprovalItem } from "@/types/subquest";
 
 interface UserData {
   uid: string;
@@ -66,7 +66,7 @@ function QuestsPageContent() {
 
   // Kept for useQuestActions type compatibility — volunteers don't populate these
   const [approvals, setApprovals] = useState<ApprovalsQueueItem[]>([]);
-  const [missionApprovals, setMissionApprovals] = useState<MissionApprovalItem[]>([]);
+  const [missionApprovals, setMissionApprovals] = useState<SubquestApprovalItem[]>([]);
 
   const [activeTab, setActiveTab] = useState<string>("");
   const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
@@ -184,11 +184,11 @@ function QuestsPageContent() {
                   submitting={submitting}
                 />
 
-                <MissionsPanel
+                <SubquestsPanel
                   userData={userData!}
-                  missions={missions}
-                  missionCompletions={missionCompletions}
-                  missionApprovals={missionApprovals}
+                  subquests={missions}
+                  subquestCompletions={missionCompletions}
+                  subquestApprovals={missionApprovals}
                   loadingMissions={loadingMissions}
                   loadingMissionApprovals={false}
                   expandedMissionId={expandedMissionId}
