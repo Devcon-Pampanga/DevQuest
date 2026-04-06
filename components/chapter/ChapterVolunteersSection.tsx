@@ -20,9 +20,7 @@ export function ChapterVolunteersSection({
   setSearch,
   teamFilter,
   setTeamFilter,
-  canEdit,
   currentUserId,
-  onRequestRemoveVolunteer,
 }: {
   volunteers: ChapterVolunteer[];
   filteredVolunteers: ChapterVolunteer[];
@@ -35,9 +33,7 @@ export function ChapterVolunteersSection({
   setSearch: (s: string) => void;
   teamFilter: string;
   setTeamFilter: (t: string) => void;
-  canEdit: boolean;
   currentUserId?: string;
-  onRequestRemoveVolunteer: (uid: string) => void;
 }) {
   return (
     <div
@@ -154,8 +150,6 @@ export function ChapterVolunteersSection({
               key={`${teamFilter}-${v.uid}`}
               volunteer={v}
               index={(volunteerPage - 1) * volunteerPageSize + i}
-              canRemove={canEdit}
-              onRemove={onRequestRemoveVolunteer}
               isCurrentUser={v.uid === currentUserId}
             />
           ))}
