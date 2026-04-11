@@ -82,10 +82,10 @@ npm run dev
 <img height="300" src="https://github.com/user-attachments/assets/e878f754-71b4-4c8a-bf0b-2e3ba85b0ccf">
 <br>
 
-**2. Dashboard**
+**2. Volunteer Profile**
 <br>
-<img height="300" src="https://github.com/user-attachments/assets/0f07ad99-76fd-4bec-a472-413dad2ec6a2">
-<img height="300" src="https://github.com/user-attachments/assets/90c53ccf-d627-4a3a-b614-7bddc451e1fd">
+<img height="300" src="https://github.com/user-attachments/assets/22bec498-9335-4e3c-9db1-d53037b74015">
+<img height="300" src="https://github.com/user-attachments/assets/92cde073-af9b-4cd4-8419-3da7a160d680">
 <br>
 
 **3. Quests & Milestones**
@@ -96,24 +96,24 @@ npm run dev
 
 **4. Events & Details**
 <br>
-<img height="300" src="https://github.com/user-attachments/assets/5009b19e-d0e3-44c4-b698-b101b5075cb4">
-<img height="300" src="https://github.com/user-attachments/assets/59cee562-2bad-445d-a0d2-2971d18caf66">
+<img height="300" src="https://github.com/user-attachments/assets/af2f2913-a4a6-4beb-9597-91c39350c400">
+<img height="300" src="https://github.com/user-attachments/assets/b7cb4502-62fa-4159-8434-947418eb4d47">
 <img height="300" src="https://github.com/user-attachments/assets/558b9410-a23b-4348-8f66-f5dd1fd69201">
 <img height="300" src="https://github.com/user-attachments/assets/baa56c0f-bf41-4b46-a7e9-45ae6eb9c03a">
 <br>
 
-**5. Chapter Profile**
+**5. Chapter Profile & Leaderboards**
 <br>
-_Pending..._
+<img height="300" src="https://github.com/user-attachments/assets/cd035370-1f57-4dc3-9c77-34caf7fb433c">
+<img height="300" src="https://github.com/user-attachments/assets/6b977391-bddc-4700-9ea4-2506ad48d07f">
+<br>
+
 
 **6. Rewards & Marketplace**
 <br>
-_Pending..._
+<img height="300" src="https://github.com/user-attachments/assets/5f8992d4-00e9-4742-89aa-6853df4dfe46">
+<br>
 
-**7. Volunteer Profile**
-<br>
-<img height="300" src="https://github.com/user-attachments/assets/a5db123c-15c1-4145-83b2-905001bc5cad">
-<br>
 
 ## Team Members
 
@@ -125,4 +125,14 @@ _Pending..._
 
 ## Future Improvements
 
-*(Pending...)*
+**Governance & Role Management**
+
+A Super Admin tier will be introduced for multi-chapter oversight and the direct management of coordinator roles. To maintain a secure and professional community, registration will transition to a coordinator-approval model supported by dedicated domain emails for all members.
+
+**Engagement & Availability Tracking**
+
+A Volunteer Calendar will be implemented to allow members to log their schedules, facilitating event planning around academic and work commitments. Furthermore, automated dormancy alerts will trigger notifications if activity levels drop, allowing for timely well-being check-ins.
+
+**AI Analytics & Impact Reporting**
+
+New AI-driven insights will automatically summarize long-form reflection feedback, transforming qualitative data into actionable summaries. These tools will generate automated impact reports, distilling chapter-wide performance and volunteer growth into professional, ready-to-share data.
