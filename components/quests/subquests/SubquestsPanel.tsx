@@ -62,7 +62,6 @@ export function SubquestsPanel({
       className="rounded-2xl border border-border overflow-hidden animate-fade-up"
       style={{ backgroundColor: "#1e1a2e", animationDelay: "280ms" }}
     >
-      <div className="h-[3px] w-full" style={{ backgroundColor: "#A855F7" }} />
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-2 mb-4">
           <div className="flex-1 min-w-0">

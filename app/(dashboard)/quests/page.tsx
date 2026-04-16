@@ -159,7 +159,6 @@ function QuestsPageContent() {
                   className="rounded-2xl border border-border overflow-hidden lg:hidden"
                   style={{ backgroundColor: "#1e1a2e" }}
                 >
-                  <div className="h-[3px] w-full" style={{ backgroundColor: metrics.activeMeta.color }} />
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
@@ -222,7 +221,6 @@ function QuestsPageContent() {
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
                   style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
                 >
-                  <div className="h-[3px] w-full" style={{ backgroundColor: metrics.activeMeta.color }} />
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
