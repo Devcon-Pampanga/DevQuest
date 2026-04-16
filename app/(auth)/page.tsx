@@ -53,11 +53,9 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
-    if (status !== "ready") return;
     if (firebaseUser) router.replace("/dashboard");
-  }, [status, firebaseUser, router]);
+  }, [firebaseUser, router]);
 
   async function handleSignIn() {
     setError("");

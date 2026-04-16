@@ -64,9 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setFirebaseUser(null);
         setUser(null);
         setStatus("ready");
+        document.cookie = "devquest_session=; path=/; max-age=0; SameSite=Lax";
         return;
       }
 
+      document.cookie = "devquest_session=1; path=/; max-age=2592000; SameSite=Lax";
       setFirebaseUser(fbUser);
 
       if (subscribedUidRef.current === fbUser.uid) {
