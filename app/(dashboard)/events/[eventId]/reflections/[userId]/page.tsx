@@ -8,7 +8,6 @@ import { db } from "@/lib/firebase";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { useAuth } from "@/context/AuthContext";
 import { DEFAULT_AVATAR, buildAvatarUrl, type AvatarOptions } from "@/lib/avatar";
-import { TEAM_META } from "@/lib/seed/quests";
 import { useQuestData } from "@/hooks/useQuestData";
 import { useXpActivityLog } from "@/hooks/useXpActivityLog";
 import { useLeaderboardVolunteers } from "@/hooks/useLeaderboardVolunteers";
@@ -190,7 +189,6 @@ export default function ReflectionDetailPage() {
   const { reflectionData } = reg;
   const teams = volunteerUser.teams;
   const milestoneTeam = activeTeam && teams.includes(activeTeam) ? activeTeam : teams[0] ?? "";
-  const primaryTeamColor = teams[0] && TEAM_META[teams[0]] ? TEAM_META[teams[0]].color : "#A855F7";
   const avatarUrl = buildAvatarUrl(volunteerUser.username, volunteerUser.avatarOptions ?? DEFAULT_AVATAR);
 
   return (

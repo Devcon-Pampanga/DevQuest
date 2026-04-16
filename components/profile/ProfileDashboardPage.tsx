@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireDashboardAuth } from "@/hooks/useRequireDashboardAuth";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
-import { TEAM_META } from "@/lib/seed/quests";
 import { useQuestData } from "@/hooks/useQuestData";
 import { useQuestActions } from "@/hooks/useQuestActions";
 import { useXpActivityLog } from "@/hooks/useXpActivityLog";
@@ -183,8 +182,6 @@ export function ProfileDashboardPage() {
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
   const teams = userData.teams ?? [];
   const milestoneTeam = activeTeam && teams.includes(activeTeam) ? activeTeam : teams[0] ?? "";
-  const primaryTeamColor = teams[0] && TEAM_META[teams[0]] ? TEAM_META[teams[0]].color : "#A855F7";
-
   return (
     <PageShell
       title={userData.role === "coordinator" ? "Dashboard" : "Profile"}
