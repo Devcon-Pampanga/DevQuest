@@ -161,7 +161,7 @@ export function PublicProfilePage({ payload }: { payload: PublicProfilePayload }
               displayLimit={3}
               showCurrentUserOutsideLimit
             />
-            <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+            <ProfileBadgesGrid badges={badges} />
           </div>
         </div>
       </div>

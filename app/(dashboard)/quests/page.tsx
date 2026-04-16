@@ -162,8 +162,7 @@ function QuestsPageContent() {
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
-                      teamColor={metrics.activeMeta.color}
-                      leadTitle={metrics.activeMeta.leadTitle}
+                          leadTitle={metrics.activeMeta.leadTitle}
                       completions={completions}
                       allQuests={quests}
                     />
@@ -171,7 +170,6 @@ function QuestsPageContent() {
                 </div>
 
                 <QuestTierSection
-                  teamColor={metrics.activeMeta.color}
                   quests={metrics.currentTierQuests}
                   completions={completions}
                   expandedQuestId={expandedQuestId}
@@ -202,8 +200,7 @@ function QuestsPageContent() {
                 {/* Badges — mobile only (position 5) */}
                 <div className="lg:hidden [&_.animate-fade-up]:animate-none [&_.animate-fade-up]:opacity-100">
                   <QuestBadgesCard
-                    teamColor={metrics.activeMeta.color}
-                    completions={completions}
+                      completions={completions}
                     allQuests={quests}
                     teams={userData!.teams ?? []}
                     xp={userData!.xp ?? 0}
@@ -224,15 +221,13 @@ function QuestsPageContent() {
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
-                      teamColor={metrics.activeMeta.color}
-                      leadTitle={metrics.activeMeta.leadTitle}
+                          leadTitle={metrics.activeMeta.leadTitle}
                       completions={completions}
                       allQuests={quests}
                     />
                   </div>
                 </div>
                 <QuestBadgesCard
-                  teamColor={metrics.activeMeta.color}
                   completions={completions}
                   allQuests={quests}
                   teams={userData!.teams ?? []}

@@ -277,7 +277,7 @@ function DashboardProfileDetailContent({ payload }: { payload: DashboardProfileP
               />
             </div>
             <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
-              <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+              <ProfileBadgesGrid badges={badges} />
             </div>
           </div>
 

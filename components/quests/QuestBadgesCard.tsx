@@ -42,7 +42,6 @@ function QuestBadgeTile({ badge }: { badge: QuestBadgeDef }) {
 }
 
 export function QuestBadgesCard({
-  teamColor,
   completions,
   allQuests,
   teams,
@@ -51,7 +50,6 @@ export function QuestBadgesCard({
   reflectionCount,
   profileSetupCount,
 }: {
-  teamColor: string;
   completions: Record<string, QuestCompletion>;
   allQuests: Quest[];
   teams: string[];

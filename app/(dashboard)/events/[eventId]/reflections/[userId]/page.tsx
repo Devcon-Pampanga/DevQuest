@@ -269,7 +269,7 @@ export default function ReflectionDetailPage() {
               displayLimit={3}
               showCurrentUserOutsideLimit
             />
-            <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+            <ProfileBadgesGrid badges={badges} />
           </div>
 
           {/* Full width: Post-Event Reflection */}

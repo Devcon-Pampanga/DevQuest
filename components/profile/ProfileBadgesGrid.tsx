@@ -35,10 +35,8 @@ function BadgeTile({ badge }: { badge: VolunteerBadgeDef }) {
 
 export function ProfileBadgesGrid({
   badges,
-  teamColor = "#A855F7",
 }: {
   badges: VolunteerBadgeDef[];
-  teamColor?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const LIMIT = 6;

@@ -264,7 +264,7 @@ export function ProfileDashboardPage() {
                 />
               </div>
               <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
-                <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+                <ProfileBadgesGrid badges={badges} />
               </div>
             </div>
           </div>

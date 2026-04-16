@@ -47,7 +47,7 @@ function EyeOffIcon() {
 
 export default function SignInPage() {
   const router = useRouter();
-  const { firebaseUser, status } = useAuth();
+  const { firebaseUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
