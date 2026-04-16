@@ -159,12 +159,11 @@ function QuestsPageContent() {
                   className="rounded-2xl border border-border overflow-hidden lg:hidden"
                   style={{ backgroundColor: "#1e1a2e" }}
                 >
-                  <div className="h-[3px] w-full" style={{ backgroundColor: metrics.activeMeta.color }} />
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
                       teamColor={metrics.activeMeta.color}
-                      leadTitle={metrics.activeMeta.leadTitle}
+                          leadTitle={metrics.activeMeta.leadTitle}
                       completions={completions}
                       allQuests={quests}
                     />
@@ -203,8 +202,7 @@ function QuestsPageContent() {
                 {/* Badges — mobile only (position 5) */}
                 <div className="lg:hidden [&_.animate-fade-up]:animate-none [&_.animate-fade-up]:opacity-100">
                   <QuestBadgesCard
-                    teamColor={metrics.activeMeta.color}
-                    completions={completions}
+                      completions={completions}
                     allQuests={quests}
                     teams={userData!.teams ?? []}
                     xp={userData!.xp ?? 0}
@@ -222,19 +220,17 @@ function QuestsPageContent() {
                   className="rounded-2xl border border-border overflow-hidden animate-fade-up"
                   style={{ backgroundColor: "#1e1a2e", animationDelay: "240ms" }}
                 >
-                  <div className="h-[3px] w-full" style={{ backgroundColor: metrics.activeMeta.color }} />
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
                       teamColor={metrics.activeMeta.color}
-                      leadTitle={metrics.activeMeta.leadTitle}
+                          leadTitle={metrics.activeMeta.leadTitle}
                       completions={completions}
                       allQuests={quests}
                     />
                   </div>
                 </div>
                 <QuestBadgesCard
-                  teamColor={metrics.activeMeta.color}
                   completions={completions}
                   allQuests={quests}
                   teams={userData!.teams ?? []}

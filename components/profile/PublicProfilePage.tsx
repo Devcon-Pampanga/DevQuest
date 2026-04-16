@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
-import { TEAM_META } from "@/lib/seed/quests";
 import { buildVolunteerBadgeList } from "@/lib/volunteerBadges";
 import { ChapterLeaderboardPanel } from "@/components/chapter/ChapterLeaderboardPanel";
 import { ProfileActivityFeed } from "@/components/profile/ProfileActivityFeed";
@@ -88,7 +87,6 @@ export function PublicProfilePage({ payload }: { payload: PublicProfilePayload }
   );
 
   const avatarUrl = buildAvatarUrl(userData.username, userData.avatarOptions ?? DEFAULT_AVATAR);
-  const primaryTeamColor = userData.teams[0] && TEAM_META[userData.teams[0]] ? TEAM_META[userData.teams[0]].color : "#A855F7";
   const milestoneTeam = activeTeam && userData.teams.includes(activeTeam) ? activeTeam : userData.teams[0] ?? "";
 
   return (
@@ -161,7 +159,7 @@ export function PublicProfilePage({ payload }: { payload: PublicProfilePayload }
               displayLimit={3}
               showCurrentUserOutsideLimit
             />
-            <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+            <ProfileBadgesGrid badges={badges} />
           </div>
         </div>
       </div>

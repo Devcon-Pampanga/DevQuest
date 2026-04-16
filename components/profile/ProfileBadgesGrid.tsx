@@ -35,10 +35,8 @@ function BadgeTile({ badge }: { badge: VolunteerBadgeDef }) {
 
 export function ProfileBadgesGrid({
   badges,
-  teamColor = "#A855F7",
 }: {
   badges: VolunteerBadgeDef[];
-  teamColor?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const LIMIT = 6;
@@ -52,7 +50,6 @@ export function ProfileBadgesGrid({
       className="rounded-2xl border border-border overflow-hidden"
       style={{ backgroundColor: "#1e1a2e" }}
     >
-      <div className="h-[3px] w-full" style={{ backgroundColor: teamColor }} />
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-3 mb-4">
           <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">Badges</p>

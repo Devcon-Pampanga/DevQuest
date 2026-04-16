@@ -2,7 +2,10 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { User, Gear, Info } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { User, Gear, Info, SignOut } from "@phosphor-icons/react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useSidebar } from "@/context/SidebarContext";
 
 // ─── Skeleton primitives ──────────────────────────────────────────────────────
@@ -47,9 +50,16 @@ export default function PageShell({
   children,
 }: PageShellProps) {
   const { openSidebar } = useSidebar();
+  const router = useRouter();
   const showMobileSidebarButton = !backHref;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  async function handleSignOut() {
+    setMenuOpen(false);
+    await signOut(auth);
+    router.push("/");
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -159,6 +169,15 @@ export default function PageShell({
                     {label}
                   </Link>
                 ))}
+                <div className="border-t border-border" />
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+                >
+                  <SignOut size={16} weight="bold" />
+                  Sign Out
+                </button>
               </div>
             )}
           </div>
