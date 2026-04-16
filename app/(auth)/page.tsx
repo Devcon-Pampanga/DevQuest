@@ -47,17 +47,15 @@ function EyeOffIcon() {
 
 export default function SignInPage() {
   const router = useRouter();
-  const { firebaseUser, status } = useAuth();
+  const { firebaseUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
-    if (status !== "ready") return;
     if (firebaseUser) router.replace("/dashboard");
-  }, [status, firebaseUser, router]);
+  }, [firebaseUser, router]);
 
   async function handleSignIn() {
     setError("");

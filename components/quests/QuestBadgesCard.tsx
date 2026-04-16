@@ -42,7 +42,6 @@ function QuestBadgeTile({ badge }: { badge: QuestBadgeDef }) {
 }
 
 export function QuestBadgesCard({
-  teamColor,
   completions,
   allQuests,
   teams,
@@ -51,7 +50,6 @@ export function QuestBadgesCard({
   reflectionCount,
   profileSetupCount,
 }: {
-  teamColor: string;
   completions: Record<string, QuestCompletion>;
   allQuests: Quest[];
   teams: string[];
@@ -86,7 +84,6 @@ export function QuestBadgesCard({
 
   return (
     <div className="rounded-2xl border border-border overflow-hidden animate-fade-up" style={{ backgroundColor: "#1e1a2e", animationDelay: "300ms" }}>
-      <div className="h-[3px] w-full" style={{ backgroundColor: teamColor }} />
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-3 mb-4">
           <p className="text-xs font-semibold text-text-muted tracking-widest uppercase">Badges</p>

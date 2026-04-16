@@ -11,7 +11,6 @@ import { useXpActivityLog } from "@/hooks/useXpActivityLog";
 import { useLeaderboardVolunteers } from "@/hooks/useLeaderboardVolunteers";
 import { useShareLinkCopy } from "@/hooks/useShareLinkCopy";
 import type { DashboardProfilePayload, SerializedQuestCompletion } from "@/lib/profile/dashboardProfile";
-import { TEAM_META } from "@/lib/seed/quests";
 import { buildVolunteerBadgeList } from "@/lib/volunteerBadges";
 import { generateVolunteerProfileResume } from "@/lib/profileResume";
 import { ChapterLeaderboardPanel } from "@/components/chapter/ChapterLeaderboardPanel";
@@ -154,8 +153,6 @@ function DashboardProfileDetailContent({ payload }: { payload: DashboardProfileP
     ? buildAvatarUrl(sessionUser.username, sessionUser.avatarOptions ?? DEFAULT_AVATAR)
     : undefined;
 
-  const primaryTeamColor = userData.teams[0] && TEAM_META[userData.teams[0]] ? TEAM_META[userData.teams[0]].color : "#A855F7";
-
   const [activeTeam, setActiveTeam] = useState("");
   useEffect(() => {
     const teams = userData.teams ?? [];
@@ -277,7 +274,7 @@ function DashboardProfileDetailContent({ payload }: { payload: DashboardProfileP
               />
             </div>
             <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
-              <ProfileBadgesGrid badges={badges} teamColor={primaryTeamColor} />
+              <ProfileBadgesGrid badges={badges} />
             </div>
           </div>
 
