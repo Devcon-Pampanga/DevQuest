@@ -171,6 +171,7 @@ function QuestsPageContent() {
                 </div>
 
                 <QuestTierSection
+                  teamColor={metrics.activeMeta.color}
                   quests={metrics.currentTierQuests}
                   completions={completions}
                   expandedQuestId={expandedQuestId}
