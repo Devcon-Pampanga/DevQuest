@@ -162,6 +162,7 @@ function QuestsPageContent() {
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
+                      teamColor={metrics.activeMeta.color}
                           leadTitle={metrics.activeMeta.leadTitle}
                       completions={completions}
                       allQuests={quests}
@@ -221,6 +222,7 @@ function QuestsPageContent() {
                   <div className="p-4 sm:p-5">
                     <PathJourneySidebar
                       teamId={activeTab}
+                      teamColor={metrics.activeMeta.color}
                           leadTitle={metrics.activeMeta.leadTitle}
                       completions={completions}
                       allQuests={quests}
