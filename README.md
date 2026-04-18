@@ -104,8 +104,8 @@ npm run dev
 
 **5. Chapter Profile & Leaderboards**
 <br>
+<img height="300" src="https://github.com/user-attachments/assets/61267ab1-d940-4215-89e2-118d51143be5">
 <img height="300" src="https://github.com/user-attachments/assets/cd035370-1f57-4dc3-9c77-34caf7fb433c">
-<img height="300" src="https://github.com/user-attachments/assets/6b977391-bddc-4700-9ea4-2506ad48d07f">
 <br>
 
 
