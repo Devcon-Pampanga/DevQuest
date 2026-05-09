@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Cross-references the user's Firestore doc to verify coordinator role.
+    // Storage rules can call firestore.get() — each call costs one Firestore read.
+    function isCoordinator() {
+      return isSignedIn() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'coordinator';
+    }
+
+    // ── event-banners/{eventId}/banner ────────────────────────────────────────
+    // The only path in use. Coordinators upload/replace/delete banners via the
+    // client SDK (lib/eventCreate.ts, lib/events/eventMutations.ts).
+    //
+    // NOTE: The banner is uploaded before the Firestore event doc is created
+    // (eventCreate.ts uses the Firestore doc ref ID before setDoc), so we cannot
+    // validate chapter ownership here — that constraint is enforced by the
+    // Firestore rules on the events collection instead.
+    //
+    // READ  — any authenticated user (banner displayed in events list and detail)
+    // WRITE — coordinator only (upload on create, replace on edit, delete on event delete)
+    match /event-banners/{eventId}/banner {
+      allow read: if isSignedIn();
+      allow write: if isCoordinator();
+    }
+
+    // Deny everything else. No other Storage paths are used by this app.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
