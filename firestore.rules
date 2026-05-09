@@ -1,0 +1,180 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Fetches the requesting user's doc to verify coordinator role.
+    // Called only on write paths to bound read quota usage.
+    function currentUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isCoordinator() {
+      return isSignedIn() && currentUserData().role == 'coordinator';
+    }
+
+    // role and email are set once at signup and must be immutable from the client.
+    function protectedFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'email']);
+    }
+
+
+    // ── coordinator_whitelist ─────────────────────────────────────────────────
+    // Queried during signUp() to assign coordinator role. Always happens while
+    // the user is authenticated (Firebase Auth user is created first).
+    match /coordinator_whitelist/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── quests ────────────────────────────────────────────────────────────────
+    // Read-only content seeded via Admin SDK (/api/seed-quests). Never client-writable.
+    match /quests/{questId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── subquests ─────────────────────────────────────────────────────────────
+    // Coordinators create chapter subquests. No mutation paths exist in the app.
+    match /subquests/{subquestId} {
+      allow read: if isSignedIn();
+      allow create: if isCoordinator()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.chapterId == currentUserData().chapterId;
+      allow update, delete: if false;
+    }
+
+    // ── events ────────────────────────────────────────────────────────────────
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      allow create: if isCoordinator()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.chapterId == currentUserData().chapterId;
+      allow update, delete: if isCoordinator() && (
+        resource.data.createdBy == request.auth.uid
+        || resource.data.chapterId == currentUserData().chapterId
+      );
+
+      // ── events/{eventId}/registrations/{regUid} ───────────────────────────
+      match /registrations/{regUid} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && request.auth.uid == regUid
+          && request.resource.data.userId == request.auth.uid;
+        // Owner submits reflection; coordinator confirms attendance
+        allow update: if isOwner(regUid) || isCoordinator();
+        allow delete: if false;
+      }
+    }
+
+    // ── users ─────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Any authenticated user can read (needed for leaderboard, chapter pages,
+      // coordinator queries across chapter members). Sensitive fields like email
+      // and contactNumber are excluded at the app layer, not the rules layer.
+      allow read: if isSignedIn();
+
+      allow create: if isOwner(uid);
+
+      // Three update paths:
+      //   1. Owner or coordinator: full update, but role/email are always frozen
+      //   2. Any volunteer: ONLY starsReceived may change
+      //      (useReflectionForm.ts:220 increments a co-attendee's starsReceived)
+      allow update: if
+        ((isOwner(uid) || isCoordinator()) && protectedFieldsUnchanged()) ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['starsReceived']));
+
+      // Account deletion — deleteDoc(users/{uid}) + deleteUser(firebaseUser)
+      allow delete: if isOwner(uid);
+
+
+      // ── users/{uid}/xpLog/{logId} ─────────────────────────────────────────
+      // Append-only audit log. Owner writes their own (reflection +25 XP via addDoc,
+      // onboarding +10 XP via batch). Coordinator writes to other users' xpLog
+      // during approval batches, attendance confirmation, and QR quest auto-completion.
+      match /xpLog/{logId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) || isCoordinator();
+        allow update, delete: if false;
+      }
+
+      // ── users/{uid}/teamProgress/{teamId} ────────────────────────────────
+      // Set by owner during onboarding and team join (merge:true setDoc).
+      // Coordinator reads during hub volunteer detail view.
+      match /teamProgress/{teamId} {
+        allow read: if isOwner(uid) || isCoordinator();
+        allow create, update: if isOwner(uid);
+        allow delete: if false;
+      }
+
+      // ── users/{uid}/questCompletions/{questId} ───────────────────────────
+      // Volunteer submits; coordinator approves or requests revision.
+      // Coordinator also auto-creates completions via completeQrScanQuests.
+      match /questCompletions/{questId} {
+        allow read: if isOwner(uid) || isCoordinator();
+        allow create: if isOwner(uid) || isCoordinator();
+        allow update: if isOwner(uid) || isCoordinator();
+        allow delete: if false;
+      }
+
+      // ── users/{uid}/subquestCompletions/{subquestId} ─────────────────────
+      // Coordinator creates assignments; volunteer joins and submits; coordinator approves.
+      match /subquestCompletions/{subquestId} {
+        allow read: if isOwner(uid) || isCoordinator();
+        allow create: if isOwner(uid) || isCoordinator();
+        allow update: if isOwner(uid) || isCoordinator();
+        allow delete: if false;
+      }
+
+      // ── users/{uid}/notifications/{notifId} ──────────────────────────────
+      // Coordinator writes to other users' notifications during approval batches.
+      // Owner marks as read.
+      match /notifications/{notifId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) || isCoordinator();
+        allow update: if isOwner(uid);
+        allow delete: if false;
+      }
+
+      // ── users/{uid}/reflections/{reflectionId} ───────────────────────────
+      // Currently read via getCountFromServer on the client. Individual reflection
+      // documents are read server-side (Admin SDK) in publicProfile and dashboardProfile.
+      match /reflections/{reflectionId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid);
+        allow update, delete: if false;
+      }
+
+      // ── users/{uid}/purchases/{orderId} ──────────────────────────────────
+      // All writes go through /api/market/purchase (Admin SDK). Client writes are blocked.
+      match /purchases/{orderId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+    }
+
+    // ── Collection group rules for coordinator cross-user queries ─────────────
+    // Enables collectionGroup('questCompletions') and collectionGroup('subquestCompletions')
+    // queries for the approvals queue without knowing each volunteer UID in advance.
+    // These rules are additive with the document-path rules above — volunteers
+    // can still read only their own completions via the users/{uid}/... path.
+    match /{path=**}/questCompletions/{questId} {
+      allow read: if isCoordinator();
+    }
+
+    match /{path=**}/subquestCompletions/{subquestId} {
+      allow read: if isCoordinator();
+    }
+  }
+}

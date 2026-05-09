@@ -3,6 +3,8 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import {
   doc,
@@ -33,6 +35,12 @@ export function getFriendlyAuthError(code: string): string {
       return "Please enter a valid email address.";
     case "auth/too-many-requests":
       return "Too many attempts. Please try again later.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in cancelled.";
+    case "auth/popup-blocked":
+      return "Pop-up blocked. Please allow pop-ups for this site.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with this email. Try signing in with email and password.";
     default:
       return "Something went wrong. Please try again.";
   }
@@ -152,6 +160,49 @@ export async function completeOnboarding(
   if (auth.currentUser) {
     await updateProfile(auth.currentUser, { displayName: username.trim() });
   }
+}
+
+export async function signInWithGoogle(): Promise<{
+  onboardingComplete: boolean;
+}> {
+  const provider = new GoogleAuthProvider();
+  const credential = await signInWithPopup(auth, provider);
+  const { uid, email } = credential.user;
+
+  const userRef = doc(db, "users", uid);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    const normalizedEmail = (email ?? "").toLowerCase().trim();
+    const whitelistSnap = await getDocs(
+      query(
+        collection(db, "coordinator_whitelist"),
+        where("email", "==", normalizedEmail)
+      )
+    );
+    const role: "coordinator" | "volunteer" = whitelistSnap.empty
+      ? "volunteer"
+      : "coordinator";
+
+    await setDoc(userRef, {
+      uid,
+      email: normalizedEmail,
+      role,
+      username: "",
+      usernameLower: "",
+      contactNumber: "",
+      chapterId: "",
+      teams: [],
+      xp: 0,
+      devCoins: 0,
+      onboardingComplete: false,
+      createdAt: serverTimestamp(),
+    });
+
+    return { onboardingComplete: false };
+  }
+
+  return { onboardingComplete: userSnap.data().onboardingComplete ?? false };
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
