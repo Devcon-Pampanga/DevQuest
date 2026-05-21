@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { totalSlots } from "@/lib/chapterConstants";
 import type { ChapterEventDoc } from "@/types/chapter";
+import { EventShareButton } from "@/components/events/EventShareButton";
 
 export function PastEventRow({
   event,
@@ -45,6 +46,8 @@ export function PastEventRow({
           </span>
         </div>
       )}
+
+      <EventShareButton eventId={event.eventId} variant="icon" />
 
       <svg
         width="14"

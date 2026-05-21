@@ -1,5 +1,6 @@
 import type { EventDoc } from "@/lib/events/types";
 import { IconCalendar, IconPin } from "./EventDetailIcons";
+import { EventShareButton } from "@/components/events/EventShareButton";
 
 interface EventHeaderCardProps {
   event: EventDoc;
@@ -68,6 +69,7 @@ export function EventHeaderCard({
               View on Luma ↗
             </a>
           )}
+          <EventShareButton eventId={event.eventId} variant="badge" />
         </div>
 
         <h1 className="font-heading text-3xl sm:text-4xl text-text-primary leading-tight">
