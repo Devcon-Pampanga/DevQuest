@@ -4,6 +4,7 @@ import Link from "next/link";
 import { totalSlots } from "@/lib/chapterConstants";
 import { formatRelativeDate } from "@/lib/eventListFormat";
 import type { ChapterEventDoc } from "@/types/chapter";
+import { EventShareButton } from "@/components/events/EventShareButton";
 
 export function EventsListEventCard({
   event,
@@ -50,6 +51,9 @@ export function EventsListEventCard({
             Internal
           </span>
         )}
+        <div className="absolute top-3 right-3">
+          <EventShareButton eventId={event.eventId} variant="icon" />
+        </div>
       </div>
 
       <div className="p-5 flex flex-col flex-1">

@@ -38,6 +38,7 @@ const config: Config = {
         "fade-in":   "fade-in 0.2s ease-out both",
         "float":     "float 3s ease-in-out infinite",
         "modal-in":  "modal-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "snackbar":  "snackbar-show 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
     },
   },

@@ -111,6 +111,13 @@ body {
   to   { opacity: 1; }
 }
 
+@keyframes snackbar-show {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
+  14%  { opacity: 1; transform: translateY(0)    scale(1);    }
+  80%  { opacity: 1; transform: translateY(0)    scale(1);    }
+  100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   @keyframes fade-up {
     from { opacity: 0; }
@@ -134,5 +141,9 @@ body {
   @keyframes fade-in {
     from { opacity: 0; }
     to   { opacity: 1; }
+  }
+  @keyframes snackbar-show {
+    0%, 100% { opacity: 0; }
+    14%, 80%  { opacity: 1; }
   }
 }
