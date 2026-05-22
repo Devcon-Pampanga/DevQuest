@@ -47,6 +47,11 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
 
   const joined = !!p.myReg;
   const attended = p.myReg?.attended ?? false;
+  const canLeave =
+    joined &&
+    upcoming &&
+    !attended &&
+    event.date.toDate().getTime() - Date.now() > 3 * 24 * 60 * 60 * 1000;
   const reflectionSubmitted = p.myReg?.reflectionSubmitted ?? false;
   const reflectionDeadline = p.myReg?.reflectionDeadline;
   const reflectionOpen =
@@ -83,6 +88,14 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
         onConfirmAttendance={p.confirmAttendance}
         onConfirmAll={p.confirmAll}
         onQrScan={p.handleQrScan}
+        showSwitchRoleModal={p.showSwitchRoleModal}
+        switchingRoleLoading={p.switchingRoleLoading}
+        switchingForUserId={p.switchingForUserId}
+        onSwitchRole={p.handleSwitchRole}
+        onOpenCoordSwitchRole={p.openCoordSwitchRole}
+        onCloseCoordSwitchRole={p.closeCoordSwitchRole}
+        removingUserId={p.removingUserId}
+        onRemoveVolunteer={p.handleRemoveVolunteer}
         avatarUrl={avatarUrl}
         upcoming={upcoming}
         totalSlots={totalSlots}
@@ -118,6 +131,13 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
       setShowRoleModal={p.setShowRoleModal}
       joiningLoading={p.joiningLoading}
       onJoin={p.handleJoin}
+      showSwitchRoleModal={p.showSwitchRoleModal}
+      setShowSwitchRoleModal={p.setShowSwitchRoleModal}
+      switchingRoleLoading={p.switchingRoleLoading}
+      onSwitchRole={p.handleSwitchRole}
+      canLeave={canLeave}
+      leavingLoading={p.leavingLoading}
+      onLeave={p.handleLeaveEvent}
     />
   );
 }

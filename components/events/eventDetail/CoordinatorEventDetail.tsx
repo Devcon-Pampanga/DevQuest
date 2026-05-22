@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Timestamp } from "firebase/firestore";
-import type { EditEventFields, EventDoc, EventRegistration } from "@/lib/events/types";
+import type { EditEventFields, EventDoc, EventRegistration, EventRole } from "@/lib/events/types";
 import type { CoordTab } from "@/hooks/useEventDetailPage";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
 import { IconBack, IconCheck, IconDownload, IconEdit, IconQr, IconTrash, IconX } from "./EventDetailIcons";
-import { EditEventModal, QrScannerModal } from "./EventDetailModals";
+import { EditEventModal, QrScannerModal, RoleModal } from "./EventDetailModals";
 import { EventHeaderCard } from "./EventHeaderCard";
 import { EventRolesSection } from "./EventRolesSection";
 import { ReflectionDataPreview } from "./ReflectionDataPreview";
@@ -36,6 +37,14 @@ interface CoordinatorEventDetailProps {
   onConfirmAttendance: (reg: EventRegistration) => void;
   onConfirmAll: () => void;
   onQrScan: (data: string) => void;
+  showSwitchRoleModal: boolean;
+  switchingRoleLoading: boolean;
+  switchingForUserId: string | null;
+  onSwitchRole: (role: EventRole) => void;
+  onOpenCoordSwitchRole: (userId: string) => void;
+  onCloseCoordSwitchRole: () => void;
+  removingUserId: string | null;
+  onRemoveVolunteer: (userId: string) => void;
   avatarUrl: string;
   upcoming: boolean;
   totalSlots: number;
@@ -71,6 +80,14 @@ export function CoordinatorEventDetail({
   onConfirmAttendance,
   onConfirmAll,
   onQrScan,
+  showSwitchRoleModal,
+  switchingRoleLoading,
+  switchingForUserId,
+  onSwitchRole,
+  onOpenCoordSwitchRole,
+  onCloseCoordSwitchRole,
+  removingUserId,
+  onRemoveVolunteer,
   avatarUrl,
   upcoming,
   totalSlots,
@@ -80,6 +97,9 @@ export function CoordinatorEventDetail({
   timeLabel,
   formatDate,
 }: CoordinatorEventDetailProps) {
+  const [removeConfirmFor, setRemoveConfirmFor] = useState<string | null>(null);
+  const removeTarget = removeConfirmFor ? allRegs.find((r) => r.userId === removeConfirmFor) : null;
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
@@ -267,6 +287,27 @@ export function CoordinatorEventDetail({
                           )}
                         </div>
                       </div>
+                      {!reg.attended && (
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => onOpenCoordSwitchRole(reg.userId)}
+                            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors"
+                            title="Change Role"
+                          >
+                            <IconEdit />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRemoveConfirmFor(reg.userId)}
+                            disabled={removingUserId === reg.userId}
+                            className="p-1.5 rounded-lg text-text-muted hover:text-red-400 hover:bg-white/5 transition-colors disabled:opacity-40"
+                            title="Remove Volunteer"
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
+                      )}
                       <div className="shrink-0">
                         {reg.attended ? (
                           <span className="flex items-center gap-1.5 text-sm px-3.5 py-1.5 rounded-xl bg-team-sustainability/15 text-team-sustainability font-heading font-medium animate-modal-in">
@@ -308,6 +349,67 @@ export function CoordinatorEventDetail({
       </div>
 
       {showQrScanner && <QrScannerModal onScan={onQrScan} onClose={() => setShowQrScanner(false)} />}
+
+      {removeConfirmFor && removeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => removingUserId !== removeConfirmFor && setRemoveConfirmFor(null)} />
+          <div className="relative z-10 w-full max-w-sm border border-border bg-elevated rounded-2xl overflow-hidden shadow-2xl animate-modal-in">
+            <div className="h-[3px] w-full bg-red-600" />
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-heading text-xl text-text-primary">Remove Volunteer?</h3>
+                <button onClick={() => setRemoveConfirmFor(null)} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
+                  <IconX size={14} />
+                </button>
+              </div>
+              <p className="text-sm text-text-secondary mb-6">
+                <strong className="text-text-primary">{removeTarget.username ?? removeTarget.userId}</strong> will be removed from this event as <strong className="text-text-primary">{removeTarget.role}</strong>.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRemoveConfirmFor(null)}
+                  disabled={removingUserId === removeConfirmFor}
+                  className="flex-1 py-3 rounded-xl border border-border text-text-secondary hover:text-text-primary text-sm font-heading transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onRemoveVolunteer(removeConfirmFor); setRemoveConfirmFor(null); }}
+                  disabled={removingUserId === removeConfirmFor}
+                  className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white text-sm font-heading transition-colors flex items-center justify-center gap-2"
+                >
+                  {removingUserId === removeConfirmFor ? (
+                    <span className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </span>
+                  ) : "Remove"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSwitchRoleModal && switchingForUserId && (() => {
+        const target = allRegs.find((r) => r.userId === switchingForUserId);
+        if (!target) return null;
+        return (
+          <RoleModal
+            roles={event.roles}
+            slotCounts={slotCounts}
+            onConfirm={onSwitchRole}
+            onClose={onCloseCoordSwitchRole}
+            loading={switchingRoleLoading}
+            title={`Change Role — ${target.username ?? target.userId}`}
+            confirmLabel="Change Role"
+            excludeRole={target.role}
+          />
+        );
+      })()}
 
       {showEditModal && event && (
         <EditEventModal event={event} onSave={onSaveEdit} onClose={() => setShowEditModal(false)} saving={saving} />

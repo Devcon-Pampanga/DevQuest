@@ -151,23 +151,31 @@ export function RoleModal({
   onConfirm,
   onClose,
   loading,
+  title = "Choose Your Role",
+  confirmLabel = "Confirm Registration",
+  excludeRole,
 }: {
   roles: EventRole[];
   slotCounts: Record<string, number>;
   onConfirm: (role: EventRole) => void;
   onClose: () => void;
   loading: boolean;
+  title?: string;
+  confirmLabel?: string;
+  excludeRole?: string;
 }) {
   const [selected, setSelected] = useState<EventRole | null>(null);
 
-  const available = roles.filter((r) => (slotCounts[r.roleName] ?? 0) < r.slots);
+  const available = roles.filter(
+    (r) => (slotCounts[r.roleName] ?? 0) < r.slots && r.roleName !== excludeRole
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md bg-elevated border border-border rounded-2xl p-6 shadow-2xl animate-modal-in">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-heading text-xl text-text-primary">Choose Your Role</h3>
+          <h3 className="font-heading text-xl text-text-primary">{title}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
             <IconX />
           </button>
@@ -223,7 +231,7 @@ export function RoleModal({
               ))}
             </span>
           ) : (
-            "Confirm Registration"
+            confirmLabel
           )}
         </button>
       </div>
