@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { User as FirebaseUser } from "firebase/auth";
 import type { EventDoc, EventRegistration, EventRole, PublicRegistrationRow } from "@/lib/events/types";
 import { DEFAULT_AVATAR, buildAvatarUrl } from "@/lib/avatar";
-import { IconBack, IconCheck } from "./EventDetailIcons";
+import { IconBack, IconCheck, IconEdit, IconTrash, IconX } from "./EventDetailIcons";
 import { RoleModal } from "./EventDetailModals";
 import { EventHeaderCard } from "./EventHeaderCard";
 import { EventRolesSection } from "./EventRolesSection";
@@ -31,6 +32,13 @@ interface VolunteerEventDetailProps {
   setShowRoleModal: (v: boolean) => void;
   joiningLoading: boolean;
   onJoin: (role: EventRole) => void;
+  showSwitchRoleModal: boolean;
+  setShowSwitchRoleModal: (v: boolean) => void;
+  switchingRoleLoading: boolean;
+  onSwitchRole: (role: EventRole) => void;
+  canLeave: boolean;
+  leavingLoading: boolean;
+  onLeave: () => void;
 }
 
 export function VolunteerEventDetail({
@@ -55,7 +63,15 @@ export function VolunteerEventDetail({
   setShowRoleModal,
   joiningLoading,
   onJoin,
+  showSwitchRoleModal,
+  setShowSwitchRoleModal,
+  switchingRoleLoading,
+  onSwitchRole,
+  canLeave,
+  leavingLoading,
+  onLeave,
 }: VolunteerEventDetailProps) {
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   return (
     <div className="flex flex-col min-h-screen pb-24">
       <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 border-b border-border bg-base">
@@ -94,6 +110,28 @@ export function VolunteerEventDetail({
               <p className="text-sm text-green-400">
                 You&rsquo;re registered as <strong>{myReg.role}</strong> · +{myReg.roleXP} XP on attendance
               </p>
+              {upcoming && !attended && (
+                <div className="ml-auto flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowSwitchRoleModal(true)}
+                    className="p-1.5 rounded-lg text-green-400/60 hover:text-green-300 hover:bg-white/5 transition-colors"
+                    title="Change Role"
+                  >
+                    <IconEdit />
+                  </button>
+                  {canLeave && (
+                    <button
+                      type="button"
+                      onClick={() => setShowLeaveConfirm(true)}
+                      className="p-1.5 rounded-lg text-green-400/60 hover:text-red-400 hover:bg-white/5 transition-colors"
+                      title="Leave Event"
+                    >
+                      <IconTrash />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -205,6 +243,63 @@ export function VolunteerEventDetail({
           onClose={() => setShowRoleModal(false)}
           loading={joiningLoading}
         />
+      )}
+
+      {showSwitchRoleModal && myReg && !event.isInternal && (
+        <RoleModal
+          roles={event.roles}
+          slotCounts={slotCounts}
+          onConfirm={onSwitchRole}
+          onClose={() => setShowSwitchRoleModal(false)}
+          loading={switchingRoleLoading}
+          title="Switch Your Role"
+          confirmLabel="Switch Role"
+          excludeRole={myReg.role}
+        />
+      )}
+
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !leavingLoading && setShowLeaveConfirm(false)} />
+          <div className="relative z-10 w-full max-w-sm border border-border bg-elevated rounded-2xl overflow-hidden shadow-2xl animate-modal-in">
+            <div className="h-[3px] w-full bg-red-600" />
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-heading text-xl text-text-primary">Leave Event?</h3>
+                <button onClick={() => setShowLeaveConfirm(false)} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
+                  <IconX />
+                </button>
+              </div>
+              <p className="text-sm text-text-secondary mb-6">
+                You&apos;ll be removed from <strong className="text-text-primary">{event.name}</strong> as <strong className="text-text-primary">{myReg?.role}</strong>. You can re-register later if slots are still available.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLeaveConfirm(false)}
+                  disabled={leavingLoading}
+                  className="flex-1 py-3 rounded-xl border border-border text-text-secondary hover:text-text-primary text-sm font-heading transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onLeave(); setShowLeaveConfirm(false); }}
+                  disabled={leavingLoading}
+                  className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white text-sm font-heading transition-colors flex items-center justify-center gap-2"
+                >
+                  {leavingLoading ? (
+                    <span className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="w-1.5 h-1.5 rounded-full bg-white" style={{ animation: "wave-dot 0.6s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </span>
+                  ) : "Leave Event"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

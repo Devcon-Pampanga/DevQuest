@@ -17,7 +17,7 @@ import {
   buildPublicRegistrationList,
   fetchAllQuestDefinitions,
 } from "@/lib/events/eventDetailData";
-import { createEventRegistration, updateEventFromEditFields, deleteEventAndBanner } from "@/lib/events/eventMutations";
+import { createEventRegistration, switchEventRegistrationRole, leaveEvent, updateEventFromEditFields, deleteEventAndBanner } from "@/lib/events/eventMutations";
 import { confirmVolunteerAttendance } from "@/lib/events/attendanceConfirmation";
 import { parseAttendanceQrData, isDevQuestQr } from "@/lib/events/qrAttendance";
 import { exportVolunteersCsv } from "@/lib/events/exportVolunteerCsv";
@@ -50,6 +50,11 @@ export function useEventDetailPage(eventId: string) {
 
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [joiningLoading, setJoiningLoading] = useState(false);
+  const [showSwitchRoleModal, setShowSwitchRoleModal] = useState(false);
+  const [switchingRoleLoading, setSwitchingRoleLoading] = useState(false);
+  const [switchingForUserId, setSwitchingForUserId] = useState<string | null>(null);
+  const [leavingLoading, setLeavingLoading] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showQrScanner, setShowQrScanner] = useState(false);
   const [coordTab, setCoordTab] = useState<CoordTab>("details");
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
@@ -239,6 +244,62 @@ export function useEventDetailPage(eventId: string) {
     }
   }
 
+  async function handleLeaveEvent() {
+    if (!firebaseUser || !myReg || myReg.attended) return;
+    setLeavingLoading(true);
+    try {
+      await leaveEvent(db, eventId, firebaseUser.uid);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLeavingLoading(false);
+    }
+  }
+
+  async function handleRemoveVolunteer(userId: string) {
+    const reg = allRegs.find((r) => r.userId === userId);
+    if (!reg || reg.attended) return;
+    setRemovingUserId(userId);
+    try {
+      await leaveEvent(db, eventId, userId);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRemovingUserId(null);
+    }
+  }
+
+  function openCoordSwitchRole(userId: string) {
+    setSwitchingForUserId(userId);
+    setShowSwitchRoleModal(true);
+  }
+
+  function closeCoordSwitchRole() {
+    setShowSwitchRoleModal(false);
+    setSwitchingForUserId(null);
+  }
+
+  async function handleSwitchRole(newRole: EventRole) {
+    if (!firebaseUser || !event) return;
+    const targetUserId = switchingForUserId ?? firebaseUser.uid;
+    const targetReg = switchingForUserId
+      ? allRegs.find((r) => r.userId === switchingForUserId)
+      : myReg;
+    if (!targetReg || targetReg.attended) return;
+    setSwitchingRoleLoading(true);
+    try {
+      await switchEventRegistrationRole(db, eventId, targetUserId, newRole);
+      closeCoordSwitchRole();
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSwitchingRoleLoading(false);
+    }
+  }
+
   function exportCsv() {
     if (!event) return;
     exportVolunteersCsv(event.name, allRegs);
@@ -281,5 +342,16 @@ export function useEventDetailPage(eventId: string) {
     handleDelete,
     exportCsv,
     eventId,
+    showSwitchRoleModal,
+    setShowSwitchRoleModal,
+    switchingRoleLoading,
+    switchingForUserId,
+    handleSwitchRole,
+    openCoordSwitchRole,
+    closeCoordSwitchRole,
+    leavingLoading,
+    removingUserId,
+    handleLeaveEvent,
+    handleRemoveVolunteer,
   };
 }

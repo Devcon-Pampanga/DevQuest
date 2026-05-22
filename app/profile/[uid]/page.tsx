@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { DashboardProfileDetailPage } from "@/components/profile/DashboardProfileDetailPage";
 import { getDashboardProfilePayload } from "@/lib/profile/dashboardProfile";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicProfileRoute({
   params,
 }: {

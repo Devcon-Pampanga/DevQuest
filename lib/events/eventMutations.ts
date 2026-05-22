@@ -28,6 +28,28 @@ export async function createEventRegistration(
   });
 }
 
+export async function switchEventRegistrationRole(
+  firestore: Firestore,
+  eventId: string,
+  targetUserId: string,
+  newRole: EventRole
+): Promise<void> {
+  const qrData = `devquest://attendance?eventId=${eventId}&userId=${targetUserId}&role=${encodeURIComponent(newRole.roleName)}`;
+  await updateDoc(doc(firestore, "events", eventId, "registrations", targetUserId), {
+    role: newRole.roleName,
+    roleXP: newRole.xpReward,
+    qrData,
+  });
+}
+
+export async function leaveEvent(
+  firestore: Firestore,
+  eventId: string,
+  userId: string
+): Promise<void> {
+  await deleteDoc(doc(firestore, "events", eventId, "registrations", userId));
+}
+
 export async function updateEventFromEditFields(
   firestore: Firestore,
   storage: FirebaseStorage,
