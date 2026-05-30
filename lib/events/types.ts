@@ -51,6 +51,7 @@ export interface EventRegistration {
   username?: string;
   avatarOptions?: AvatarOptions;
   starsGiven?: string[];
+  registeredAt?: Timestamp;
 }
 
 export interface PublicRegistrationRow {
@@ -68,4 +69,5 @@ export interface EditEventFields {
   endTime: string;
   location: string;
   lumaUrl: string;
+  roles: EventRole[];
 }

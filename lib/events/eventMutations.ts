@@ -9,7 +9,7 @@ import type { Firestore } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import type { FirebaseStorage } from "firebase/storage";
 import type { User as FirebaseUser } from "firebase/auth";
-import type { EventRole, EditEventFields } from "./types";
+import type { EventRole, EditEventFields, EventRegistration } from "./types";
 
 export async function createEventRegistration(
   firestore: Firestore,
@@ -25,6 +25,7 @@ export async function createEventRegistration(
     qrData,
     attended: false,
     reflectionSubmitted: false,
+    registeredAt: Timestamp.now(),
   });
 }
 
@@ -70,6 +71,7 @@ export async function updateEventFromEditFields(
   };
   if (endTs) updates.endDate = endTs;
   if (fields.lumaUrl.trim()) updates.lumaUrl = fields.lumaUrl.trim();
+  if (fields.roles && fields.roles.length > 0) updates.roles = fields.roles;
 
   if (bannerFile) {
     const bannerRef = ref(storage, `event-banners/${eventId}/banner`);
@@ -83,6 +85,40 @@ export async function updateEventFromEditFields(
   }
 
   await updateDoc(doc(firestore, "events", eventId), updates);
+}
+
+export async function revokeVolunteersForRoleChanges(
+  firestore: Firestore,
+  eventId: string,
+  oldRoles: EventRole[],
+  newRoles: EventRole[],
+  allRegs: EventRegistration[]
+): Promise<void> {
+  const newSlotsMap = new Map(newRoles.map((r) => [r.roleName, r.slots]));
+  const toDelete = new Set<string>();
+
+  for (const oldRole of oldRoles) {
+    const unattended = allRegs.filter(
+      (r) => r.role === oldRole.roleName && !r.attended
+    );
+    if (!newSlotsMap.has(oldRole.roleName)) {
+      unattended.forEach((r) => toDelete.add(r.userId));
+    } else {
+      const excess = Math.max(0, unattended.length - newSlotsMap.get(oldRole.roleName)!);
+      if (excess > 0) {
+        const sorted = [...unattended].sort(
+          (a, b) => (a.registeredAt?.toMillis() ?? 0) - (b.registeredAt?.toMillis() ?? 0)
+        );
+        sorted.slice(sorted.length - excess).forEach((r) => toDelete.add(r.userId));
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from(toDelete).map((uid) =>
+      deleteDoc(doc(firestore, "events", eventId, "registrations", uid))
+    )
+  );
 }
 
 export async function deleteEventAndBanner(
