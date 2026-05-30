@@ -412,7 +412,7 @@ export function CoordinatorEventDetail({
       })()}
 
       {showEditModal && event && (
-        <EditEventModal event={event} onSave={onSaveEdit} onClose={() => setShowEditModal(false)} saving={saving} />
+        <EditEventModal event={event} onSave={onSaveEdit} onClose={() => setShowEditModal(false)} saving={saving} allRegs={allRegs} />
       )}
 
       {scanFeedback && (

@@ -17,7 +17,7 @@ import {
   buildPublicRegistrationList,
   fetchAllQuestDefinitions,
 } from "@/lib/events/eventDetailData";
-import { createEventRegistration, switchEventRegistrationRole, leaveEvent, updateEventFromEditFields, deleteEventAndBanner } from "@/lib/events/eventMutations";
+import { createEventRegistration, switchEventRegistrationRole, leaveEvent, updateEventFromEditFields, deleteEventAndBanner, revokeVolunteersForRoleChanges } from "@/lib/events/eventMutations";
 import { confirmVolunteerAttendance } from "@/lib/events/attendanceConfirmation";
 import { parseAttendanceQrData, isDevQuestQr } from "@/lib/events/qrAttendance";
 import { exportVolunteersCsv } from "@/lib/events/exportVolunteerCsv";
@@ -221,8 +221,10 @@ export function useEventDetailPage(eventId: string) {
   );
 
   async function handleSaveEdit(fields: EditEventFields, bannerFile: File | null) {
+    if (!event) return;
     setSaving(true);
     try {
+      await revokeVolunteersForRoleChanges(db, eventId, event.roles, fields.roles, allRegs);
       await updateEventFromEditFields(db, storage, eventId, fields, bannerFile);
       await fetchData();
       setShowEditModal(false);
